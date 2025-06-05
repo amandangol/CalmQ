@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "907384913894",
+    "project_id": "auralynn-30af4",
+    "storage_bucket": "auralynn-30af4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:907384913894:android:bece0f4609cf11fdd36027",
+        "android_client_info": {
+          "package_name": "com.example.auralynn"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBU8kN2Coa1NEjGZo_XPHrjd99IRG2ZgfE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
