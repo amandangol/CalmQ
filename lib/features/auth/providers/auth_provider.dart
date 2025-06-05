@@ -1,53 +1,86 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
-class AuthProvider extends ChangeNotifier {
-  final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
-  firebase_auth.User? _user;
-  bool _isLoading = false;
+class AuthProvider with ChangeNotifier {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  bool _isLoading = true;
+  User? _user;
 
   AuthProvider() {
-    _auth.authStateChanges().listen((firebase_auth.User? user) {
-      _user = user;
-      notifyListeners();
-    });
+    _init();
   }
 
-  firebase_auth.User? get user => _user;
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _user != null;
+  User? get user => _user;
 
-  Future<void> signIn(String email, String password) async {
+  Future<void> _init() async {
     try {
-      _isLoading = true;
-      notifyListeners();
-
-      await _auth.signInWithEmailAndPassword(
-        email: email.trim(),
-        password: password,
-      );
-    } finally {
+      // Listen to auth state changes
+      _auth.authStateChanges().listen((User? user) {
+        _user = user;
+        _isLoading = false;
+        notifyListeners();
+      });
+    } catch (e) {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<void> signUp(String email, String password) async {
+  Future<UserCredential> signIn(String email, String password) async {
     try {
       _isLoading = true;
       notifyListeners();
 
-      await _auth.createUserWithEmailAndPassword(
-        email: email.trim(),
+      final userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
         password: password,
       );
-    } finally {
+
       _isLoading = false;
       notifyListeners();
+      return userCredential;
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<UserCredential> signUp(String email, String password) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      final userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      _isLoading = false;
+      notifyListeners();
+      return userCredential;
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
     }
   }
 
   Future<void> signOut() async {
-    await _auth.signOut();
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      await _auth.signOut();
+
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
   }
 }

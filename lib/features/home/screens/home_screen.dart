@@ -148,19 +148,19 @@ class HomeScreen extends StatelessWidget {
     }
 
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [AppColors.primary, AppColors.secondary],
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withOpacity(0.3),
-            blurRadius: 20,
-            offset: Offset(0, 10),
+            blurRadius: 15,
+            offset: Offset(0, 8),
           ),
         ],
       ),
@@ -174,7 +174,7 @@ class HomeScreen extends StatelessWidget {
                   '$greeting,',
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: AppColors.surface.withOpacity(0.9),
-                    fontSize: 18,
+                    fontSize: 16,
                   ),
                 ),
                 SizedBox(height: 4),
@@ -183,27 +183,27 @@ class HomeScreen extends StatelessWidget {
                   style: theme.textTheme.titleLarge?.copyWith(
                     color: AppColors.surface,
                     fontWeight: FontWeight.bold,
-                    fontSize: 28,
+                    fontSize: 24,
                   ),
                 ),
-                SizedBox(height: 12),
+                SizedBox(height: 8),
                 Text(
                   'How are you taking care of yourself today?',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: AppColors.surface.withOpacity(0.9),
-                    fontSize: 16,
+                    fontSize: 14,
                   ),
                 ),
               ],
             ),
           ),
           Container(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppColors.surface.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(Icons.spa, color: AppColors.surface, size: 48),
+            child: Icon(Icons.spa, color: AppColors.surface, size: 36),
           ),
         ],
       ),
@@ -212,39 +212,39 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildWellnessScore(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.2),
-            blurRadius: 15,
-            offset: Offset(0, 8),
+            blurRadius: 12,
+            offset: Offset(0, 6),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            width: 70,
-            height: 70,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [AppColors.success, AppColors.success.withOpacity(0.7)],
               ),
-              borderRadius: BorderRadius.circular(35),
+              borderRadius: BorderRadius.circular(28),
               boxShadow: [
                 BoxShadow(
                   color: AppColors.success.withOpacity(0.3),
-                  blurRadius: 10,
+                  blurRadius: 8,
                   offset: Offset(0, 4),
                 ),
               ],
             ),
-            child: Icon(Icons.trending_up, color: AppColors.surface, size: 32),
+            child: Icon(Icons.trending_up, color: AppColors.surface, size: 28),
           ),
-          SizedBox(width: 20),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -252,37 +252,37 @@ class HomeScreen extends StatelessWidget {
                 Text(
                   'Wellness Score',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                SizedBox(height: 8),
+                SizedBox(height: 6),
                 Row(
                   children: [
                     Text(
                       '78%',
                       style: TextStyle(
-                        fontSize: 32,
+                        fontSize: 28,
                         fontWeight: FontWeight.bold,
                         color: AppColors.success,
                       ),
                     ),
-                    SizedBox(width: 12),
+                    SizedBox(width: 10),
                     Container(
                       padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
+                        horizontal: 10,
+                        vertical: 4,
                       ),
                       decoration: BoxDecoration(
                         color: AppColors.success.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
                         'Great progress!',
                         style: TextStyle(
                           color: AppColors.success,
-                          fontSize: 14,
+                          fontSize: 13,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -303,7 +303,7 @@ class HomeScreen extends StatelessWidget {
     ThemeData theme,
   ) {
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
@@ -320,7 +320,7 @@ class HomeScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.favorite, color: AppColors.secondary, size: 24),
+              Icon(Icons.favorite, color: AppColors.secondary, size: 20),
               SizedBox(width: 8),
               Text(
                 "Today's Mood",
@@ -331,22 +331,22 @@ class HomeScreen extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: 16),
+          SizedBox(height: 12),
           if (moodProvider.todayMood != null) ...[
             Row(
               children: [
                 Container(
-                  padding: EdgeInsets.all(16),
+                  padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(50),
+                    borderRadius: BorderRadius.circular(40),
                   ),
                   child: Text(
                     moodProvider.todayMood!.emoji,
-                    style: TextStyle(fontSize: 32),
+                    style: TextStyle(fontSize: 24),
                   ),
                 ),
-                SizedBox(width: 16),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -358,13 +358,14 @@ class HomeScreen extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(height: 4),
+                      SizedBox(height: 2),
                       Text(
                         moodProvider.getMoodSuggestion(
                           moodProvider.todayMood!.mood,
                         ),
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: AppColors.textLight,
+                          fontSize: 13,
                         ),
                       ),
                     ],
@@ -373,47 +374,60 @@ class HomeScreen extends StatelessWidget {
               ],
             ),
           ] else ...[
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: moodProvider.moodEmojis.entries.map((entry) {
-                return GestureDetector(
-                  onTap: () => _showMoodPicker(context),
-                  child: Container(
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.primary.withOpacity(0.3),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(entry.value, style: TextStyle(fontSize: 24)),
-                        SizedBox(height: 4),
-                        Text(
-                          entry.key,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: AppColors.textLight,
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: moodProvider.moodEmojis.entries.map((entry) {
+                  return Padding(
+                    padding: EdgeInsets.only(right: 12),
+                    child: GestureDetector(
+                      onTap: () => _showMoodPicker(context),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.primary.withOpacity(0.3),
                           ),
                         ),
-                      ],
+                        child: Row(
+                          children: [
+                            Text(entry.value, style: TextStyle(fontSize: 20)),
+                            SizedBox(width: 8),
+                            Text(
+                              entry.key,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: AppColors.textLight,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                );
-              }).toList(),
+                  );
+                }).toList(),
+              ),
             ),
-            SizedBox(height: 16),
+            SizedBox(height: 12),
             Center(
               child: TextButton.icon(
                 onPressed: () => _showMoodPicker(context),
-                icon: Icon(Icons.add_circle_outline, color: AppColors.primary),
+                icon: Icon(
+                  Icons.add_circle_outline,
+                  color: AppColors.primary,
+                  size: 18,
+                ),
                 label: Text(
                   'Log your mood',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w500,
+                    fontSize: 13,
                   ),
                 ),
               ),
@@ -493,9 +507,9 @@ class HomeScreen extends StatelessWidget {
       physics: NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
-        childAspectRatio: 1.1,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 1.2,
       ),
       itemCount: quickActions.length,
       itemBuilder: (context, index) {
