@@ -15,6 +15,7 @@ import 'features/auth/screens/login_screen.dart';
 import 'features/home/screens/home_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 import 'features/breathing/screens/breathing_screen.dart';
+import 'app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,11 +37,7 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'Mental Wellness',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          visualDensity: VisualDensity.adaptivePlatformDensity,
-          scaffoldBackgroundColor: Colors.grey[50],
-        ),
+        theme: mentalWellnessTheme,
         home: AuthWrapper(),
         debugShowCheckedModeBanner: false,
       ),

@@ -46,9 +46,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           message = 'The email address is not valid.';
         }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message), backgroundColor: Colors.red),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
       }
     }
   }
@@ -56,13 +56,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.grey[800]),
+        iconTheme: IconThemeData(color: theme.colorScheme.onBackground),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -71,21 +71,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SizedBox(height: 20),
-              Icon(Icons.person_add_outlined, size: 80, color: Colors.blue),
+              Icon(
+                Icons.person_add_outlined,
+                size: 80,
+                color: theme.colorScheme.primary,
+              ),
               SizedBox(height: 24),
               Text(
                 'Create Account',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                ),
+                style: theme.textTheme.displayMedium,
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 8),
               Text(
                 'Sign up to get started',
-                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                style: theme.textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 48),
@@ -99,11 +99,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       decoration: InputDecoration(
                         labelText: 'Email',
                         prefixIcon: Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -136,11 +131,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             });
                           },
                         ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -172,11 +162,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             });
                           },
                         ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -194,16 +179,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       height: 50,
                       child: ElevatedButton(
                         onPressed: authProvider.isLoading ? null : _signUp,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
                         child: authProvider.isLoading
-                            ? CircularProgressIndicator(color: Colors.white)
-                            : Text('Sign Up', style: TextStyle(fontSize: 16)),
+                            ? CircularProgressIndicator(
+                                color: theme.colorScheme.onPrimary,
+                              )
+                            : Text('Sign Up'),
                       ),
                     ),
                   ],

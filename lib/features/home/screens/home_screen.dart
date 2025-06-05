@@ -16,14 +16,12 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final moodProvider = context.watch<MoodProvider>();
+    final theme = Theme.of(context);
     final user = authProvider.user;
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: Text('Mental Wellness'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: Icon(Icons.logout),
@@ -38,75 +36,48 @@ class HomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Today's Mood Section
-              Container(
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      spreadRadius: 2,
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Today's Mood",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[800],
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    if (moodProvider.todayMood != null) ...[
-                      Row(
-                        children: [
-                          Text(
-                            moodProvider.todayMood!.emoji,
-                            style: TextStyle(fontSize: 32),
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            moodProvider.todayMood!.mood,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
+              Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Today's Mood", style: theme.textTheme.titleLarge),
                       SizedBox(height: 8),
-                      Text(
-                        moodProvider.getMoodSuggestion(
-                          moodProvider.todayMood!.mood,
+                      if (moodProvider.todayMood != null) ...[
+                        Row(
+                          children: [
+                            Text(
+                              moodProvider.todayMood!.emoji,
+                              style: TextStyle(fontSize: 32),
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              moodProvider.todayMood!.mood,
+                              style: theme.textTheme.titleMedium,
+                            ),
+                          ],
                         ),
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                    ] else
-                      Text(
-                        'How are you feeling today?',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                  ],
+                        SizedBox(height: 8),
+                        Text(
+                          moodProvider.getMoodSuggestion(
+                            moodProvider.todayMood!.mood,
+                          ),
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ] else
+                        Text(
+                          'How are you feeling today?',
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                    ],
+                  ),
                 ),
               ),
               SizedBox(height: 16),
 
               // Quick Access Section
-              Text(
-                'Quick Access',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                ),
-              ),
+              Text('Quick Access', style: theme.textTheme.titleLarge),
               SizedBox(height: 8),
               GridView.count(
                 shrinkWrap: true,
@@ -160,54 +131,56 @@ class HomeScreen extends StatelessWidget {
               SizedBox(height: 16),
 
               // Daily Tip Section
-              Container(
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.purple.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.format_quote, color: Colors.purple),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            context
-                                    .watch<AffirmationProvider>()
-                                    .dailyAffirmation
-                                    ?.text ??
-                                'Loading...',
-                            style: TextStyle(
-                              color: Colors.purple[700],
-                              fontWeight: FontWeight.w500,
+              Card(
+                color: theme.colorScheme.secondary.withOpacity(0.1),
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.format_quote,
+                            color: theme.colorScheme.secondary,
+                          ),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              context
+                                      .watch<AffirmationProvider>()
+                                      .dailyAffirmation
+                                      ?.text ??
+                                  'Loading...',
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: theme.colorScheme.secondary,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 12),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AffirmationScreen(),
-                            ),
-                          );
-                        },
-                        icon: Icon(Icons.auto_awesome, size: 16),
-                        label: Text('More Affirmations'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.purple[700],
+                        ],
+                      ),
+                      SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => AffirmationScreen(),
+                              ),
+                            );
+                          },
+                          icon: Icon(Icons.auto_awesome, size: 16),
+                          label: Text('More Affirmations'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: theme.colorScheme.secondary,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -220,8 +193,6 @@ class HomeScreen extends StatelessWidget {
         },
         icon: Icon(Icons.add),
         label: Text('Log Mood'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
       ),
     );
   }
@@ -250,35 +221,20 @@ class _QuickAccessButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 2,
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 32, color: Colors.blue),
-            SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[800],
-              ),
-            ),
-          ],
+      child: Card(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            children: [
+              Icon(icon, size: 32, color: theme.colorScheme.primary),
+              SizedBox(height: 8),
+              Text(label, style: theme.textTheme.titleMedium),
+            ],
+          ),
         ),
       ),
     );

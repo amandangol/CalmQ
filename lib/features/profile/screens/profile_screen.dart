@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../auth/providers/user_profile_provider.dart';
 import '../../auth/models/user_profile.dart';
-import '../../auth/screens/user_info_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -10,178 +9,159 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController nameController;
+  late TextEditingController ageController;
+  bool isEditing = false;
+
   @override
   void initState() {
     super.initState();
-    // Load user profile when screen initializes
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<UserProfileProvider>().loadUserProfile();
-    });
+    nameController = TextEditingController();
+    ageController = TextEditingController();
+    _loadUserProfile();
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    ageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadUserProfile() async {
+    await context.read<UserProfileProvider>().loadUserProfile();
+    final profile = context.read<UserProfileProvider>().userProfile;
+    if (profile != null) {
+      nameController.text = profile.name;
+      ageController.text = profile.age.toString();
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        final currentProfile = context.read<UserProfileProvider>().userProfile;
+        if (currentProfile != null) {
+          final updatedProfile = currentProfile.copyWith(
+            name: nameController.text,
+            age: int.parse(ageController.text),
+          );
+          await context.read<UserProfileProvider>().updateUserProfile(
+            updatedProfile,
+          );
+          setState(() => isEditing = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Profile updated successfully')),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating profile: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Profile'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.edit),
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => UserInfoScreen()),
-              );
-              // Reload profile after returning from edit screen
-              context.read<UserProfileProvider>().loadUserProfile();
-            },
+    return Consumer<UserProfileProvider>(
+      builder: (context, userProfileProvider, _) {
+        final profile = userProfileProvider.userProfile;
+
+        if (userProfileProvider.isLoading) {
+          return Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+
+        if (profile == null) {
+          return Scaffold(
+            body: Center(child: Text('No profile data available')),
+          );
+        }
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text('Profile'),
+            actions: [
+              IconButton(
+                icon: Icon(isEditing ? Icons.save : Icons.edit),
+                onPressed: () {
+                  if (isEditing) {
+                    _saveProfile();
+                  } else {
+                    setState(() => isEditing = true);
+                  }
+                },
+              ),
+            ],
           ),
-        ],
-      ),
-      body: Consumer<UserProfileProvider>(
-        builder: (context, profileProvider, _) {
-          if (profileProvider.isLoading) {
-            return Center(child: CircularProgressIndicator());
-          }
-
-          if (profileProvider.error != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  SizedBox(height: 16),
-                  Text(
-                    'Error loading profile',
-                    style: TextStyle(fontSize: 18, color: Colors.red),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    profileProvider.error!,
-                    style: TextStyle(color: Colors.grey[600]),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      profileProvider.loadUserProfile();
-                    },
-                    child: Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final userProfile = profileProvider.userProfile;
-          if (userProfile == null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.person_outline, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text(
-                    'No Profile Found',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Create your profile to get started',
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-                  SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => UserInfoScreen(),
-                        ),
-                      );
-                      profileProvider.loadUserProfile();
-                    },
-                    icon: Icon(Icons.add),
-                    label: Text('Create Profile'),
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: () => profileProvider.loadUserProfile(),
-            child: SingleChildScrollView(
-              physics: AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.all(16),
+          body: SingleChildScrollView(
+            padding: EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildProfileHeader(userProfile),
+                  _buildProfileHeader(profile),
                   SizedBox(height: 24),
                   _buildProfileSection('Personal Information', [
-                    _buildInfoRow('Name', userProfile.name),
-                    _buildInfoRow('Age', userProfile.age.toString()),
-                    if (userProfile.gender != null)
-                      _buildInfoRow('Gender', userProfile.gender!),
-                  ]),
-                  SizedBox(height: 16),
-                  _buildProfileSection('Wellness Goals', [
-                    if (userProfile.goals.isNotEmpty)
-                      ...userProfile.goals.map(
-                        (goal) => _buildInfoRow('•', goal),
-                      )
-                    else
-                      _buildInfoRow('No goals set', ''),
-                  ]),
-                  SizedBox(height: 16),
-                  _buildProfileSection('Stress & Wellness', [
-                    if (userProfile.stressFrequency != null)
-                      _buildInfoRow(
-                        'Stress Level',
-                        userProfile.stressFrequency!,
-                      ),
-                    if (userProfile.healthyEating != null)
-                      _buildInfoRow(
-                        'Healthy Eating',
-                        userProfile.healthyEating!,
-                      ),
-                    if (userProfile.sleepQuality != null)
-                      _buildInfoRow('Sleep Quality', userProfile.sleepQuality!),
-                    if (userProfile.happinessLevel != null)
-                      _buildInfoRow('Happiness', userProfile.happinessLevel!),
-                  ]),
-                  SizedBox(height: 16),
-                  _buildProfileSection('Meditation', [
-                    if (userProfile.meditationExperience != null)
-                      _buildInfoRow(
-                        'Experience',
-                        userProfile.meditationExperience!,
-                      ),
+                    _buildEditableField(
+                      'Name',
+                      nameController,
+                      isEditing: isEditing,
+                    ),
+                    SizedBox(height: 16),
+                    _buildEditableField(
+                      'Age',
+                      ageController,
+                      isEditing: isEditing,
+                      keyboardType: TextInputType.number,
+                    ),
+                    SizedBox(height: 16),
+                    _buildInfoTile('Gender', profile.gender ?? 'Not specified'),
                   ]),
                   SizedBox(height: 24),
-                  Center(
-                    child: Text(
-                      'Member since ${_formatDate(userProfile.createdAt)}',
-                      style: Theme.of(context).textTheme.bodySmall,
+                  _buildProfileSection('Wellness Goals', [
+                    _buildChipsList('Goals', profile.goals),
+                  ]),
+                  SizedBox(height: 24),
+                  _buildProfileSection('Mental Health', [
+                    _buildInfoTile(
+                      'Stress Frequency',
+                      profile.stressFrequency ?? 'Not specified',
                     ),
-                  ),
+                    SizedBox(height: 16),
+                    _buildInfoTile(
+                      'Sleep Quality',
+                      profile.sleepQuality ?? 'Not specified',
+                    ),
+                    SizedBox(height: 16),
+                    _buildInfoTile(
+                      'Happiness Level',
+                      profile.happinessLevel ?? 'Not specified',
+                    ),
+                  ]),
+                  SizedBox(height: 24),
+                  _buildProfileSection('Lifestyle', [
+                    _buildInfoTile(
+                      'Healthy Eating',
+                      profile.healthyEating ?? 'Not specified',
+                    ),
+                    SizedBox(height: 16),
+                    _buildInfoTile(
+                      'Meditation Experience',
+                      profile.meditationExperience ?? 'Not specified',
+                    ),
+                  ]),
                 ],
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -191,14 +171,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           CircleAvatar(
             radius: 50,
-            backgroundColor: Colors.blue[100],
+            backgroundColor: Theme.of(context).primaryColor,
             child: Text(
-              profile.name[0].toUpperCase(),
-              style: TextStyle(
-                fontSize: 40,
-                color: Colors.blue[700],
-                fontWeight: FontWeight.bold,
-              ),
+              profile.name.isNotEmpty ? profile.name[0].toUpperCase() : '?',
+              style: TextStyle(fontSize: 40, color: Colors.white),
             ),
           ),
           SizedBox(height: 16),
@@ -212,55 +188,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileSection(String title, List<Widget> children) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue[700],
-              ),
-            ),
-            SizedBox(height: 12),
-            ...children,
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).primaryColor,
+          ),
         ),
-      ),
+        SizedBox(height: 16),
+        ...children,
+      ],
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4),
+  Widget _buildEditableField(
+    String label,
+    TextEditingController controller, {
+    bool isEditing = false,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return TextFormField(
+      controller: controller,
+      enabled: isEditing,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      validator: (value) =>
+          (value == null || value.isEmpty) ? '$label cannot be empty' : null,
+    );
+  }
+
+  Widget _buildInfoTile(String label, String value) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(10),
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+          Text(
+            label,
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
-          Expanded(
-            child: Text(value, style: TextStyle(fontWeight: FontWeight.w500)),
-          ),
+          Text(value, style: TextStyle(fontSize: 16, color: Colors.grey[700])),
         ],
       ),
     );
   }
 
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'N/A';
-    return '${date.day}/${date.month}/${date.year}';
+  Widget _buildChipsList(String label, List<String> items) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: items.map((item) {
+        return Chip(
+          label: Text(item),
+          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+          labelStyle: TextStyle(color: Theme.of(context).primaryColor),
+        );
+      }).toList(),
+    );
   }
 }
