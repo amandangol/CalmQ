@@ -10,6 +10,9 @@ class UserInfoScreen extends StatefulWidget {
 
 class _UserInfoScreenState extends State<UserInfoScreen> {
   final _formKey = GlobalKey<FormState>();
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+
   final TextEditingController nameController = TextEditingController();
   final TextEditingController ageController = TextEditingController();
   String? gender;
@@ -21,7 +24,12 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
   String? sleepQuality;
   String? happinessLevel;
 
-  final List<String> genderOptions = ['Male', 'Female', 'Other'];
+  final List<String> genderOptions = [
+    'Male',
+    'Female',
+    'Non-binary',
+    'Prefer not to say',
+  ];
   final List<String> stressFrequencyOptions = [
     'Almost daily',
     'A few times a week',
@@ -36,81 +44,141 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
     'Rarely',
     'Never',
   ];
-  final List<String> meditationExperienceOptions = ['Yes', 'No'];
+  final List<String> meditationExperienceOptions = [
+    'Yes, I practice regularly',
+    'I\'ve tried it a few times',
+    'No, but I\'m interested',
+    'No, not interested',
+  ];
   final List<String> sleepQualityOptions = [
-    'Very good',
-    'Good',
-    'Average',
-    'Poor',
-    'Very poor',
+    'Excellent - I sleep deeply',
+    'Good - Usually restful',
+    'Fair - Sometimes restless',
+    'Poor - Often tired',
+    'Very poor - Chronic issues',
   ];
   final List<String> happinessLevelOptions = [
-    'Very happy',
-    'Happy',
-    'Neutral',
-    'Unhappy',
-    'Very unhappy',
+    'Very content and joyful',
+    'Generally happy',
+    'Balanced, some ups and downs',
+    'Often feeling down',
+    'Struggling with sadness',
   ];
   final List<String> goalsOptions = [
     'Manage anxiety',
     'Reduce stress',
     'Improve mood',
-    'Improve sleep',
+    'Better sleep',
+    'Build confidence',
     'Enhance relationships',
+    'Practice mindfulness',
+    'Develop coping skills',
   ];
   final List<String> causesOptions = [
-    'Work/school',
-    'Relationships',
-    'Finances',
-    'Health',
+    'Work pressure',
+    'Academic stress',
+    'Relationship issues',
+    'Financial concerns',
+    'Health worries',
+    'Family situations',
+    'Social anxiety',
+    'Life transitions',
     'Other',
   ];
 
-  Future<void> _saveData() async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        await context.read<UserProfileProvider>().saveUserProfile(
-          name: nameController.text,
-          age: int.parse(ageController.text),
-          gender: gender,
-          goals: goals,
-          causes: causes,
-          stressFrequency: stressFrequency,
-          healthyEating: healthyEating,
-          meditationExperience: meditationExperience,
-          sleepQuality: sleepQuality,
-          happinessLevel: happinessLevel,
-        );
+  @override
+  void dispose() {
+    nameController.dispose();
+    ageController.dispose();
+    _pageController.dispose();
+    super.dispose();
+  }
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomeScreen()),
-        );
-      } catch (e) {
-        String errorMessage = 'Error saving profile';
-        if (e.toString().contains('unable to start connection')) {
-          errorMessage =
-              'Unable to connect to the server. Please check your internet connection and try again.';
-        } else if (e.toString().contains('permission-denied')) {
-          errorMessage = 'Permission denied. Please try logging in again.';
-        } else if (e.toString().contains('not-authenticated')) {
-          errorMessage =
-              'You are not authenticated. Please try logging in again.';
-        }
+  bool _canProceed() {
+    switch (_currentPage) {
+      case 0:
+        return nameController.text.isNotEmpty &&
+            ageController.text.isNotEmpty &&
+            gender != null;
+      case 1:
+        return goals.isNotEmpty;
+      case 2:
+        return causes.isNotEmpty;
+      case 3:
+        return stressFrequency != null &&
+            sleepQuality != null &&
+            happinessLevel != null;
+      case 4:
+        return healthyEating != null && meditationExperience != null;
+      default:
+        return false;
+    }
+  }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 5),
-            action: SnackBarAction(
-              label: 'Retry',
-              textColor: Colors.white,
-              onPressed: _saveData,
-            ),
-          ),
+  void _nextPage() {
+    if (_canProceed()) {
+      if (_currentPage < 4) {
+        _pageController.nextPage(
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
         );
+      } else {
+        _saveData();
       }
+    }
+  }
+
+  void _previousPage() {
+    if (_currentPage > 0) {
+      _pageController.previousPage(
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  Future<void> _saveData() async {
+    try {
+      await context.read<UserProfileProvider>().saveUserProfile(
+        name: nameController.text,
+        age: int.parse(ageController.text),
+        gender: gender,
+        goals: goals,
+        causes: causes,
+        stressFrequency: stressFrequency,
+        healthyEating: healthyEating,
+        meditationExperience: meditationExperience,
+        sleepQuality: sleepQuality,
+        happinessLevel: happinessLevel,
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
+    } catch (e) {
+      String errorMessage = 'We encountered an issue saving your profile';
+      if (e.toString().contains('unable to start connection')) {
+        errorMessage = 'Please check your internet connection and try again.';
+      } else if (e.toString().contains('permission-denied')) {
+        errorMessage = 'Authentication issue. Please sign in again.';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red.shade300,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          action: SnackBarAction(
+            label: 'Retry',
+            textColor: Colors.white,
+            onPressed: _saveData,
+          ),
+        ),
+      );
     }
   }
 
@@ -119,107 +187,354 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
     final userProfileProvider = context.watch<UserProfileProvider>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Tell us about yourself',
-          style: TextStyle(fontWeight: FontWeight.bold),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF6B73FF).withOpacity(0.1),
+              Color(0xFF9F7AEA).withOpacity(0.05),
+              Colors.white,
+            ],
+          ),
         ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
-      ),
-      body: userProfileProvider.isLoading
-          ? Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        child: SafeArea(
+          child: userProfileProvider.isLoading
+              ? _buildLoadingScreen()
+              : Column(
                   children: [
-                    _buildTextField('What should we call you?', nameController),
-                    const SizedBox(height: 20),
-                    _buildDropdownField(
-                      'What is your gender?',
-                      genderOptions,
-                      (value) => setState(() => gender = value),
-                    ),
-                    const SizedBox(height: 20),
-                    _buildTextField(
-                      'How old are you?',
-                      ageController,
-                      keyboardType: TextInputType.number,
-                    ),
-                    const SizedBox(height: 20),
-                    _buildMultiSelectField(
-                      'What are your main goals?',
-                      goalsOptions,
-                      goals,
-                    ),
-                    const SizedBox(height: 20),
-                    _buildMultiSelectField(
-                      'What causes your mental health issues?',
-                      causesOptions,
-                      causes,
-                    ),
-                    const SizedBox(height: 20),
-                    _buildDropdownField(
-                      'How often do you feel stressed?',
-                      stressFrequencyOptions,
-                      (value) => setState(() => stressFrequency = value),
-                    ),
-                    const SizedBox(height: 20),
-                    _buildDropdownField(
-                      'Do you eat healthy?',
-                      healthyEatingOptions,
-                      (value) => setState(() => healthyEating = value),
-                    ),
-                    const SizedBox(height: 20),
-                    _buildDropdownField(
-                      'Have you tried meditation before?',
-                      meditationExperienceOptions,
-                      (value) => setState(() => meditationExperience = value),
-                    ),
-                    const SizedBox(height: 20),
-                    _buildDropdownField(
-                      'How would you rate your sleep quality?',
-                      sleepQualityOptions,
-                      (value) => setState(() => sleepQuality = value),
-                    ),
-                    const SizedBox(height: 20),
-                    _buildDropdownField(
-                      'How happy are you?',
-                      happinessLevelOptions,
-                      (value) => setState(() => happinessLevel = value),
-                    ),
-                    const SizedBox(height: 20),
-                    Center(
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: userProfileProvider.isLoading
-                              ? null
-                              : _saveData,
-                          child: userProfileProvider.isLoading
-                              ? CircularProgressIndicator(color: Colors.white)
-                              : Text('Submit'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFF9EB567),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 32.0,
-                              vertical: 12.0,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        ),
+                    _buildHeader(),
+                    _buildProgressIndicator(),
+                    Expanded(
+                      child: PageView(
+                        controller: _pageController,
+                        onPageChanged: (index) {
+                          setState(() {
+                            _currentPage = index;
+                          });
+                        },
+                        children: [
+                          _buildBasicInfoPage(),
+                          _buildGoalsPage(),
+                          _buildCausesPage(),
+                          _buildWellnessAssessmentPage(),
+                          _buildLifestylePage(),
+                        ],
                       ),
                     ),
+                    _buildNavigationButtons(),
                   ],
                 ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingScreen() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: Offset(0, 10),
+                ),
+              ],
+            ),
+            child: CircularProgressIndicator(
+              color: Color(0xFF6B73FF),
+              strokeWidth: 3,
+            ),
+          ),
+          SizedBox(height: 24),
+          Text(
+            'Setting up your wellness journey...',
+            style: TextStyle(
+              fontSize: 18,
+              color: Color(0xFF2D3748),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'This will just take a moment',
+            style: TextStyle(fontSize: 14, color: Color(0xFF718096)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: EdgeInsets.all(24),
+      child: Row(
+        children: [
+          if (_currentPage > 0)
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                icon: Icon(Icons.arrow_back_ios_new, color: Color(0xFF6B73FF)),
+                onPressed: _previousPage,
               ),
             ),
+          Expanded(
+            child: Column(
+              children: [
+                Text(
+                  'Welcome to Auralynn',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF2D3748),
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Let\'s personalize your wellness experience',
+                  style: TextStyle(fontSize: 14, color: Color(0xFF718096)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProgressIndicator() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        children: [
+          Row(
+            children: List.generate(5, (index) {
+              return Expanded(
+                child: Container(
+                  height: 4,
+                  margin: EdgeInsets.symmetric(horizontal: 2),
+                  decoration: BoxDecoration(
+                    color: index <= _currentPage
+                        ? Color(0xFF6B73FF)
+                        : Color(0xFF6B73FF).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              );
+            }),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Step ${_currentPage + 1} of 5',
+            style: TextStyle(fontSize: 12, color: Color(0xFF718096)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBasicInfoPage() {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildPageTitle('Tell us about yourself', '👋'),
+          SizedBox(height: 32),
+          _buildTextField(
+            'What should we call you?',
+            nameController,
+            hint: 'Enter your first name',
+          ),
+          SizedBox(height: 20),
+          _buildTextField(
+            'What\'s your age?',
+            ageController,
+            keyboardType: TextInputType.number,
+            hint: 'This helps us personalize your experience',
+          ),
+          SizedBox(height: 20),
+          _buildDropdownField(
+            'How do you identify?',
+            genderOptions,
+            gender,
+            (value) => setState(() => gender = value),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGoalsPage() {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildPageTitle('What are your wellness goals?', '🎯'),
+          SizedBox(height: 16),
+          Text(
+            'Select all that apply - we\'ll tailor your experience accordingly',
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF718096),
+              height: 1.4,
+            ),
+          ),
+          SizedBox(height: 24),
+          _buildMultiSelectField(goalsOptions, goals),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCausesPage() {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildPageTitle('What affects your mental wellbeing?', '💭'),
+          SizedBox(height: 16),
+          Text(
+            'Understanding your challenges helps us provide better support',
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF718096),
+              height: 1.4,
+            ),
+          ),
+          SizedBox(height: 24),
+          _buildMultiSelectField(causesOptions, causes),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWellnessAssessmentPage() {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildPageTitle('How are you feeling lately?', '🌱'),
+          SizedBox(height: 32),
+          _buildDropdownField(
+            'How often do you feel stressed?',
+            stressFrequencyOptions,
+            stressFrequency,
+            (value) => setState(() => stressFrequency = value),
+          ),
+          SizedBox(height: 20),
+          _buildDropdownField(
+            'How would you describe your sleep?',
+            sleepQualityOptions,
+            sleepQuality,
+            (value) => setState(() => sleepQuality = value),
+          ),
+          SizedBox(height: 20),
+          _buildDropdownField(
+            'How would you describe your mood recently?',
+            happinessLevelOptions,
+            happinessLevel,
+            (value) => setState(() => happinessLevel = value),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLifestylePage() {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildPageTitle('Let\'s talk about your lifestyle', '🌿'),
+          SizedBox(height: 32),
+          _buildDropdownField(
+            'How would you rate your eating habits?',
+            healthyEatingOptions,
+            healthyEating,
+            (value) => setState(() => healthyEating = value),
+          ),
+          SizedBox(height: 20),
+          _buildDropdownField(
+            'What\'s your experience with meditation?',
+            meditationExperienceOptions,
+            meditationExperience,
+            (value) => setState(() => meditationExperience = value),
+          ),
+          SizedBox(height: 32),
+          Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Color(0xFF6B73FF).withOpacity(0.05),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Color(0xFF6B73FF).withOpacity(0.1)),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  '🎉 You\'re all set!',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF2D3748),
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'We\'ll use this information to create a personalized wellness plan just for you.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF718096),
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPageTitle(String title, String emoji) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(emoji, style: TextStyle(fontSize: 32)),
+        SizedBox(height: 12),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF2D3748),
+            height: 1.2,
+          ),
+        ),
+      ],
     );
   }
 
@@ -227,71 +542,228 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
     String label,
     TextEditingController controller, {
     TextInputType keyboardType = TextInputType.text,
+    String? hint,
   }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      validator: (value) =>
-          (value == null || value.isEmpty) ? '$label cannot be empty' : null,
-      decoration: InputDecoration(
-        labelText: label,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF2D3748),
+          ),
+        ),
+        SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: Offset(0, 5),
+              ),
+            ],
+          ),
+          child: TextFormField(
+            controller: controller,
+            keyboardType: keyboardType,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(color: Color(0xFF718096)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: EdgeInsets.all(16),
+            ),
+            validator: (value) =>
+                (value == null || value.isEmpty) ? '$label is required' : null,
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildDropdownField(
     String label,
     List<String> options,
+    String? value,
     ValueChanged<String?> onChanged,
-  ) {
-    return DropdownButtonFormField<String>(
-      decoration: InputDecoration(
-        labelText: label,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-      items: options
-          .map(
-            (String value) =>
-                DropdownMenuItem<String>(value: value, child: Text(value)),
-          )
-          .toList(),
-      onChanged: onChanged,
-      validator: (value) =>
-          (value == null || value.isEmpty) ? '$label cannot be empty' : null,
-    );
-  }
-
-  Widget _buildMultiSelectField(
-    String label,
-    List<String> options,
-    List<String> selectedValues,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF2D3748),
+          ),
         ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 10,
-          children: options.map((String option) {
-            return FilterChip(
-              label: Text(option),
-              selected: selectedValues.contains(option),
-              onSelected: (bool selected) {
-                setState(() {
-                  selected
-                      ? selectedValues.add(option)
-                      : selectedValues.remove(option);
-                });
-              },
-            );
-          }).toList(),
+        SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: Offset(0, 5),
+              ),
+            ],
+          ),
+          child: DropdownButtonFormField<String>(
+            value: value,
+            decoration: InputDecoration(
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: EdgeInsets.all(16),
+            ),
+            hint: Text(
+              'Select an option',
+              style: TextStyle(color: Color(0xFF718096)),
+            ),
+            items: options.map((String option) {
+              return DropdownMenuItem<String>(
+                value: option,
+                child: Text(option),
+              );
+            }).toList(),
+            onChanged: onChanged,
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildMultiSelectField(
+    List<String> options,
+    List<String> selectedValues,
+  ) {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: options.map((String option) {
+        final isSelected = selectedValues.contains(option);
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              isSelected
+                  ? selectedValues.remove(option)
+                  : selectedValues.add(option);
+            });
+          },
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: isSelected ? Color(0xFF6B73FF) : Colors.white,
+              borderRadius: BorderRadius.circular(25),
+              border: Border.all(
+                color: isSelected ? Color(0xFF6B73FF) : Color(0xFFE2E8F0),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 5,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              option,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Color(0xFF2D3748),
+                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildNavigationButtons() {
+    return Padding(
+      padding: EdgeInsets.all(24),
+      child: Row(
+        children: [
+          if (_currentPage > 0) ...[
+            Expanded(
+              flex: 1,
+              child: Container(
+                height: 50,
+                child: OutlinedButton(
+                  onPressed: _previousPage,
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Color(0xFF6B73FF)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    'Back',
+                    style: TextStyle(
+                      color: Color(0xFF6B73FF),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(width: 12),
+          ],
+          Expanded(
+            flex: 2,
+            child: Container(
+              height: 50,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  colors: [Color(0xFF6B73FF), Color(0xFF9F7AEA)],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0xFF6B73FF).withOpacity(0.3),
+                    blurRadius: 15,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: ElevatedButton(
+                onPressed: _canProceed() ? _nextPage : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  _currentPage == 4 ? 'Complete Setup' : 'Continue',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
