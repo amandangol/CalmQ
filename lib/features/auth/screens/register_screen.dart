@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../providers/auth_provider.dart';
+import 'user_info_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -31,7 +32,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           _emailController.text,
           _passwordController.text,
         );
-        Navigator.pop(context);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => UserInfoScreen()),
+        );
       } on firebase_auth.FirebaseAuthException catch (e) {
         String message = 'An error occurred';
         if (e.code == 'weak-password') {

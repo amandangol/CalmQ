@@ -3,10 +3,13 @@ import 'package:provider/provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../mood/providers/mood_provider.dart';
 import '../../breathing/providers/breathing_provider.dart';
+import '../../affirmations/providers/affirmation_provider.dart';
+import '../../reminders/screens/reminders_screen.dart';
 import '../../breathing/screens/breathing_screen.dart';
 import '../../focus/screens/focus_screen.dart';
 import '../../journal/screens/journal_screen.dart';
 import '../../sos/screens/sos_screen.dart';
+import '../../affirmations/screens/affirmation_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   @override
@@ -105,61 +108,51 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 8),
-              Row(
+              GridView.count(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
                 children: [
-                  Expanded(
-                    child: _QuickAccessButton(
-                      icon: Icons.air,
-                      label: 'Breathe',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => BreathingScreen()),
-                        );
-                      },
+                  _QuickAccessButton(
+                    icon: Icons.self_improvement,
+                    label: 'Breathing',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => BreathingScreen()),
                     ),
                   ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: _QuickAccessButton(
-                      icon: Icons.psychology,
-                      label: 'Focus',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => FocusScreen()),
-                        );
-                      },
+                  _QuickAccessButton(
+                    icon: Icons.timer,
+                    label: 'Focus',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => FocusScreen()),
                     ),
                   ),
-                ],
-              ),
-              SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: _QuickAccessButton(
-                      icon: Icons.edit_note,
-                      label: 'Journal',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => JournalScreen()),
-                        );
-                      },
+                  _QuickAccessButton(
+                    icon: Icons.book,
+                    label: 'Journal',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => JournalScreen()),
                     ),
                   ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: _QuickAccessButton(
-                      icon: Icons.emergency,
-                      label: 'SOS',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => SOSScreen()),
-                        );
-                      },
+                  _QuickAccessButton(
+                    icon: Icons.notifications,
+                    label: 'Reminders',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => RemindersScreen()),
+                    ),
+                  ),
+                  _QuickAccessButton(
+                    icon: Icons.emergency,
+                    label: 'SOS',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => SOSScreen()),
                     ),
                   ),
                 ],
@@ -170,19 +163,47 @@ class HomeScreen extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: Colors.purple.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.lightbulb_outline, color: Colors.blue),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Take 3 deep breaths before your next task',
-                        style: TextStyle(
-                          color: Colors.blue[700],
-                          fontWeight: FontWeight.w500,
+                    Row(
+                      children: [
+                        Icon(Icons.format_quote, color: Colors.purple),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            context
+                                    .watch<AffirmationProvider>()
+                                    .dailyAffirmation
+                                    ?.text ??
+                                'Loading...',
+                            style: TextStyle(
+                              color: Colors.purple[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AffirmationScreen(),
+                            ),
+                          );
+                        },
+                        icon: Icon(Icons.auto_awesome, size: 16),
+                        label: Text('More Affirmations'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.purple[700],
                         ),
                       ),
                     ),
