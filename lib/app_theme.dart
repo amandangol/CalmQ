@@ -2,62 +2,62 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
-  // Primary Colors - Soft, calming blues and teals
-  static const primary = Color(0xFF6B9EDB); // Serene blue
-  static const primaryDark = Color(0xFF4A7FB8); // Deeper blue
-  static const primaryLight = Color(0xFF9BC4E8); // Light blue
+  // Primary Colors - Deep, rich blues and purples
+  static const primary = Color(0xFF4A7FB8); // Deep blue
+  static const primaryDark = Color(0xFF2C5282); // Darker blue
+  static const primaryLight = Color(0xFF6B9EDB); // Lighter blue
 
-  // Secondary Colors - Warm, comforting purples and lavenders
-  static const secondary = Color(0xFF9B7EDB); // Lavender purple
-  static const secondaryDark = Color(0xFF7A5CB8); // Deeper purple
-  static const secondaryLight = Color(0xFFC4A8E8); // Light lavender
+  // Secondary Colors - Rich purples and lavenders
+  static const secondary = Color(0xFF7A5CB8); // Deep purple
+  static const secondaryDark = Color(0xFF553C9A); // Darker purple
+  static const secondaryLight = Color(0xFF9B7EDB); // Lighter purple
 
-  // Accent Colors - Gentle, healing tones
-  static const accent = Color(0xFF7DBDA3); // Sage green
-  static const accentWarm = Color(0xFFE8B4A0); // Warm peach
+  // Accent Colors - Deep, rich tones
+  static const accent = Color(0xFF4A8B6D); // Deep sage green
+  static const accentWarm = Color(0xFFB87D6B); // Deep peach
 
-  // Background Colors - Ultra-soft, breathable tones
-  static const background = Color(0xFFF8FAFE); // Very light blue-white
-  static const surface = Color(0xFFFFFFFF); // Pure white
-  static const surfaceVariant = Color(0xFFF5F7FA); // Light grey-blue
+  // Background Colors - Dark, rich tones
+  static const background = Color(0xFF1A1B1E); // Dark background
+  static const surface = Color(0xFF2C2D30); // Dark surface
+  static const surfaceVariant = Color(0xFF3A3B3E); // Darker surface variant
 
-  // Text Colors - Soft but readable
-  static const textPrimary = Color(0xFF2C3E50); // Deep blue-grey
-  static const textSecondary = Color(0xFF5D6D7E); // Medium grey-blue
-  static const textLight = Color(0xFF85929E); // Light grey
+  // Text Colors - High contrast for readability
+  static const textPrimary = Color(0xFFE1E1E1); // Light grey
+  static const textSecondary = Color(0xFFB0B0B0); // Medium grey
+  static const textLight = Color(0xFF8A8A8A); // Darker grey
   static const textOnPrimary = Color(0xFFFFFFFF); // White text
 
-  // Status Colors - Gentle, non-alarming tones
-  static const success = Color(0xFF7DBDA3); // Soft green
-  static const warning = Color(0xFFE8B4A0); // Soft orange
-  static const error = Color(0xFFE8A0A0); // Soft red
-  static const info = Color(0xFF9BC4E8); // Soft blue
+  // Status Colors - Rich, deep tones
+  static const success = Color(0xFF4A8B6D); // Deep green
+  static const warning = Color(0xFFB87D6B); // Deep orange
+  static const error = Color(0xFFB84A4A); // Deep red
+  static const info = Color(0xFF4A7FB8); // Deep blue
 
   // Mood Colors - For mood tracking features
-  static const moodHappy = Color(0xFFFFE066); // Warm yellow
-  static const moodCalm = Color(0xFF7DBDA3); // Sage green
-  static const moodSad = Color(0xFF9BC4E8); // Soft blue
-  static const moodAnxious = Color(0xFFE8B4A0); // Soft orange
-  static const moodAngry = Color(0xFFE8A0A0); // Soft red
+  static const moodHappy = Color(0xFFD4B44A); // Deep yellow
+  static const moodCalm = Color(0xFF4A8B6D); // Deep sage green
+  static const moodSad = Color(0xFF4A7FB8); // Deep blue
+  static const moodAnxious = Color(0xFFB87D6B); // Deep orange
+  static const moodAngry = Color(0xFFB84A4A); // Deep red
 
   // Gradient Colors - For visual appeal
-  static const gradientStart = Color(0xFF6B9EDB);
-  static const gradientEnd = Color(0xFF9B7EDB);
-  static const gradientLight = [Color(0xFFF8FAFE), Color(0xFFFFFFFF)];
-  static const gradientWellness = [Color(0xFF7DBDA3), Color(0xFF6B9EDB)];
+  static const gradientStart = Color(0xFF4A7FB8);
+  static const gradientEnd = Color(0xFF7A5CB8);
+  static const gradientLight = [Color(0xFF2C2D30), Color(0xFF1A1B1E)];
+  static const gradientWellness = [Color(0xFF4A8B6D), Color(0xFF4A7FB8)];
 }
 
 final ThemeData mentalWellnessTheme = ThemeData(
   useMaterial3: true,
-  colorScheme: const ColorScheme(
-    brightness: Brightness.light,
+  brightness: Brightness.dark,
+  colorScheme: const ColorScheme.dark(
     primary: AppColors.primary,
     onPrimary: AppColors.textOnPrimary,
-    primaryContainer: AppColors.primaryLight,
+    primaryContainer: AppColors.primaryDark,
     onPrimaryContainer: AppColors.textPrimary,
     secondary: AppColors.secondary,
     onSecondary: AppColors.textOnPrimary,
-    secondaryContainer: AppColors.secondaryLight,
+    secondaryContainer: AppColors.secondaryDark,
     onSecondaryContainer: AppColors.textPrimary,
     tertiary: AppColors.accent,
     onTertiary: AppColors.textOnPrimary,
@@ -70,7 +70,7 @@ final ThemeData mentalWellnessTheme = ThemeData(
     error: AppColors.error,
     onError: AppColors.textOnPrimary,
     outline: AppColors.textLight,
-    shadow: Colors.black12,
+    shadow: Colors.black26,
   ),
 
   scaffoldBackgroundColor: AppColors.background,

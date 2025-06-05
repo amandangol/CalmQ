@@ -148,19 +148,19 @@ class HomeScreen extends StatelessWidget {
     }
 
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [AppColors.primary, AppColors.secondary],
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withOpacity(0.3),
-            blurRadius: 15,
-            offset: Offset(0, 8),
+            blurRadius: 20,
+            offset: Offset(0, 10),
           ),
         ],
       ),
@@ -173,27 +173,38 @@ class HomeScreen extends StatelessWidget {
                 Text(
                   '$greeting,',
                   style: theme.textTheme.bodyLarge?.copyWith(
-                    color: AppColors.surface.withOpacity(0.7),
+                    color: AppColors.surface.withOpacity(0.9),
+                    fontSize: 18,
                   ),
                 ),
+                SizedBox(height: 4),
                 Text(
                   userName,
                   style: theme.textTheme.titleLarge?.copyWith(
                     color: AppColors.surface,
                     fontWeight: FontWeight.bold,
+                    fontSize: 28,
                   ),
                 ),
-                SizedBox(height: 8),
+                SizedBox(height: 12),
                 Text(
                   'How are you taking care of yourself today?',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.surface.withOpacity(0.7),
+                    color: AppColors.surface.withOpacity(0.9),
+                    fontSize: 16,
                   ),
                 ),
               ],
             ),
           ),
-          Icon(Icons.spa, color: AppColors.surface, size: 48),
+          Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(Icons.spa, color: AppColors.surface, size: 48),
+          ),
         ],
       ),
     );
@@ -201,30 +212,39 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildWellnessScore(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 15,
+            offset: Offset(0, 8),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            width: 60,
-            height: 60,
+            width: 70,
+            height: 70,
             decoration: BoxDecoration(
-              color: Colors.green[100],
-              borderRadius: BorderRadius.circular(30),
+              gradient: LinearGradient(
+                colors: [AppColors.success, AppColors.success.withOpacity(0.7)],
+              ),
+              borderRadius: BorderRadius.circular(35),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.success.withOpacity(0.3),
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
-            child: Icon(Icons.trending_up, color: Colors.green[600], size: 30),
+            child: Icon(Icons.trending_up, color: AppColors.surface, size: 32),
           ),
-          SizedBox(width: 16),
+          SizedBox(width: 20),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -232,26 +252,40 @@ class HomeScreen extends StatelessWidget {
                 Text(
                   'Wellness Score',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
+                    color: AppColors.textPrimary,
                   ),
                 ),
-                SizedBox(height: 4),
+                SizedBox(height: 8),
                 Row(
                   children: [
                     Text(
                       '78%',
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: Colors.green[600],
+                        color: AppColors.success,
                       ),
                     ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Great progress!',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    SizedBox(width: 12),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.success.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'Great progress!',
+                        style: TextStyle(
+                          color: AppColors.success,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -395,7 +429,7 @@ class HomeScreen extends StatelessWidget {
       QuickActionData(
         icon: Icons.air,
         label: 'Breathing',
-        color: Colors.blue,
+        color: AppColors.primary,
         description: 'Guided exercises',
         onTap: () => Navigator.push(
           context,
@@ -405,7 +439,7 @@ class HomeScreen extends StatelessWidget {
       QuickActionData(
         icon: Icons.timer,
         label: 'Focus',
-        color: Colors.orange,
+        color: AppColors.secondary,
         description: 'Meditation timer',
         onTap: () => Navigator.push(
           context,
@@ -415,7 +449,7 @@ class HomeScreen extends StatelessWidget {
       QuickActionData(
         icon: Icons.book,
         label: 'Journal',
-        color: Colors.green,
+        color: AppColors.accent,
         description: 'Express thoughts',
         onTap: () => Navigator.push(
           context,
@@ -425,7 +459,7 @@ class HomeScreen extends StatelessWidget {
       QuickActionData(
         icon: Icons.notifications_active,
         label: 'Reminders',
-        color: Colors.purple,
+        color: AppColors.secondaryLight,
         description: 'Self-care alerts',
         onTap: () => Navigator.push(
           context,
@@ -435,7 +469,7 @@ class HomeScreen extends StatelessWidget {
       QuickActionData(
         icon: Icons.emergency,
         label: 'SOS',
-        color: Colors.red,
+        color: AppColors.error,
         description: 'Crisis support',
         onTap: () => Navigator.push(
           context,
@@ -445,7 +479,7 @@ class HomeScreen extends StatelessWidget {
       QuickActionData(
         icon: Icons.auto_awesome,
         label: 'Affirmations',
-        color: Colors.pink,
+        color: AppColors.accentWarm,
         description: 'Daily positivity',
         onTap: () => Navigator.push(
           context,
@@ -473,62 +507,96 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildDailyInspirationSection(BuildContext context, ThemeData theme) {
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.pink[50]!, Colors.purple[50]!],
+          colors: [
+            AppColors.secondary.withOpacity(0.2),
+            AppColors.primary.withOpacity(0.2),
+          ],
         ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.pink[100]!),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.secondary.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.auto_awesome, color: Colors.pink[400], size: 24),
-              SizedBox(width: 8),
+              Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.secondary.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.auto_awesome,
+                  color: AppColors.secondary,
+                  size: 24,
+                ),
+              ),
+              SizedBox(width: 12),
               Text(
                 'Daily Inspiration',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
           ),
-          SizedBox(height: 16),
+          SizedBox(height: 20),
           Text(
             context.watch<AffirmationProvider>().dailyAffirmation?.text ??
                 'Loading your daily inspiration...',
             style: TextStyle(
               fontSize: 16,
-              color: Colors.grey[700],
+              color: AppColors.textSecondary,
               fontStyle: FontStyle.italic,
-              height: 1.4,
+              height: 1.5,
             ),
           ),
-          SizedBox(height: 16),
+          SizedBox(height: 20),
           Align(
             alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => AffirmationScreen()),
-                );
-              },
-              icon: Icon(Icons.arrow_forward, size: 16),
-              label: Text('More Affirmations'),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.pink[600],
-                backgroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.secondary, AppColors.secondaryDark],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.secondary.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: TextButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => AffirmationScreen()),
+                  );
+                },
+                icon: Icon(
+                  Icons.arrow_forward,
+                  size: 18,
+                  color: AppColors.surface,
+                ),
+                label: Text(
+                  'More Affirmations',
+                  style: TextStyle(
+                    color: AppColors.surface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
               ),
             ),
@@ -543,15 +611,15 @@ class HomeScreen extends StatelessWidget {
     MoodProvider moodProvider,
   ) {
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 15,
+            offset: Offset(0, 8),
           ),
         ],
       ),
@@ -560,19 +628,30 @@ class HomeScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.analytics, color: Colors.blue[400], size: 24),
-              SizedBox(width: 8),
+              Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.analytics,
+                  color: AppColors.primary,
+                  size: 24,
+                ),
+              ),
+              SizedBox(width: 12),
               Text(
                 'This Week\'s Progress',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
           ),
-          SizedBox(height: 16),
+          SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -580,19 +659,19 @@ class HomeScreen extends StatelessWidget {
                 icon: Icons.favorite,
                 label: 'Mood Logs',
                 value: '5',
-                color: Colors.pink,
+                color: AppColors.primary,
               ),
               _ProgressStat(
                 icon: Icons.self_improvement,
                 label: 'Meditation',
                 value: '120min',
-                color: Colors.blue,
+                color: AppColors.secondary,
               ),
               _ProgressStat(
                 icon: Icons.book,
                 label: 'Journal',
                 value: '3',
-                color: Colors.green,
+                color: AppColors.accent,
               ),
             ],
           ),
@@ -644,44 +723,53 @@ class _QuickActionCard extends StatelessWidget {
       onTap: action.onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, 4),
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 15,
+              offset: Offset(0, 8),
             ),
           ],
         ),
         child: Padding(
-          padding: EdgeInsets.all(16),
+          padding: EdgeInsets.all(20),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 50,
-                height: 50,
+                width: 60,
+                height: 60,
                 decoration: BoxDecoration(
-                  color: action.color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(25),
+                  gradient: LinearGradient(
+                    colors: [action.color, action.color.withOpacity(0.7)],
+                  ),
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: action.color.withOpacity(0.3),
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
                 ),
-                child: Icon(action.icon, size: 28, color: action.color),
+                child: Icon(action.icon, size: 32, color: AppColors.surface),
               ),
-              SizedBox(height: 12),
+              SizedBox(height: 16),
               Text(
                 action.label,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
+                  color: AppColors.textPrimary,
                 ),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: 4),
+              SizedBox(height: 6),
               Text(
                 action.description,
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -710,24 +798,38 @@ class _ProgressStat extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 40,
-          height: 40,
+          width: 50,
+          height: 50,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(colors: [color, color.withOpacity(0.7)]),
+            borderRadius: BorderRadius.circular(25),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.3),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
           ),
-          child: Icon(icon, color: color, size: 20),
+          child: Icon(icon, color: AppColors.surface, size: 24),
         ),
-        SizedBox(height: 8),
+        SizedBox(height: 12),
         Text(
           value,
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
+            color: AppColors.textPrimary,
           ),
         ),
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ],
     );
   }
