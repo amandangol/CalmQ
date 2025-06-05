@@ -341,9 +341,10 @@ class HomeScreen extends StatelessWidget {
                     color: AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(40),
                   ),
-                  child: Text(
-                    moodProvider.todayMood!.emoji,
-                    style: TextStyle(fontSize: 24),
+                  child: Image.asset(
+                    'assets/images/${_getMoodImage(moodProvider.todayMood!.mood)}.png',
+                    width: 32,
+                    height: 32,
                   ),
                 ),
                 SizedBox(width: 12),
@@ -371,71 +372,41 @@ class HomeScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+                IconButton(
+                  onPressed: () => _showMoodPicker(context),
+                  icon: Icon(Icons.edit, color: AppColors.primary, size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(),
+                ),
               ],
             ),
           ] else ...[
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: moodProvider.moodEmojis.entries.map((entry) {
-                  return Padding(
-                    padding: EdgeInsets.only(right: 12),
-                    child: GestureDetector(
-                      onTap: () => _showMoodPicker(context),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.background,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppColors.primary.withOpacity(0.3),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Text(entry.value, style: TextStyle(fontSize: 20)),
-                            SizedBox(width: 8),
-                            Text(
-                              entry.key,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: AppColors.textLight,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-            SizedBox(height: 12),
-            Center(
-              child: TextButton.icon(
-                onPressed: () => _showMoodPicker(context),
-                icon: Icon(
-                  Icons.add_circle_outline,
-                  color: AppColors.primary,
-                  size: 18,
-                ),
-                label: Text(
-                  'Log your mood',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
+            _MoodSelectionGrid(
+              onMoodSelected: (mood) {
+                moodProvider.addMood(mood);
+              },
             ),
           ],
         ],
       ),
     );
+  }
+
+  String _getMoodImage(String mood) {
+    switch (mood.toLowerCase()) {
+      case 'angry':
+        return 'angry';
+      case 'sad':
+        return 'sad';
+      case 'neutral':
+        return 'neutral';
+      case 'happy':
+        return 'happy';
+      case 'very happy':
+        return 'very-happy';
+      default:
+        return 'neutral';
+    }
   }
 
   Widget _buildQuickActionsGrid(BuildContext context) {
@@ -859,6 +830,14 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
   final _noteController = TextEditingController();
   String? _selectedMood;
 
+  final Map<String, String> _moodImages = {
+    'Angry': 'angry',
+    'Sad': 'sad',
+    'Neutral': 'neutral',
+    'Happy': 'happy',
+    'Very Happy': 'very-happy',
+  };
+
   @override
   void dispose() {
     _triggerController.dispose();
@@ -869,6 +848,7 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final moodProvider = context.watch<MoodProvider>();
+    final theme = Theme.of(context);
 
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -886,54 +866,95 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
             height: 4,
             margin: EdgeInsets.only(bottom: 20),
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: AppColors.textLight.withOpacity(0.3),
               borderRadius: BorderRadius.circular(2),
             ),
             alignment: Alignment.center,
           ),
           Text(
             'How are you feeling?',
-            style: TextStyle(
-              fontSize: 24,
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: AppColors.textPrimary,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
             ),
             textAlign: TextAlign.center,
           ),
           SizedBox(height: 24),
-          Wrap(
-            alignment: WrapAlignment.spaceEvenly,
-            spacing: 16,
-            runSpacing: 16,
-            children: [
-              for (var entry in moodProvider.moodEmojis.entries)
-                _MoodEmojiButton(
-                  emoji: entry.value,
-                  label: entry.key,
-                  isSelected: _selectedMood == entry.key,
-                  onTap: () {
-                    setState(() {
-                      _selectedMood = entry.key;
-                    });
-                  },
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: _moodImages.entries.map((entry) {
+              final isSelected = _selectedMood == entry.key;
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedMood = entry.key;
+                  });
+                },
+                child: AnimatedScale(
+                  scale: isSelected ? 1.2 : 1.0,
+                  duration: Duration(milliseconds: 300),
+                  child: AnimatedOpacity(
+                    opacity: isSelected ? 1.0 : 0.6,
+                    duration: Duration(milliseconds: 300),
+                    child: Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.primary.withOpacity(0.1)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.primary
+                              : AppColors.textLight.withOpacity(0.1),
+                          width: isSelected ? 2 : 1,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Image.asset(
+                            'assets/images/${entry.value}.png',
+                            width: 48,
+                            height: 48,
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            entry.key,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.textLight,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-            ],
+              );
+            }).toList(),
           ),
           SizedBox(height: 24),
           TextField(
             controller: _triggerController,
             decoration: InputDecoration(
               labelText: 'What triggered this? (Optional)',
+              labelStyle: TextStyle(color: AppColors.textLight),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderSide: BorderSide(
+                  color: AppColors.textLight.withOpacity(0.3),
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.blue[400]!),
+                borderSide: BorderSide(color: AppColors.primary),
               ),
               filled: true,
-              fillColor: Colors.grey[50],
+              fillColor: AppColors.surface,
             ),
           ),
           SizedBox(height: 16),
@@ -941,16 +962,19 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
             controller: _noteController,
             decoration: InputDecoration(
               labelText: 'Quick note (Optional)',
+              labelStyle: TextStyle(color: AppColors.textLight),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderSide: BorderSide(
+                  color: AppColors.textLight.withOpacity(0.3),
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.blue[400]!),
+                borderSide: BorderSide(color: AppColors.primary),
               ),
               filled: true,
-              fillColor: Colors.grey[50],
+              fillColor: AppColors.surface,
             ),
             maxLines: 2,
           ),
@@ -960,7 +984,7 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
               gradient: _selectedMood == null
                   ? null
                   : LinearGradient(
-                      colors: [Colors.purple[400]!, Colors.blue[400]!],
+                      colors: [AppColors.primary, AppColors.secondary],
                     ),
               borderRadius: BorderRadius.circular(12),
             ),
@@ -981,9 +1005,9 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
                     },
               style: ElevatedButton.styleFrom(
                 backgroundColor: _selectedMood == null
-                    ? Colors.grey[300]
+                    ? AppColors.textLight.withOpacity(0.1)
                     : Colors.transparent,
-                foregroundColor: Colors.white,
+                foregroundColor: AppColors.surface,
                 elevation: 0,
                 padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
@@ -1002,54 +1026,101 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
   }
 }
 
-class _MoodEmojiButton extends StatelessWidget {
-  final String emoji;
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
+class _MoodSelectionGrid extends StatefulWidget {
+  final Function(String) onMoodSelected;
 
-  const _MoodEmojiButton({
-    required this.emoji,
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
+  const _MoodSelectionGrid({required this.onMoodSelected});
+
+  @override
+  State<_MoodSelectionGrid> createState() => _MoodSelectionGridState();
+}
+
+class _MoodSelectionGridState extends State<_MoodSelectionGrid> {
+  String? _selectedMood;
+
+  final Map<String, String> _moodImages = {
+    'Angry': 'angry',
+    'Sad': 'sad',
+    'Neutral': 'neutral',
+    'Happy': 'happy',
+    'Very Happy': 'very-happy',
+  };
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 80,
-        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withOpacity(0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.primary
-                : AppColors.textLight.withOpacity(0.3),
-            width: 2,
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'How do you feel today?',
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        child: Column(
-          children: [
-            Text(emoji, style: TextStyle(fontSize: 32)),
-            SizedBox(height: 8),
-            Text(
-              label,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? AppColors.primary : AppColors.textLight,
+        SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: _moodImages.entries.map((entry) {
+            final isSelected = _selectedMood == entry.key;
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedMood = entry.key;
+                });
+                widget.onMoodSelected(entry.key);
+              },
+              child: AnimatedScale(
+                scale: isSelected ? 1.2 : 1.0,
+                duration: Duration(milliseconds: 300),
+                child: AnimatedOpacity(
+                  opacity: isSelected ? 1.0 : 0.6,
+                  duration: Duration(milliseconds: 300),
+                  child: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.primary.withOpacity(0.1)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.textLight.withOpacity(0.1),
+                        width: isSelected ? 2 : 1,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Image.asset(
+                          'assets/images/${entry.value}.png',
+                          width: 40,
+                          height: 40,
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          entry.key,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: isSelected
+                                ? AppColors.primary
+                                : AppColors.textLight,
+                            fontSize: 12,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+            );
+          }).toList(),
         ),
-      ),
+      ],
     );
   }
 }

@@ -85,5 +85,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'auralynn-30af4.firebasestorage.app',
     measurementId: 'G-LDZ489RN72',
   );
-
 }

@@ -1,60 +1,134 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/reminder_provider.dart';
+import '../../../app_theme.dart';
 
 class RemindersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reminderProvider = context.watch<ReminderProvider>();
+    final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('Reminders'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.blue.shade50, Colors.white],
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          'Reminders',
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        child: SafeArea(
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _ReminderCard(
-                  title: 'Journal Reminder',
-                  subtitle: 'Set a daily reminder to write in your journal',
-                  icon: Icons.edit_note,
-                  time: reminderProvider.journalReminderTime,
-                  onTimeSelected: (time) =>
-                      reminderProvider.setJournalReminder(time),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header Section
+              Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppColors.primary, AppColors.secondary],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.3),
+                      blurRadius: 15,
+                      offset: Offset(0, 8),
+                    ),
+                  ],
                 ),
-                SizedBox(height: 16),
-                _ReminderCard(
-                  title: 'Breathing Exercise',
-                  subtitle: 'Set a daily reminder for breathing exercises',
-                  icon: Icons.air,
-                  time: reminderProvider.breathingReminderTime,
-                  onTimeSelected: (time) =>
-                      reminderProvider.setBreathingReminder(time),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Icon(
+                            Icons.notifications_active,
+                            color: AppColors.surface,
+                            size: 28,
+                          ),
+                        ),
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Daily Reminders',
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  color: AppColors.surface,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Set reminders for your wellness activities',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: AppColors.surface.withOpacity(0.9),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                SizedBox(height: 16),
-                _ReminderCard(
-                  title: 'Mood Check-in',
-                  subtitle: 'Set a daily reminder to log your mood',
-                  icon: Icons.mood,
-                  time: reminderProvider.moodReminderTime,
-                  onTimeSelected: (time) =>
-                      reminderProvider.setMoodReminder(time),
+              ),
+              SizedBox(height: 24),
+              // Reminders List
+              Expanded(
+                child: ListView(
+                  children: [
+                    _ReminderCard(
+                      title: 'Journal Reminder',
+                      subtitle: 'Set a daily reminder to write in your journal',
+                      icon: Icons.edit_note,
+                      time: reminderProvider.journalReminderTime,
+                      onTimeSelected: (time) =>
+                          reminderProvider.setJournalReminder(time),
+                    ),
+                    SizedBox(height: 16),
+                    _ReminderCard(
+                      title: 'Breathing Exercise',
+                      subtitle: 'Set a daily reminder for breathing exercises',
+                      icon: Icons.air,
+                      time: reminderProvider.breathingReminderTime,
+                      onTimeSelected: (time) =>
+                          reminderProvider.setBreathingReminder(time),
+                    ),
+                    SizedBox(height: 16),
+                    _ReminderCard(
+                      title: 'Mood Check-in',
+                      subtitle: 'Set a daily reminder to log your mood',
+                      icon: Icons.mood,
+                      time: reminderProvider.moodReminderTime,
+                      onTimeSelected: (time) =>
+                          reminderProvider.setMoodReminder(time),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -79,9 +153,20 @@ class _ReminderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    final theme = Theme.of(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -89,66 +174,133 @@ class _ReminderCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(icon, color: Colors.blue),
-                SizedBox(width: 12),
+                Container(
+                  padding: EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: AppColors.primary, size: 24),
+                ),
+                SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
-                        style: TextStyle(
-                          fontSize: 18,
+                        style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
+                          color: AppColors.textPrimary,
                         ),
                       ),
-                      Text(subtitle, style: TextStyle(color: Colors.grey[600])),
+                      SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
             SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  time != null
-                      ? 'Reminder set for ${time!.format(context)}'
-                      : 'No reminder set',
-                  style: TextStyle(
-                    color: time != null ? Colors.blue : Colors.grey[600],
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () async {
-                    final selectedTime = await showTimePicker(
-                      context: context,
-                      initialTime: time ?? TimeOfDay.now(),
-                    );
-                    if (selectedTime != null) {
-                      onTimeSelected(selectedTime);
-                    }
-                  },
-                  icon: Icon(
-                    time != null ? Icons.edit : Icons.add_alarm,
-                    size: 16,
-                  ),
-                  label: Text(time != null ? 'Change' : 'Set Reminder'),
-                  style: TextButton.styleFrom(foregroundColor: Colors.blue),
-                ),
-              ],
-            ),
-            if (time != null)
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => onTimeSelected(null),
-                  child: Text('Remove Reminder'),
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: time != null
+                      ? AppColors.primary.withOpacity(0.3)
+                      : AppColors.textLight.withOpacity(0.1),
                 ),
               ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time,
+                        size: 18,
+                        color: time != null
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        time != null
+                            ? 'Reminder set for ${time!.format(context)}'
+                            : 'No reminder set',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: time != null
+                              ? AppColors.primary
+                              : AppColors.textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      TextButton.icon(
+                        onPressed: () async {
+                          final selectedTime = await showTimePicker(
+                            context: context,
+                            initialTime: time ?? TimeOfDay.now(),
+                            builder: (context, child) {
+                              return Theme(
+                                data: Theme.of(context).copyWith(
+                                  timePickerTheme: TimePickerThemeData(
+                                    backgroundColor: AppColors.surface,
+                                    hourMinuteTextColor: AppColors.textPrimary,
+                                    dayPeriodTextColor: AppColors.textPrimary,
+                                    dialHandColor: AppColors.primary,
+                                    dialBackgroundColor: AppColors.background,
+                                    dialTextColor: AppColors.textPrimary,
+                                    entryModeIconColor: AppColors.primary,
+                                  ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+                          if (selectedTime != null) {
+                            onTimeSelected(selectedTime);
+                          }
+                        },
+                        icon: Icon(
+                          time != null ? Icons.edit : Icons.add_alarm,
+                          size: 16,
+                        ),
+                        label: Text(
+                          time != null ? 'Change' : 'Set Reminder',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                        ),
+                      ),
+                      if (time != null) ...[
+                        SizedBox(width: 8),
+                        IconButton(
+                          onPressed: () => onTimeSelected(null),
+                          icon: Icon(Icons.close, size: 18),
+                          color: AppColors.error,
+                          padding: EdgeInsets.zero,
+                          constraints: BoxConstraints(),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
