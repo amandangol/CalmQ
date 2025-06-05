@@ -291,7 +291,7 @@ class HomeScreen extends StatelessWidget {
               Text(
                 "Today's Mood",
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: AppColors.text,
+                  color: AppColors.secondary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -320,7 +320,7 @@ class HomeScreen extends StatelessWidget {
                       Text(
                         moodProvider.todayMood!.mood,
                         style: theme.textTheme.titleMedium?.copyWith(
-                          color: AppColors.text,
+                          color: AppColors.primary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

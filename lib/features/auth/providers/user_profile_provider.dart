@@ -10,6 +10,7 @@ class UserProfileProvider extends ChangeNotifier {
   UserProfile? _userProfile;
   bool _isLoading = false;
   String? _error;
+  bool _hasLoadedProfile = false;
 
   UserProfile? get userProfile => _userProfile;
   bool get isLoading => _isLoading;
@@ -82,6 +83,11 @@ class UserProfileProvider extends ChangeNotifier {
   }
 
   Future<void> loadUserProfile() async {
+    // If we've already loaded the profile and it exists, don't reload
+    if (_hasLoadedProfile && _userProfile != null) {
+      return;
+    }
+
     try {
       _isLoading = true;
       _error = null;
@@ -96,9 +102,11 @@ class UserProfileProvider extends ChangeNotifier {
 
       if (doc.exists && doc.data() != null) {
         _userProfile = UserProfile.fromJson(doc.data()!);
+        _hasLoadedProfile = true;
         print('User profile loaded successfully for uid: ${user.uid}');
       } else {
         _userProfile = null;
+        _hasLoadedProfile = true;
         print('No user profile found for uid: ${user.uid}');
       }
     } on FirebaseException catch (e) {

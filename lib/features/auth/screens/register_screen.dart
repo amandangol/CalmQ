@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../providers/auth_provider.dart';
 import 'user_info_screen.dart';
+import '../../../app_theme.dart';
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -49,7 +50,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
-            backgroundColor: Colors.red.shade300,
+            backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
@@ -72,9 +73,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF9F7AEA).withOpacity(0.1),
-              Color(0xFF6B73FF).withOpacity(0.1),
-              Colors.white,
+              AppColors.primary.withOpacity(0.1),
+              AppColors.secondary.withOpacity(0.1),
+              AppColors.background,
             ],
             stops: [0.0, 0.3, 1.0],
           ),
@@ -91,7 +92,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   alignment: Alignment.centerLeft,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.surface,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -104,7 +105,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: IconButton(
                       icon: Icon(
                         Icons.arrow_back_ios_new,
-                        color: Color(0xFF6B73FF),
+                        color: AppColors.primary,
                       ),
                       onPressed: () => Navigator.pop(context),
                     ),
@@ -115,7 +116,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Container(
                   padding: EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
@@ -128,26 +129,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Icon(
                     Icons.self_improvement_outlined,
                     size: 60,
-                    color: Color(0xFF9F7AEA),
+                    color: AppColors.primary,
                   ),
                 ),
                 SizedBox(height: 32),
                 Text(
                   'Join Auralynn',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF2D3748),
-                  ),
+                  style: theme.textTheme.displayLarge,
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 8),
                 Text(
                   'Begin your journey to better mental health',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF718096),
-                    height: 1.4,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: AppColors.textLight,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -158,7 +153,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppColors.surface,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
@@ -173,17 +168,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
                             labelText: 'Email',
-                            labelStyle: TextStyle(color: Color(0xFF718096)),
+                            labelStyle: TextStyle(color: AppColors.textLight),
                             prefixIcon: Icon(
                               Icons.email_outlined,
-                              color: Color(0xFF9F7AEA),
+                              color: AppColors.primary,
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
                               borderSide: BorderSide.none,
                             ),
                             filled: true,
-                            fillColor: Colors.white,
+                            fillColor: AppColors.surface,
                             contentPadding: EdgeInsets.symmetric(
                               vertical: 20,
                               horizontal: 16,
@@ -205,7 +200,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       SizedBox(height: 16),
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppColors.surface,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
@@ -220,17 +215,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             labelText: 'Password',
-                            labelStyle: TextStyle(color: Color(0xFF718096)),
+                            labelStyle: TextStyle(color: AppColors.textLight),
                             prefixIcon: Icon(
                               Icons.lock_outlined,
-                              color: Color(0xFF9F7AEA),
+                              color: AppColors.primary,
                             ),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword
                                     ? Icons.visibility_outlined
                                     : Icons.visibility_off_outlined,
-                                color: Color(0xFF718096),
+                                color: AppColors.textLight,
                               ),
                               onPressed: () {
                                 setState(() {
@@ -243,7 +238,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               borderSide: BorderSide.none,
                             ),
                             filled: true,
-                            fillColor: Colors.white,
+                            fillColor: AppColors.surface,
                             contentPadding: EdgeInsets.symmetric(
                               vertical: 20,
                               horizontal: 16,
@@ -263,7 +258,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       SizedBox(height: 16),
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppColors.surface,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
@@ -278,17 +273,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           obscureText: _obscureConfirmPassword,
                           decoration: InputDecoration(
                             labelText: 'Confirm Password',
-                            labelStyle: TextStyle(color: Color(0xFF718096)),
+                            labelStyle: TextStyle(color: AppColors.textLight),
                             prefixIcon: Icon(
                               Icons.verified_outlined,
-                              color: Color(0xFF9F7AEA),
+                              color: AppColors.primary,
                             ),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscureConfirmPassword
                                     ? Icons.visibility_outlined
                                     : Icons.visibility_off_outlined,
-                                color: Color(0xFF718096),
+                                color: AppColors.textLight,
                               ),
                               onPressed: () {
                                 setState(() {
@@ -302,7 +297,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               borderSide: BorderSide.none,
                             ),
                             filled: true,
-                            fillColor: Colors.white,
+                            fillColor: AppColors.surface,
                             contentPadding: EdgeInsets.symmetric(
                               vertical: 20,
                               horizontal: 16,
@@ -326,11 +321,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
                           gradient: LinearGradient(
-                            colors: [Color(0xFF9F7AEA), Color(0xFF6B73FF)],
+                            colors: [AppColors.primary, AppColors.secondary],
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Color(0xFF9F7AEA).withOpacity(0.3),
+                              color: AppColors.primary.withOpacity(0.3),
                               blurRadius: 20,
                               offset: Offset(0, 10),
                             ),
@@ -350,16 +345,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   width: 24,
                                   height: 24,
                                   child: CircularProgressIndicator(
-                                    color: Colors.white,
+                                    color: AppColors.surface,
                                     strokeWidth: 2,
                                   ),
                                 )
                               : Text(
                                   'Start Your Journey',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    color: AppColors.surface,
                                   ),
                                 ),
                         ),
@@ -373,7 +366,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   children: [
                     Text(
                       "Already have an account? ",
-                      style: TextStyle(color: Color(0xFF718096), fontSize: 16),
+                      style: theme.textTheme.bodyMedium,
                     ),
                     TextButton(
                       onPressed: () {
@@ -381,10 +374,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       },
                       child: Text(
                         'Sign In',
-                        style: TextStyle(
-                          color: Color(0xFF9F7AEA),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: AppColors.primary,
                         ),
                       ),
                     ),
@@ -394,30 +385,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Container(
                   padding: EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Color(0xFF6B73FF).withOpacity(0.05),
+                    color: AppColors.primary.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: Color(0xFF6B73FF).withOpacity(0.1),
+                      color: AppColors.primary.withOpacity(0.1),
                     ),
                   ),
                   child: Column(
                     children: [
                       Text(
                         '🌟 Welcome to your wellness journey',
-                        style: TextStyle(
-                          color: Color(0xFF2D3748),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: AppColors.textPrimary,
                         ),
                         textAlign: TextAlign.center,
                       ),
                       SizedBox(height: 8),
                       Text(
                         'Track your mood, practice mindfulness, and build healthy habits with personalized insights.',
-                        style: TextStyle(
-                          color: Color(0xFF718096),
-                          fontSize: 14,
-                          height: 1.4,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondary,
                         ),
                         textAlign: TextAlign.center,
                       ),

@@ -10,6 +10,7 @@ class UserProfile {
   final String? meditationExperience;
   final String? sleepQuality;
   final String? happinessLevel;
+  final String? profilePictureUrl;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -25,6 +26,7 @@ class UserProfile {
     this.meditationExperience,
     this.sleepQuality,
     this.happinessLevel,
+    this.profilePictureUrl,
     this.createdAt,
     this.updatedAt,
   });
@@ -43,6 +45,7 @@ class UserProfile {
       'meditationExperience': meditationExperience,
       'sleepQuality': sleepQuality,
       'happinessLevel': happinessLevel,
+      'profilePictureUrl': profilePictureUrl,
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': DateTime.now().toIso8601String(),
     };
@@ -62,6 +65,7 @@ class UserProfile {
       meditationExperience: json['meditationExperience'],
       sleepQuality: json['sleepQuality'],
       happinessLevel: json['happinessLevel'],
+      profilePictureUrl: json['profilePictureUrl'],
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : null,
@@ -84,6 +88,7 @@ class UserProfile {
     String? meditationExperience,
     String? sleepQuality,
     String? happinessLevel,
+    String? profilePictureUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -99,6 +104,7 @@ class UserProfile {
       meditationExperience: meditationExperience ?? this.meditationExperience,
       sleepQuality: sleepQuality ?? this.sleepQuality,
       happinessLevel: happinessLevel ?? this.happinessLevel,
+      profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

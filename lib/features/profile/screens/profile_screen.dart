@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../auth/providers/user_profile_provider.dart';
 import '../../auth/models/user_profile.dart';
+import '../../auth/screens/user_info_screen.dart';
 import '../../../app_theme.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -219,6 +220,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         color: AppColors.textLight,
                       ),
                     ),
+                    SizedBox(height: 24),
+                    Container(
+                      width: 200,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        gradient: LinearGradient(
+                          colors: [AppColors.primary, AppColors.secondary],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.3),
+                            blurRadius: 15,
+                            offset: Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => UserInfoScreen(),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Create Profile',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: AppColors.surface,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'Let\'s personalize your wellness journey',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textLight,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ],
                 ),
               ),
@@ -253,7 +303,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       title: Text(
                         'Your Profile',
                         style: theme.textTheme.titleLarge?.copyWith(
-                          color: AppColors.text,
+                          color: AppColors.accent,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -360,7 +410,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Text(
             profile.name,
             style: theme.textTheme.titleLarge?.copyWith(
-              color: AppColors.text,
+              color: AppColors.accent,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -521,7 +571,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Text(
                 title,
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: AppColors.text,
+                  color: AppColors.accent,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -548,7 +598,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Text(
           label,
           style: theme.textTheme.bodyLarge?.copyWith(
-            color: AppColors.text,
+            color: AppColors.accent,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -575,7 +625,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             enabled: isEditing,
             keyboardType: keyboardType,
             style: theme.textTheme.bodyLarge?.copyWith(
-              color: AppColors.text,
+              color: AppColors.accent,
               fontWeight: FontWeight.w500,
             ),
             decoration: InputDecoration(
@@ -624,7 +674,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Text(
           label,
           style: theme.textTheme.bodyLarge?.copyWith(
-            color: AppColors.text,
+            color: AppColors.accent,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -669,7 +719,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Text(
                   option,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.text,
+                    color: AppColors.accent,
                   ),
                 ),
               );
@@ -687,7 +737,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               color: isEditing ? AppColors.primary : AppColors.textLight,
             ),
             dropdownColor: AppColors.surface,
-            style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.text),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.accent,
+            ),
           ),
         ),
       ],
@@ -707,7 +759,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Text(
           label,
           style: theme.textTheme.bodyLarge?.copyWith(
-            color: AppColors.text,
+            color: AppColors.accent,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -721,7 +773,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               label: Text(
                 option,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: isSelected ? AppColors.surface : AppColors.text,
+                  color: isSelected ? AppColors.surface : AppColors.accent,
                   fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
                 ),
               ),

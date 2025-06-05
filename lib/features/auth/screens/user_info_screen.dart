@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_profile_provider.dart';
 import '../../home/screens/home_screen.dart';
+import '../../../app_theme.dart';
 
 class UserInfoScreen extends StatefulWidget {
   @override
@@ -185,6 +186,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
   @override
   Widget build(BuildContext context) {
     final userProfileProvider = context.watch<UserProfileProvider>();
+    final theme = Theme.of(context);
 
     return Scaffold(
       body: Container(
@@ -193,9 +195,9 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF6B73FF).withOpacity(0.1),
-              Color(0xFF9F7AEA).withOpacity(0.05),
-              Colors.white,
+              AppColors.primary.withOpacity(0.1),
+              AppColors.secondary.withOpacity(0.05),
+              AppColors.background,
             ],
           ),
         ),
@@ -232,6 +234,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
   }
 
   Widget _buildLoadingScreen() {
+    final theme = Theme.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -239,7 +242,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
           Container(
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.surface,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
@@ -250,23 +253,23 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
               ],
             ),
             child: CircularProgressIndicator(
-              color: Color(0xFF6B73FF),
+              color: AppColors.primary,
               strokeWidth: 3,
             ),
           ),
           SizedBox(height: 24),
           Text(
             'Setting up your wellness journey...',
-            style: TextStyle(
-              fontSize: 18,
-              color: Color(0xFF2D3748),
-              fontWeight: FontWeight.w500,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: AppColors.textPrimary,
             ),
           ),
           SizedBox(height: 8),
           Text(
             'This will just take a moment',
-            style: TextStyle(fontSize: 14, color: Color(0xFF718096)),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.textLight,
+            ),
           ),
         ],
       ),
@@ -274,6 +277,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
   }
 
   Widget _buildHeader() {
+    final theme = Theme.of(context);
     return Padding(
       padding: EdgeInsets.all(24),
       child: Row(
@@ -281,7 +285,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
           if (_currentPage > 0)
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.surface,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
@@ -292,7 +296,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                 ],
               ),
               child: IconButton(
-                icon: Icon(Icons.arrow_back_ios_new, color: Color(0xFF6B73FF)),
+                icon: Icon(Icons.arrow_back_ios_new, color: AppColors.primary),
                 onPressed: _previousPage,
               ),
             ),
@@ -301,16 +305,16 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
               children: [
                 Text(
                   'Welcome to Auralynn',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF2D3748),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Let\'s personalize your wellness experience',
-                  style: TextStyle(fontSize: 14, color: Color(0xFF718096)),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textLight,
+                  ),
                 ),
               ],
             ),
@@ -333,8 +337,8 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                   margin: EdgeInsets.symmetric(horizontal: 2),
                   decoration: BoxDecoration(
                     color: index <= _currentPage
-                        ? Color(0xFF6B73FF)
-                        : Color(0xFF6B73FF).withOpacity(0.2),
+                        ? AppColors.primary
+                        : AppColors.primary.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -344,7 +348,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
           SizedBox(height: 8),
           Text(
             'Step ${_currentPage + 1} of 5',
-            style: TextStyle(fontSize: 12, color: Color(0xFF718096)),
+            style: TextStyle(fontSize: 12, color: AppColors.textLight),
           ),
         ],
       ),
@@ -395,7 +399,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
             'Select all that apply - we\'ll tailor your experience accordingly',
             style: TextStyle(
               fontSize: 14,
-              color: Color(0xFF718096),
+              color: AppColors.textLight,
               height: 1.4,
             ),
           ),
@@ -418,7 +422,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
             'Understanding your challenges helps us provide better support',
             style: TextStyle(
               fontSize: 14,
-              color: Color(0xFF718096),
+              color: AppColors.textLight,
               height: 1.4,
             ),
           ),
@@ -487,9 +491,9 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
           Container(
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Color(0xFF6B73FF).withOpacity(0.05),
+              color: AppColors.primary.withOpacity(0.05),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Color(0xFF6B73FF).withOpacity(0.1)),
+              border: Border.all(color: AppColors.primary.withOpacity(0.1)),
             ),
             child: Column(
               children: [
@@ -498,7 +502,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF2D3748),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 SizedBox(height: 8),
@@ -506,7 +510,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                   'We\'ll use this information to create a personalized wellness plan just for you.',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF718096),
+                    color: AppColors.textLight,
                     height: 1.4,
                   ),
                   textAlign: TextAlign.center,
@@ -530,7 +534,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF2D3748),
+            color: AppColors.textPrimary,
             height: 1.2,
           ),
         ),
@@ -552,13 +556,13 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF2D3748),
+            color: AppColors.textPrimary,
           ),
         ),
         SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -573,13 +577,13 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
             keyboardType: keyboardType,
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: TextStyle(color: Color(0xFF718096)),
+              hintStyle: TextStyle(color: AppColors.textLight),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: AppColors.surface,
               contentPadding: EdgeInsets.all(16),
             ),
             validator: (value) =>
@@ -604,13 +608,13 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF2D3748),
+            color: AppColors.textPrimary,
           ),
         ),
         SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -628,12 +632,12 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                 borderSide: BorderSide.none,
               ),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: AppColors.surface,
               contentPadding: EdgeInsets.all(16),
             ),
             hint: Text(
               'Select an option',
-              style: TextStyle(color: Color(0xFF718096)),
+              style: TextStyle(color: AppColors.textLight),
             ),
             items: options.map((String option) {
               return DropdownMenuItem<String>(
@@ -668,10 +672,12 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: isSelected ? Color(0xFF6B73FF) : Colors.white,
+              color: isSelected ? AppColors.primary : AppColors.surface,
               borderRadius: BorderRadius.circular(25),
               border: Border.all(
-                color: isSelected ? Color(0xFF6B73FF) : Color(0xFFE2E8F0),
+                color: isSelected
+                    ? AppColors.primary
+                    : AppColors.textLight.withOpacity(0.3),
                 width: 1.5,
               ),
               boxShadow: [
@@ -685,7 +691,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
             child: Text(
               option,
               style: TextStyle(
-                color: isSelected ? Colors.white : Color(0xFF2D3748),
+                color: isSelected ? AppColors.surface : AppColors.textPrimary,
                 fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
               ),
             ),
@@ -696,6 +702,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
   }
 
   Widget _buildNavigationButtons() {
+    final theme = Theme.of(context);
     return Padding(
       padding: EdgeInsets.all(24),
       child: Row(
@@ -708,16 +715,15 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                 child: OutlinedButton(
                   onPressed: _previousPage,
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Color(0xFF6B73FF)),
+                    side: BorderSide(color: AppColors.primary),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: Text(
                     'Back',
-                    style: TextStyle(
-                      color: Color(0xFF6B73FF),
-                      fontWeight: FontWeight.w500,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: AppColors.primary,
                     ),
                   ),
                 ),
@@ -732,11 +738,11 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 gradient: LinearGradient(
-                  colors: [Color(0xFF6B73FF), Color(0xFF9F7AEA)],
+                  colors: [AppColors.primary, AppColors.secondary],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Color(0xFF6B73FF).withOpacity(0.3),
+                    color: AppColors.primary.withOpacity(0.3),
                     blurRadius: 15,
                     offset: Offset(0, 8),
                   ),
@@ -753,10 +759,8 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                 ),
                 child: Text(
                   _currentPage == 4 ? 'Complete Setup' : 'Continue',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: AppColors.surface,
                   ),
                 ),
               ),
