@@ -11,10 +11,31 @@ class UserProfileProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   bool _hasLoadedProfile = false;
+  bool _isInitialized = false;
 
   UserProfile? get userProfile => _userProfile;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  bool get isInitialized => _isInitialized;
+
+  // Initialize the provider and listen to auth state changes
+  Future<void> initialize() async {
+    if (_isInitialized) return;
+
+    // Listen to auth state changes
+    _auth.authStateChanges().listen((User? user) async {
+      if (user != null) {
+        // User is signed in, load their profile
+        await loadUserProfile();
+      } else {
+        // User is signed out, clear profile
+        clearProfile();
+      }
+    });
+
+    _isInitialized = true;
+    notifyListeners();
+  }
 
   Future<void> saveUserProfile({
     required String name,
@@ -67,6 +88,7 @@ class UserProfileProvider extends ChangeNotifier {
       await docRef.set(userProfile.toJson(), SetOptions(merge: true));
 
       _userProfile = userProfile;
+      _hasLoadedProfile = true;
       print('User profile saved successfully for uid: ${user.uid}');
     } on FirebaseException catch (e) {
       _error = _handleFirebaseError(e);
@@ -172,6 +194,7 @@ class UserProfileProvider extends ChangeNotifier {
 
       await _firestore.collection('users').doc(user.uid).delete();
       _userProfile = null;
+      _hasLoadedProfile = true;
       print('User profile deleted successfully for uid: ${user.uid}');
     } on FirebaseException catch (e) {
       _error = _handleFirebaseError(e);
@@ -192,6 +215,7 @@ class UserProfileProvider extends ChangeNotifier {
     _userProfile = null;
     _error = null;
     _isLoading = false;
+    _hasLoadedProfile = false;
     notifyListeners();
   }
 

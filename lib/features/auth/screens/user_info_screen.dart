@@ -88,6 +88,28 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // Load existing profile data if available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userProfile = context.read<UserProfileProvider>().userProfile;
+      if (userProfile != null) {
+        nameController.text = userProfile.name;
+        ageController.text = userProfile.age.toString();
+        gender = userProfile.gender;
+        goals = List.from(userProfile.goals);
+        causes = List.from(userProfile.causes);
+        stressFrequency = userProfile.stressFrequency;
+        healthyEating = userProfile.healthyEating;
+        meditationExperience = userProfile.meditationExperience;
+        sleepQuality = userProfile.sleepQuality;
+        happinessLevel = userProfile.happinessLevel;
+        setState(() {});
+      }
+    });
+  }
+
+  @override
   void dispose() {
     nameController.dispose();
     ageController.dispose();
@@ -153,10 +175,8 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
         happinessLevel: happinessLevel,
       );
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
-      );
+      // Pop back to profile screen
+      Navigator.pop(context);
     } catch (e) {
       String errorMessage = 'We encountered an issue saving your profile';
       if (e.toString().contains('unable to start connection')) {

@@ -1,3 +1,4 @@
+import 'package:auralynn/features/affirmations/screens/affirmations_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -8,7 +9,6 @@ import '../../breathing/screens/breathing_screen.dart';
 import '../../focus/screens/focus_screen.dart';
 import '../../journal/screens/journal_screen.dart';
 import '../../sos/screens/sos_screen.dart';
-import '../../affirmations/screens/affirmation_screen.dart';
 import '../../../app_theme.dart';
 import '../../mood/screens/mood_screen.dart';
 
@@ -501,17 +501,7 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
           SizedBox(height: 20),
-          Text(
-            context.watch<AffirmationProvider>().dailyAffirmation?.text ??
-                'Loading your daily inspiration...',
-            style: TextStyle(
-              fontSize: 16,
-              color: AppColors.textSecondary,
-              fontStyle: FontStyle.italic,
-              height: 1.5,
-            ),
-          ),
-          SizedBox(height: 20),
+
           Align(
             alignment: Alignment.centerRight,
             child: Container(
@@ -532,7 +522,7 @@ class HomeScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => AffirmationScreen()),
+                    MaterialPageRoute(builder: (_) => AffirmationsScreen()),
                   );
                 },
                 icon: Icon(
