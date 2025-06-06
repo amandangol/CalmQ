@@ -1,440 +1,1158 @@
+import 'package:auralynn/features/home/screens/home_screen.dart';
+import 'package:auralynn/features/mood/screens/all_moods_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../providers/mood_provider.dart';
+import '../../../app_theme.dart';
+import 'package:intl/intl.dart';
 
-class MoodScreen extends StatelessWidget {
+class MoodScreen extends StatefulWidget {
+  @override
+  _MoodScreenState createState() => _MoodScreenState();
+}
+
+class _MoodScreenState extends State<MoodScreen> {
+  DateTime currentMonth = DateTime.now();
+
+  void _navigateMonth(bool forward) {
+    setState(() {
+      if (forward) {
+        currentMonth = DateTime(currentMonth.year, currentMonth.month + 1);
+      } else {
+        currentMonth = DateTime(currentMonth.year, currentMonth.month - 1);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final moodProvider = context.watch<MoodProvider>();
     final theme = Theme.of(context);
     final weekMoods = moodProvider.getLatestMoodPerDayForWeek();
+    final groupedMoodHistory = moodProvider.getGroupedMoodHistory();
 
     return Scaffold(
-      appBar: AppBar(title: Text('Mood & Sentiment Insights')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Mood & Sentiment Trends',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 16),
-            Container(
-              height: 220,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(color: Colors.grey.shade200, blurRadius: 6),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: _MoodSentimentChart(weekMoods: weekMoods),
-              ),
-            ),
-            SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                _getWeeklySummary(weekMoods),
-                style: TextStyle(color: Colors.grey[800]),
-              ),
-            ),
-            SizedBox(height: 24),
-            Text(
-              'Recent Entries',
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          'Mood Tracker',
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: false,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0, top: 8.0),
+            child: Text(
+              DateFormat('MMM yyyy').format(currentMonth),
               style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
+                color: AppColors.textSecondary,
               ),
             ),
-            SizedBox(height: 12),
-            Expanded(
-              child: ListView.builder(
-                itemCount: moodProvider.moodHistory.length,
-                itemBuilder: (context, index) {
-                  final entry = moodProvider
-                      .moodHistory[moodProvider.moodHistory.length - 1 - index];
-                  final imagePath =
-                      'assets/images/' +
-                      Provider.of<MoodProvider>(
-                        context,
-                        listen: false,
-                      ).getMoodImage(entry.mood) +
-                      '.png';
-                  return Container(
-                    margin: EdgeInsets.only(bottom: 12),
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 6,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios,
+              color: AppColors.textSecondary,
+              size: 18,
+            ),
+            onPressed: () => _navigateMonth(false),
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.arrow_forward_ios,
+              color: AppColors.textSecondary,
+              size: 18,
+            ),
+            onPressed: () => _navigateMonth(true),
+          ),
+        ],
+      ),
+      body: moodProvider.isLoading
+          ? Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: () async {
+                await moodProvider.refreshData();
+              },
+              child: CustomScrollView(
+                physics: AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20.0,
+                        vertical: 16.0,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Today's Quick Check-in Section
+                          _buildTodayCheckinSection(context),
+                          SizedBox(height: 24),
+
+                          // Mood Chart Section
+                          if (weekMoods.isNotEmpty) ...[
+                            Text(
+                              'Weekly Mood Trend',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 16),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 20,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 10,
+                                    offset: Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              height: 280,
+                              child: _MoodBarChart(weekMoods: weekMoods),
+                            ),
+                            SizedBox(height: 24),
+                          ],
+
+                          // Mood Statistics
+                          if (weekMoods.isNotEmpty) ...[
+                            _buildMoodStats(context, weekMoods),
+                            SizedBox(height: 24),
+                          ],
+                        ],
+                      ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                  ),
+
+                  // Recent Entries Section (Grouped by Date)
+                  if (groupedMoodHistory.isNotEmpty) ...[
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      sliver: SliverToBoxAdapter(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: [
-                                Image.asset(imagePath, width: 28, height: 28),
-                                SizedBox(width: 8),
-                                Text(
-                                  entry.mood,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface,
-                                  ),
-                                ),
-                              ],
-                            ),
                             Text(
-                              _formatDate(entry.timestamp),
-                              style: TextStyle(
-                                color: Theme.of(
+                              'Recent Entries',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.push(
                                   context,
-                                ).colorScheme.onSurface.withOpacity(0.6),
-                                fontSize: 13,
+                                  MaterialPageRoute(
+                                    builder: (context) => AllMoodsScreen(),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                'View All',
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                        if (entry.trigger != null &&
-                            entry.trigger!.isNotEmpty) ...[
-                          SizedBox(height: 8),
-                          Row(
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20.0,
+                        vertical: 16.0,
+                      ),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final dateKey = groupedMoodHistory.keys.elementAt(
+                            index,
+                          );
+                          final entries = groupedMoodHistory[dateKey]!;
+                          // Only show entries for the first 5 days
+                          if (index >= 5) return null;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.bolt,
-                                color: Theme.of(context).colorScheme.primary,
-                                size: 18,
-                              ),
-                              SizedBox(width: 6),
-                              Expanded(
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12.0,
+                                ),
                                 child: Text(
-                                  entry.trigger!,
-                                  style: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface.withOpacity(0.85),
-                                    fontSize: 14,
-                                    fontStyle: FontStyle.italic,
+                                  dateKey,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
+                              ),
+                              ...entries.map(
+                                (entry) => _MoodEntryCard(entry: entry),
                               ),
                             ],
-                          ),
-                        ],
-                        if (entry.note != null && entry.note!.isNotEmpty) ...[
-                          SizedBox(height: 8),
-                          Text(
-                            entry.note!,
-                            style: TextStyle(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withOpacity(0.85),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                        SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.surfaceVariant,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    'Mood: ',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  Text(
-                                    entry.mood,
-                                    style: TextStyle(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(entry.emoji),
-                                ],
+                          );
+                        }, childCount: groupedMoodHistory.length),
+                      ),
+                    ),
+                  ] else ...[
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: _buildEmptyState(context),
+                    ),
+                  ],
+
+                  // Tips Section
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (groupedMoodHistory.isNotEmpty) ...[
+                            Text(
+                              'Wellness Tips',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            SizedBox(width: 12),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.surfaceVariant,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    'Sentiment: ',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  Text(
-                                    _getSentiment(entry),
-                                    style: TextStyle(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            SizedBox(height: 16),
+                            _buildTipSection(
+                              context,
+                              'Connect with nature',
+                              'Spend time outdoors, surrounded by greenery and fresh air',
+                              Icons.nature,
+                            ),
+                            SizedBox(height: 16),
+                            _buildTipSection(
+                              context,
+                              'Practice mindfulness',
+                              'Take a few minutes each day to focus on your breathing',
+                              Icons.self_improvement,
                             ),
                           ],
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Navigate to mood entry screen
+          Navigator.pushNamed(context, '/add-mood');
+        },
+        backgroundColor: AppColors.primary,
+        child: Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 
-  // Helper: Dummy sentiment
-  String _getSentiment(MoodEntry entry) {
-    switch (entry.mood.toLowerCase()) {
-      case 'very happy':
-      case 'happy':
-        return 'Positive';
-      case 'neutral':
-        return 'Neutral';
-      case 'sad':
-      case 'very sad':
-        return 'Negative';
-      default:
-        return 'Neutral';
-    }
-  }
+  Widget _buildTodayCheckinSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final moodProvider = context.read<MoodProvider>();
+    final hasTodayEntry = moodProvider.hasTodayEntry();
+    final todayEntries = moodProvider.getEntriesForDate(DateTime.now());
+    final streak = moodProvider.getMoodStreak();
 
-  String _getWeeklySummary(List<MoodEntry> week) {
-    if (week.isEmpty) return 'No mood data for this week.';
-    final positives = week.where((e) => _getSentiment(e) == 'Positive').length;
-    final negatives = week.where((e) => _getSentiment(e) == 'Negative').length;
-    final neutrals = week.length - positives - negatives;
-    if (positives > negatives && positives > neutrals) {
-      return 'Your overall sentiment has been positive!';
-    } else if (negatives > positives && negatives > neutrals) {
-      return 'Your overall sentiment has been negative.';
-    } else {
-      return 'Your overall sentiment has been relatively neutral.';
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-  }
-}
-
-class _MoodSentimentChart extends StatelessWidget {
-  final List<MoodEntry> weekMoods;
-  const _MoodSentimentChart({required this.weekMoods});
-
-  // Map moods to numeric values for chart
-  double _moodToValue(String mood) {
-    switch (mood.toLowerCase()) {
-      case 'very happy':
-        return 4;
-      case 'happy':
-        return 3;
-      case 'neutral':
-        return 2;
-      case 'sad':
-        return 1;
-      case 'very sad':
-        return 0;
-      default:
-        return 2;
-    }
-  }
-
-  double _sentimentToValue(String mood) {
-    switch (mood.toLowerCase()) {
-      case 'very happy':
-      case 'happy':
-        return 2;
-      case 'neutral':
-        return 1;
-      case 'sad':
-      case 'very sad':
-        return 0;
-      default:
-        return 1;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final moodProvider = Provider.of<MoodProvider>(context, listen: false);
-    // Use weekday index for x value and weekday label for x-axis
-    final now = DateTime.now();
-    final List<FlSpot> moodSpots = [];
-    final List<FlSpot> sentimentSpots = [];
-    final List<String> dayLabels = [];
-    for (int i = 0; i < weekMoods.length; i++) {
-      final entry = weekMoods[i];
-      final weekday = entry.timestamp.weekday % 7; // 0=Sunday, 1=Monday, ...
-      moodSpots.add(FlSpot(i.toDouble(), _moodToValue(entry.mood)));
-      sentimentSpots.add(
-        FlSpot(i.toDouble(), _sentimentToValue(entry.mood) * 2),
-      );
-      final label = _weekdayLabel(entry.timestamp.weekday);
-      dayLabels.add(label);
-    }
-    return LineChart(
-      LineChartData(
-        gridData: FlGridData(show: true, drawVerticalLine: false),
-        titlesData: FlTitlesData(
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 40,
-              getTitlesWidget: (value, meta) {
-                String mood;
-                switch (value.toInt()) {
-                  case 0:
-                    mood = 'Very Sad';
-                    break;
-                  case 1:
-                    mood = 'Sad';
-                    break;
-                  case 2:
-                    mood = 'Neutral';
-                    break;
-                  case 3:
-                    mood = 'Happy';
-                    break;
-                  case 4:
-                    mood = 'Very Happy';
-                    break;
-                  default:
-                    mood = 'Neutral';
-                }
-                final imagePath =
-                    'assets/images/' + moodProvider.getMoodImage(mood) + '.png';
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2.0),
-                  child: Image.asset(imagePath, width: 24, height: 24),
-                );
-              },
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primary.withOpacity(0.1),
+            AppColors.primary.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  hasTodayEntry
+                      ? 'Today\'s mood logged!'
+                      : 'How are you feeling today?',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  hasTodayEntry
+                      ? 'Great job tracking your mood!'
+                      : 'Take a moment to check in with yourself',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
             ),
           ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                final idx = value.toInt();
-                if (idx >= 0 && idx < dayLabels.length) {
-                  return Text(dayLabels[idx]);
-                }
-                return Text('');
-              },
-            ),
-          ),
-          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        ),
-        borderData: FlBorderData(
-          show: true,
-          border: Border.all(color: Colors.grey.shade300),
-        ),
-        minX: 0,
-        maxX: (weekMoods.length - 1).toDouble(),
-        minY: 0,
-        maxY: 4,
-        lineBarsData: [
-          LineChartBarData(
-            spots: moodSpots,
-            isCurved: true,
-            color: Colors.blue,
-            barWidth: 3,
-            dotData: FlDotData(show: true),
-            belowBarData: BarAreaData(show: false),
-          ),
-          LineChartBarData(
-            spots: sentimentSpots,
-            isCurved: true,
-            color: Colors.red,
-            barWidth: 3,
-            dotData: FlDotData(show: true),
-            belowBarData: BarAreaData(show: false),
+          SizedBox(width: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.local_fire_department,
+                color: AppColors.accent,
+                size: 32,
+              ),
+              SizedBox(width: 5),
+              Text(
+                '${moodProvider.getMoodStreak()} days',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  String _weekdayLabel(int weekday) {
-    switch (weekday) {
-      case DateTime.monday:
-        return 'Mon';
-      case DateTime.tuesday:
-        return 'Tue';
-      case DateTime.wednesday:
-        return 'Wed';
-      case DateTime.thursday:
-        return 'Thu';
-      case DateTime.friday:
-        return 'Fri';
-      case DateTime.saturday:
-        return 'Sat';
-      case DateTime.sunday:
-        return 'Sun';
+  Widget _buildMoodStats(BuildContext context, List<MoodEntry> weekMoods) {
+    final theme = Theme.of(context);
+    final moodCounts = <String, int>{};
+
+    for (final mood in weekMoods) {
+      moodCounts[mood.mood] = (moodCounts[mood.mood] ?? 0) + 1;
+    }
+
+    final mostFrequentMood = moodCounts.entries
+        .reduce((a, b) => a.value > b.value ? a : b)
+        .key;
+
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'This Week\'s Insights',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(Icons.trending_up, color: AppColors.primary, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Most frequent mood: $mostFrequentMood',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.analytics, color: AppColors.primary, size: 20),
+              SizedBox(width: 8),
+              Text(
+                '${weekMoods.length} mood entries this week',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.mood, size: 60, color: AppColors.primary),
+          ),
+          SizedBox(height: 24),
+          Text(
+            'Start Your Mood Journey',
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Log your first mood to see your history and\ntrack your emotional patterns over time.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(20),
+                    ),
+                  ),
+                  child: MoodPickerSheet(),
+                ),
+              );
+            },
+            icon: Icon(Icons.add, color: Colors.white),
+            label: Text('Log Your First Mood'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTipSection(
+    BuildContext context,
+    String title,
+    String description,
+    IconData icon,
+  ) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: AppColors.primary, size: 20),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  description,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Enhanced Mood Entry Card with better error handling and UX
+class _MoodEntryCard extends StatelessWidget {
+  final MoodEntry entry;
+
+  const _MoodEntryCard({required this.entry});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final moodProvider = Provider.of<MoodProvider>(context, listen: false);
+    final imagePath =
+        'assets/images/${moodProvider.getMoodImage(entry.mood)}.png';
+    final sentiment = _getSentiment(entry.mood);
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            // Navigate to detailed view
+            _showMoodDetails(context, entry);
+          },
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: MoodColors.getMoodColor(
+                              entry.mood,
+                            ).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Image.asset(imagePath, width: 24, height: 24),
+                        ),
+                        SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              entry.mood,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Feeling $sentiment',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          DateFormat('HH:mm').format(entry.timestamp),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.textLight,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildActionButton(
+                              context,
+                              'Edit',
+                              AppColors.primary,
+                              () => _editMoodEntry(context, entry),
+                            ),
+                            SizedBox(width: 12),
+                            _buildActionButton(
+                              context,
+                              'Delete',
+                              AppColors.error,
+                              () => _deleteMoodEntry(context, entry),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                if (entry.trigger != null && entry.trigger!.isNotEmpty) ...[
+                  SizedBox(height: 12),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'Trigger: ${entry.trigger!}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+                if (entry.note != null && entry.note!.isNotEmpty) ...[
+                  SizedBox(height: 12),
+                  Text(
+                    entry.note!,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (entry.note!.length > 100) ...[
+                    SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () => _showMoodDetails(context, entry),
+                      child: Text(
+                        'Read more',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(
+    BuildContext context,
+    String text,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    final theme = Theme.of(context);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          text,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: color,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showMoodDetails(BuildContext context, MoodEntry entry) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _MoodDetailModal(entry: entry),
+    );
+  }
+
+  void _editMoodEntry(BuildContext context, MoodEntry entry) {
+    Navigator.pushNamed(context, '/edit-mood', arguments: entry);
+  }
+
+  void _deleteMoodEntry(BuildContext context, MoodEntry entry) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Delete Mood Entry'),
+        content: Text('Are you sure you want to delete this mood entry?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Provider.of<MoodProvider>(
+                context,
+                listen: false,
+              ).deleteMoodEntry(entry.id);
+              Navigator.pop(context);
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('Mood entry deleted')));
+            },
+            child: Text('Delete', style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getSentiment(String mood) {
+    switch (mood.toLowerCase()) {
+      case 'very happy':
+      case 'awesome':
+        return 'excited and joyful';
+      case 'happy':
+      case 'good':
+        return 'positive and content';
+      case 'neutral':
+      case 'okay':
+        return 'balanced';
+      case 'sad':
+      case 'down':
+        return 'melancholic';
+      case 'angry':
+      case 'terrible':
+        return 'frustrated';
+      case 'anxious':
+        return 'worried';
+      case 'stressed':
+        return 'overwhelmed';
       default:
-        return '';
+        return 'complex emotions';
+    }
+  }
+}
+
+// Modal for detailed mood entry view
+class _MoodDetailModal extends StatelessWidget {
+  final MoodEntry entry;
+
+  const _MoodDetailModal({required this.entry});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final moodProvider = Provider.of<MoodProvider>(context, listen: false);
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.7,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            margin: EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.textLight.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Image.asset(
+                        'assets/images/${moodProvider.getMoodImage(entry.mood)}.png',
+                        width: 40,
+                        height: 40,
+                      ),
+                      SizedBox(width: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            entry.mood,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            DateFormat(
+                              'EEEE, MMMM d, yyyy • HH:mm',
+                            ).format(entry.timestamp),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 24),
+                  if (entry.trigger != null && entry.trigger!.isNotEmpty) ...[
+                    Text(
+                      'Trigger',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      entry.trigger!,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                  ],
+                  if (entry.note != null && entry.note!.isNotEmpty) ...[
+                    Text(
+                      'Notes',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Text(
+                          entry.note!,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: AppColors.textSecondary,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Enhanced Bar Chart with better visual feedback
+class _MoodBarChart extends StatelessWidget {
+  final List<MoodEntry> weekMoods;
+
+  const _MoodBarChart({required this.weekMoods});
+
+  double _moodToValue(String mood) {
+    switch (mood.toLowerCase()) {
+      case 'very happy':
+      case 'awesome':
+        return 5;
+      case 'happy':
+      case 'good':
+        return 4;
+      case 'neutral':
+      case 'okay':
+        return 3;
+      case 'sad':
+      case 'down':
+        return 2;
+      case 'angry':
+      case 'terrible':
+        return 1;
+      default:
+        return 3;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final moodProvider = Provider.of<MoodProvider>(context, listen: false);
+    final List<BarChartGroupData> barGroups = [];
+
+    // Generate data for the last 7 days
+    final now = DateTime.now();
+    final List<DateTime> last7Days = List.generate(7, (index) {
+      return DateTime(now.year, now.month, now.day - (6 - index));
+    });
+
+    for (int i = 0; i < last7Days.length; i++) {
+      final date = last7Days[i];
+      final entry = weekMoods.firstWhere(
+        (mood) =>
+            mood.timestamp.day == date.day &&
+            mood.timestamp.month == date.month &&
+            mood.timestamp.year == date.year,
+        orElse: () => MoodEntry(
+          id: 'placeholder',
+          emoji: '😐',
+          mood: 'Neutral',
+          timestamp: date,
+        ),
+      );
+
+      final moodValue = _moodToValue(entry.mood);
+      final isPlaceholder = entry.id == 'placeholder';
+
+      barGroups.add(
+        BarChartGroupData(
+          x: i,
+          barRods: [
+            BarChartRodData(
+              toY: isPlaceholder ? 0.5 : moodValue,
+              color: isPlaceholder
+                  ? AppColors.textLight.withOpacity(0.2)
+                  : MoodColors.getMoodColor(entry.mood),
+              width: 24,
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return BarChart(
+      BarChartData(
+        barGroups: barGroups,
+        titlesData: FlTitlesData(
+          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 60,
+              getTitlesWidget: (value, meta) {
+                final index = value.toInt();
+                if (index >= 0 && index < last7Days.length) {
+                  final date = last7Days[index];
+                  final entry = weekMoods.firstWhere(
+                    (mood) =>
+                        mood.timestamp.day == date.day &&
+                        mood.timestamp.month == date.month &&
+                        mood.timestamp.year == date.year,
+                    orElse: () => MoodEntry(
+                      id: 'placeholder',
+                      emoji: '😐',
+                      mood: 'Neutral',
+                      timestamp: date,
+                    ),
+                  );
+
+                  final weekdayLabel = DateFormat('EEE').format(date);
+                  final isPlaceholder = entry.id == 'placeholder';
+
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          weekdayLabel,
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(height: 6),
+                        if (!isPlaceholder)
+                          Container(
+                            padding: EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: MoodColors.getMoodColor(
+                                entry.mood,
+                              ).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Image.asset(
+                              'assets/images/${moodProvider.getMoodImage(entry.mood)}.png',
+                              width: 18,
+                              height: 18,
+                            ),
+                          )
+                        else
+                          Container(
+                            width: 18,
+                            height: 18,
+                            decoration: BoxDecoration(
+                              color: AppColors.textLight.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Icon(
+                              Icons.remove,
+                              size: 12,
+                              color: AppColors.textLight.withOpacity(0.5),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                }
+                return Container();
+              },
+            ),
+          ),
+        ),
+        gridData: FlGridData(
+          show: true,
+          drawHorizontalLine: true,
+          horizontalInterval: 1,
+          getDrawingHorizontalLine: (value) {
+            return FlLine(
+              color: AppColors.textLight.withOpacity(0.1),
+              strokeWidth: 1,
+            );
+          },
+        ),
+        borderData: FlBorderData(show: false),
+        alignment: BarChartAlignment.spaceAround,
+        maxY: 5,
+        minY: 0,
+        groupsSpace: 16,
+        barTouchData: BarTouchData(
+          enabled: true,
+          touchTooltipData: BarTouchTooltipData(
+            tooltipPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              final date = last7Days[group.x.toInt()];
+              final entry = weekMoods.firstWhere(
+                (mood) =>
+                    mood.timestamp.day == date.day &&
+                    mood.timestamp.month == date.month &&
+                    mood.timestamp.year == date.year,
+                orElse: () => MoodEntry(
+                  id: 'placeholder',
+                  emoji: '😐',
+                  mood: 'Neutral',
+                  timestamp: date,
+                ),
+              );
+
+              if (entry.id == 'placeholder') {
+                return BarTooltipItem(
+                  'No entry',
+                  TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: '\n${DateFormat('MMM d').format(date)}',
+                      style: TextStyle(color: Colors.white70, fontSize: 10),
+                    ),
+                  ],
+                );
+              }
+
+              return BarTooltipItem(
+                entry.mood,
+                TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+                children: [
+                  TextSpan(
+                    text: '\n${DateFormat('MMM d').format(entry.timestamp)}',
+                    style: TextStyle(color: Colors.white70, fontSize: 10),
+                  ),
+                  if (entry.trigger != null && entry.trigger!.isNotEmpty)
+                    TextSpan(
+                      text: '\n${entry.trigger}',
+                      style: TextStyle(color: Colors.white70, fontSize: 10),
+                    ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Helper class for mood colors (assuming this exists in your project)
+class MoodColors {
+  static Color getMoodColor(String mood) {
+    switch (mood.toLowerCase()) {
+      case 'very happy':
+      case 'awesome':
+        return Color(0xFF4CAF50); // Green
+      case 'happy':
+      case 'good':
+        return Color(0xFF8BC34A); // Light Green
+      case 'neutral':
+      case 'okay':
+        return Color(0xFFFFEB3B); // Yellow
+      case 'sad':
+      case 'down':
+        return Color(0xFFFF9800); // Orange
+      case 'angry':
+      case 'terrible':
+        return Color(0xFFF44336); // Red
+      case 'anxious':
+        return Color(0xFF9C27B0); // Purple
+      case 'stressed':
+        return Color(0xFF795548); // Brown
+      default:
+        return Color(0xFF9E9E9E); // Grey
     }
   }
 }

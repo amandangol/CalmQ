@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../mood/providers/mood_provider.dart';
-import '../../breathing/providers/breathing_provider.dart';
 import '../../affirmations/providers/affirmation_provider.dart';
 import '../../reminders/screens/reminders_screen.dart';
 import '../../breathing/screens/breathing_screen.dart';
@@ -11,6 +10,7 @@ import '../../journal/screens/journal_screen.dart';
 import '../../sos/screens/sos_screen.dart';
 import '../../affirmations/screens/affirmation_screen.dart';
 import '../../../app_theme.dart';
+import '../../mood/screens/mood_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   @override
@@ -19,6 +19,17 @@ class HomeScreen extends StatelessWidget {
     final moodProvider = context.watch<MoodProvider>();
     final theme = Theme.of(context);
     final user = authProvider.user;
+
+    if (authProvider.isLoading) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -68,7 +79,7 @@ class HomeScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(20.0),
+          padding: EdgeInsets.all(0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -76,33 +87,38 @@ class HomeScreen extends StatelessWidget {
               _buildWelcomeSection(context, user?.displayName ?? 'Friend'),
               SizedBox(height: 24),
 
-              // Wellness Score Section
-              _buildWellnessScore(context),
+              // Today's Check-in Section (Streak)
+              _buildTodayCheckinSection(context, moodProvider, theme),
               SizedBox(height: 24),
 
-              // Today's Mood Section
+              // Today's Mood Section (Log Mood)
               _buildTodaysMoodSection(context, moodProvider, theme),
               SizedBox(height: 24),
 
               // Quick Actions Section
-              Text(
-                'Quick Actions',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Text(
+                  'Quick Actions',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
               SizedBox(height: 16),
-              _buildQuickActionsGrid(context),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: _buildQuickActionsGrid(context),
+              ),
               SizedBox(height: 24),
 
               // Daily Inspiration Section
-              _buildDailyInspirationSection(context, theme),
-              SizedBox(height: 24),
-
-              // Progress Tracking Section
-              _buildProgressSection(context, moodProvider),
-              SizedBox(height: 100), // Space for FAB
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: _buildDailyInspirationSection(context, theme),
+              ),
+              SizedBox(height: 100),
             ],
           ),
         ),
@@ -110,12 +126,12 @@ class HomeScreen extends StatelessWidget {
       floatingActionButton: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.purple[400]!, Colors.blue[400]!],
+            colors: [AppColors.primaryLight, AppColors.secondaryLight],
           ),
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: Colors.purple.withOpacity(0.3),
+              color: AppColors.primaryLight.withOpacity(0.5),
               blurRadius: 15,
               offset: Offset(0, 8),
             ),
@@ -148,21 +164,13 @@ class HomeScreen extends StatelessWidget {
     }
 
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 32.0),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.secondary],
+          colors: [AppColors.primaryLight, AppColors.secondaryLight],
         ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
-            blurRadius: 15,
-            offset: Offset(0, 8),
-          ),
-        ],
       ),
       child: Row(
         children: [
@@ -171,121 +179,96 @@ class HomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$greeting,',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: AppColors.surface.withOpacity(0.9),
-                    fontSize: 16,
+                  'Hey, $userName!',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    color: AppColors.surface,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 28,
                   ),
                 ),
                 SizedBox(height: 4),
-                Text(
-                  userName,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: AppColors.surface,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'How are you taking care of yourself today?',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.surface.withOpacity(0.9),
-                    fontSize: 14,
-                  ),
-                ),
               ],
             ),
-          ),
-          Container(
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.surface.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(Icons.spa, color: AppColors.surface, size: 36),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildWellnessScore(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 12,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
+  Widget _buildTodayCheckinSection(
+    BuildContext context,
+    MoodProvider moodProvider,
+    ThemeData theme,
+  ) {
+    final int streak = moodProvider.getMoodStreak();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            "Today's check-in",
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 16),
           Container(
-            width: 56,
-            height: 56,
+            padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColors.success, AppColors.success.withOpacity(0.7)],
-              ),
-              borderRadius: BorderRadius.circular(28),
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.success.withOpacity(0.3),
-                  blurRadius: 8,
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
                   offset: Offset(0, 4),
                 ),
               ],
             ),
-            child: Icon(Icons.trending_up, color: AppColors.surface, size: 28),
-          ),
-          SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Wellness Score',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.favorite,
+                        color: AppColors.primary,
+                        size: 24,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Text(
+                      'Check-in Streak',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
-                SizedBox(height: 6),
                 Row(
                   children: [
                     Text(
-                      '78%',
-                      style: TextStyle(
-                        fontSize: 28,
+                      '$streak',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: AppColors.primary,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.success,
                       ),
                     ),
-                    SizedBox(width: 10),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.success.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        'Great progress!',
-                        style: TextStyle(
-                          color: AppColors.success,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                    SizedBox(width: 8),
+                    Icon(
+                      Icons.local_fire_department,
+                      color: AppColors.accent,
+                      size: 24,
                     ),
                   ],
                 ),
@@ -303,10 +286,11 @@ class HomeScreen extends StatelessWidget {
     ThemeData theme,
   ) {
     return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20.0),
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -332,7 +316,7 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
           SizedBox(height: 12),
-          if (moodProvider.todayMood != null) ...[
+          if (moodProvider.hasLoggedMoodToday()) ...[
             Row(
               children: [
                 Container(
@@ -342,7 +326,7 @@ class HomeScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(40),
                   ),
                   child: Image.asset(
-                    'assets/images/${_getMoodImage(moodProvider.todayMood!.mood)}.png',
+                    'assets/images/${moodProvider.getMoodImage(moodProvider.todayMood!.mood)}.png',
                     width: 32,
                     height: 32,
                   ),
@@ -392,29 +376,22 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  String _getMoodImage(String mood) {
-    switch (mood.toLowerCase()) {
-      case 'angry':
-        return 'angry';
-      case 'sad':
-        return 'sad';
-      case 'neutral':
-        return 'neutral';
-      case 'happy':
-        return 'happy';
-      case 'very happy':
-        return 'very-happy';
-      default:
-        return 'neutral';
-    }
-  }
-
   Widget _buildQuickActionsGrid(BuildContext context) {
     final quickActions = [
       QuickActionData(
+        icon: Icons.calendar_month,
+        label: 'Your history',
+        color: AppColors.primary,
+        description: 'View past entries',
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => MoodScreen()),
+        ),
+      ),
+      QuickActionData(
         icon: Icons.air,
         label: 'Breathing',
-        color: AppColors.primary,
+        color: AppColors.secondary,
         description: 'Guided exercises',
         onTap: () => Navigator.push(
           context,
@@ -424,7 +401,7 @@ class HomeScreen extends StatelessWidget {
       QuickActionData(
         icon: Icons.timer,
         label: 'Focus',
-        color: AppColors.secondary,
+        color: AppColors.accent,
         description: 'Meditation timer',
         onTap: () => Navigator.push(
           context,
@@ -434,7 +411,7 @@ class HomeScreen extends StatelessWidget {
       QuickActionData(
         icon: Icons.book,
         label: 'Journal',
-        color: AppColors.accent,
+        color: AppColors.secondaryLight,
         description: 'Express thoughts',
         onTap: () => Navigator.push(
           context,
@@ -444,7 +421,7 @@ class HomeScreen extends StatelessWidget {
       QuickActionData(
         icon: Icons.notifications_active,
         label: 'Reminders',
-        color: AppColors.secondaryLight,
+        color: AppColors.error,
         description: 'Self-care alerts',
         onTap: () => Navigator.push(
           context,
@@ -454,21 +431,11 @@ class HomeScreen extends StatelessWidget {
       QuickActionData(
         icon: Icons.emergency,
         label: 'SOS',
-        color: AppColors.error,
+        color: AppColors.accentWarm,
         description: 'Crisis support',
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => SOSScreen()),
-        ),
-      ),
-      QuickActionData(
-        icon: Icons.auto_awesome,
-        label: 'Affirmations',
-        color: AppColors.accentWarm,
-        description: 'Daily positivity',
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => AffirmationScreen()),
         ),
       ),
     ];
@@ -480,7 +447,7 @@ class HomeScreen extends StatelessWidget {
         crossAxisCount: 2,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: 1.2,
+        childAspectRatio: 1.1,
       ),
       itemCount: quickActions.length,
       itemBuilder: (context, index) {
@@ -498,12 +465,12 @@ class HomeScreen extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.secondary.withOpacity(0.2),
-            AppColors.primary.withOpacity(0.2),
+            AppColors.secondary.withOpacity(0.1),
+            AppColors.primary.withOpacity(0.1),
           ],
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.secondary.withOpacity(0.3)),
+        border: Border.all(color: AppColors.secondary.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -513,7 +480,7 @@ class HomeScreen extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.secondary.withOpacity(0.2),
+                  color: AppColors.secondary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -550,7 +517,7 @@ class HomeScreen extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.secondary, AppColors.secondaryDark],
+                  colors: [AppColors.secondaryLight, AppColors.secondary],
                 ),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
@@ -585,80 +552,6 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProgressSection(
-    BuildContext context,
-    MoodProvider moodProvider,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 15,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.analytics,
-                  color: AppColors.primary,
-                  size: 24,
-                ),
-              ),
-              SizedBox(width: 12),
-              Text(
-                'This Week\'s Progress',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _ProgressStat(
-                icon: Icons.favorite,
-                label: 'Mood Logs',
-                value: '5',
-                color: AppColors.primary,
-              ),
-              _ProgressStat(
-                icon: Icons.self_improvement,
-                label: 'Meditation',
-                value: '120min',
-                color: AppColors.secondary,
-              ),
-              _ProgressStat(
-                icon: Icons.book,
-                label: 'Journal',
-                value: '3',
-                color: AppColors.accent,
-              ),
-            ],
           ),
         ],
       ),
@@ -712,7 +605,7 @@ class _QuickActionCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withOpacity(0.1),
               blurRadius: 15,
               offset: Offset(0, 8),
             ),
@@ -761,61 +654,6 @@ class _QuickActionCard extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _ProgressStat extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
-
-  const _ProgressStat({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [color, color.withOpacity(0.7)]),
-            borderRadius: BorderRadius.circular(25),
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.3),
-                blurRadius: 10,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Icon(icon, color: AppColors.surface, size: 24),
-        ),
-        SizedBox(height: 12),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
     );
   }
 }
@@ -942,19 +780,17 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
             controller: _triggerController,
             decoration: InputDecoration(
               labelText: 'What triggered this? (Optional)',
-              labelStyle: TextStyle(color: AppColors.textLight),
+              labelStyle: TextStyle(color: AppColors.textSecondary),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: AppColors.textLight.withOpacity(0.3),
-                ),
+                borderSide: BorderSide.none,
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.primary),
+                borderSide: BorderSide(color: AppColors.primary, width: 2),
               ),
               filled: true,
-              fillColor: AppColors.surface,
+              fillColor: AppColors.surfaceVariant,
             ),
           ),
           SizedBox(height: 16),
@@ -962,19 +798,17 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
             controller: _noteController,
             decoration: InputDecoration(
               labelText: 'Quick note (Optional)',
-              labelStyle: TextStyle(color: AppColors.textLight),
+              labelStyle: TextStyle(color: AppColors.textSecondary),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: AppColors.textLight.withOpacity(0.3),
-                ),
+                borderSide: BorderSide.none,
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.primary),
+                borderSide: BorderSide(color: AppColors.primary, width: 2),
               ),
               filled: true,
-              fillColor: AppColors.surface,
+              fillColor: AppColors.surfaceVariant,
             ),
             maxLines: 2,
           ),
@@ -1005,9 +839,11 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
                     },
               style: ElevatedButton.styleFrom(
                 backgroundColor: _selectedMood == null
-                    ? AppColors.textLight.withOpacity(0.1)
+                    ? AppColors.surfaceVariant
                     : Colors.transparent,
-                foregroundColor: AppColors.surface,
+                foregroundColor: _selectedMood == null
+                    ? AppColors.textLight
+                    : AppColors.surface,
                 elevation: 0,
                 padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(

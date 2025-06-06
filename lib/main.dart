@@ -73,12 +73,6 @@ class _SplashScreenWrapperState extends State<SplashScreenWrapper> {
 
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
-        if (authProvider.isLoading) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
         return authProvider.isAuthenticated
             ? const MainNavigation()
             : LoginScreen();

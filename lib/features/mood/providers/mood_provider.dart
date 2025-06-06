@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 
 class MoodEntry {
   final String emoji;
@@ -8,6 +9,7 @@ class MoodEntry {
   final String? trigger;
   final String? note;
   final DateTime timestamp;
+  final String id;
 
   MoodEntry({
     required this.emoji,
@@ -15,6 +17,7 @@ class MoodEntry {
     this.trigger,
     this.note,
     required this.timestamp,
+    required this.id,
   });
 
   Map<String, dynamic> toJson() => {
@@ -25,12 +28,13 @@ class MoodEntry {
     'timestamp': timestamp.toIso8601String(),
   };
 
-  factory MoodEntry.fromJson(Map<String, dynamic> json) => MoodEntry(
+  factory MoodEntry.fromJson(Map<String, dynamic> json, String id) => MoodEntry(
     emoji: json['emoji'] ?? '😐',
     mood: json['mood'] ?? 'Neutral',
     trigger: json['trigger'],
     note: json['note'],
     timestamp: DateTime.parse(json['timestamp']),
+    id: id,
   );
 }
 
@@ -51,7 +55,7 @@ class MoodProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   final Map<String, String> moodEmojis = {
-    'Very Sad': '😔',
+    'Angry': '😠',
     'Sad': '😢',
     'Neutral': '😐',
     'Happy': '😊',
@@ -59,7 +63,7 @@ class MoodProvider extends ChangeNotifier {
   };
 
   final Map<String, String> moodImages = {
-    'Very Sad': 'angry',
+    'Angry': 'angry',
     'Sad': 'sad',
     'Neutral': 'neutral',
     'Happy': 'happy',
@@ -70,12 +74,22 @@ class MoodProvider extends ChangeNotifier {
     return moodImages[mood] ?? 'neutral';
   }
 
+  String getMoodEmoji(String mood) {
+    return moodEmojis[mood] ?? '😐';
+  }
+
   bool hasLoggedMoodToday() {
-    if (_todayMood == null) return false;
+    if (_moodHistory.isEmpty) return false; // Check if history is empty
     final now = DateTime.now();
-    return _todayMood!.timestamp.year == now.year &&
-        _todayMood!.timestamp.month == now.month &&
-        _todayMood!.timestamp.day == now.day;
+    // Find the latest entry for today
+    final latestTodayEntry = _moodHistory.firstWhere(
+      (e) =>
+          e.timestamp.year == now.year &&
+          e.timestamp.month == now.month &&
+          e.timestamp.day == now.day,
+      orElse: () => null as MoodEntry, // Return null if no entry for today
+    );
+    return latestTodayEntry != null; // True if a mood was logged today
   }
 
   Future<void> addMood(String mood, {String? trigger, String? note}) async {
@@ -83,6 +97,7 @@ class MoodProvider extends ChangeNotifier {
     notifyListeners();
 
     final entry = MoodEntry(
+      id: '', // Firestore will generate ID
       emoji: moodEmojis[mood] ?? '😐',
       mood: mood,
       trigger: trigger,
@@ -90,20 +105,60 @@ class MoodProvider extends ChangeNotifier {
       timestamp: DateTime.now(),
     );
 
-    _todayMood = entry;
-    _moodHistory.add(entry);
-    notifyListeners();
-
     // Save to Firestore
     final user = _auth.currentUser;
     if (user != null) {
-      final docId = entry.timestamp.toIso8601String();
-      await _firestore
+      final docRef = await _firestore
           .collection('users')
           .doc(user.uid)
           .collection('moods')
-          .doc(docId)
-          .set(entry.toJson());
+          .add(entry.toJson());
+
+      // Create a new MoodEntry with the generated ID
+      final newEntry = MoodEntry(
+        id: docRef.id,
+        emoji: entry.emoji,
+        mood: entry.mood,
+        trigger: entry.trigger,
+        note: entry.note,
+        timestamp: entry.timestamp,
+      );
+
+      // Update local history and todayMood
+      _moodHistory.add(newEntry);
+      _moodHistory.sort(
+        (a, b) => b.timestamp.compareTo(a.timestamp),
+      ); // Sort descending
+
+      final today = DateTime.now();
+      if (newEntry.timestamp.year == today.year &&
+          newEntry.timestamp.month == today.month &&
+          newEntry.timestamp.day == today.day) {
+        // Find the latest entry for today after adding the new one
+        _todayMood = _moodHistory.firstWhere(
+          (e) =>
+              e.timestamp.year == today.year &&
+              e.timestamp.month == today.month &&
+              e.timestamp.day == today.day,
+          orElse: () =>
+              newEntry, // If somehow it's not the first, it's still today's mood
+        );
+      } else {
+        // If the new entry is not for today, just update todayMood if it was null or older
+        // This logic seems slightly off - todayMood should always represent the latest entry *today*
+        // Let's simplify this: if the new entry is today, it becomes todayMood (if it's the latest). If not, todayMood remains the latest today entry from the history.
+        final latestTodayEntry = _moodHistory.firstWhere(
+          (e) =>
+              e.timestamp.year == today.year &&
+              e.timestamp.month == today.month &&
+              e.timestamp.day == today.day,
+          orElse: () => null as MoodEntry, // Use null if no entry for today
+        );
+        _todayMood =
+            latestTodayEntry; // Update todayMood based on the latest today entry in history
+      }
+
+      notifyListeners();
     }
     _isLoading = false;
     notifyListeners();
@@ -118,21 +173,22 @@ class MoodProvider extends ChangeNotifier {
           .collection('users')
           .doc(user.uid)
           .collection('moods')
-          .orderBy('timestamp', descending: false)
+          .orderBy('timestamp', descending: true)
           .get();
       _moodHistory = snapshot.docs
-          .map((doc) => MoodEntry.fromJson(doc.data()))
+          .map((doc) => MoodEntry.fromJson(doc.data(), doc.id))
           .toList();
+
+      // Set todayMood after loading history
       if (_moodHistory.isNotEmpty) {
         final today = DateTime.now();
-        final todayEntry = _moodHistory.lastWhere(
+        _todayMood = _moodHistory.firstWhere(
           (e) =>
               e.timestamp.year == today.year &&
               e.timestamp.month == today.month &&
               e.timestamp.day == today.day,
-          orElse: () => _moodHistory.last,
+          orElse: () => null as MoodEntry, // Use null if no entry for today
         );
-        _todayMood = todayEntry;
       }
     }
     _isLoading = false;
@@ -141,7 +197,8 @@ class MoodProvider extends ChangeNotifier {
 
   String getMoodSuggestion(String mood) {
     switch (mood) {
-      case 'Very Sad':
+      case 'Angry':
+        return 'Take deep breaths and try to identify what triggered this emotion.';
       case 'Sad':
         return 'Feeling down? Try a quick breathing exercise to lift your spirits.';
       case 'Neutral':
@@ -157,32 +214,200 @@ class MoodProvider extends ChangeNotifier {
   // Get the latest mood entry for each of the last 7 days (for chart)
   List<MoodEntry> getLatestMoodPerDayForWeek() {
     final now = DateTime.now();
+    final startOfWeek = now.subtract(
+      Duration(days: now.weekday - 1),
+    ); // Assuming Monday is the start of the week
+
     final Map<String, MoodEntry> dayMap = {};
-    for (final entry in _moodHistory.reversed) {
-      final key =
-          '${entry.timestamp.year}-${entry.timestamp.month}-${entry.timestamp.day}';
-      if (!dayMap.containsKey(key)) {
-        dayMap[key] = entry;
+
+    // Filter entries for the current week (from startOfWeek to now)
+    final weekEntries = _moodHistory
+        .where(
+          (entry) => entry.timestamp.isAfter(
+            startOfWeek.subtract(Duration(days: 1)),
+          ), // Include entries from the start of the week
+        )
+        .toList();
+
+    // Get the latest entry for each day of the week
+    for (final entry in weekEntries) {
+      final dateKey = DateFormat('yyyy-MM-dd').format(entry.timestamp);
+      // Only keep the latest entry for each day
+      if (!dayMap.containsKey(dateKey) ||
+          entry.timestamp.isAfter(dayMap[dateKey]!.timestamp)) {
+        dayMap[dateKey] = entry;
       }
     }
-    final week = <MoodEntry>[];
-    for (int i = 6; i >= 0; i--) {
-      final day = now.subtract(Duration(days: i));
-      final key = '${day.year}-${day.month}-${day.day}';
-      if (dayMap.containsKey(key)) {
-        week.add(dayMap[key]!);
-      } else {
-        week.add(
-          MoodEntry(
-            emoji: '😐',
-            mood: 'Neutral',
-            trigger: null,
-            note: null,
-            timestamp: DateTime(day.year, day.month, day.day),
-          ),
-        );
-      }
+
+    // Create a list of entries for the last 7 days of the current week
+    final List<MoodEntry> week = [];
+    for (int i = 0; i < 7; i++) {
+      final day = startOfWeek.add(Duration(days: i));
+      final dateKey = DateFormat('yyyy-MM-dd').format(day);
+      // Add the mood entry if it exists for the day, otherwise add a placeholder neutral entry
+      week.add(
+        dayMap[dateKey] ??
+            MoodEntry(
+              id: 'placeholder',
+              emoji: moodEmojis['Neutral']!,
+              mood: 'Neutral',
+              timestamp: DateTime(
+                day.year,
+                day.month,
+                day.day,
+                12,
+              ), // Use midday for consistency
+            ),
+      );
     }
+
+    // Ensure the list has exactly 7 entries for the chart
     return week;
+  }
+
+  // Group mood history by date
+  Map<String, List<MoodEntry>> getGroupedMoodHistory() {
+    final Map<String, List<MoodEntry>> grouped = {};
+    final DateFormat formatter = DateFormat(
+      'EEEE, MMMM d',
+    ); // e.g., Saturday, June 3
+
+    for (final entry in _moodHistory) {
+      final dateKey = formatter.format(entry.timestamp);
+      if (!grouped.containsKey(dateKey)) {
+        grouped[dateKey] = [];
+      }
+      grouped[dateKey]!.add(entry);
+    }
+    return grouped;
+  }
+
+  // Calculate the consecutive daily mood logging streak
+  int getMoodStreak() {
+    if (_moodHistory.isEmpty) {
+      return 0; // No streak if no history
+    }
+
+    int streak = 0;
+    DateTime currentDate = DateTime.now();
+    List<MoodEntry> sortedHistory = List.from(
+      _moodHistory,
+    ); // Create a mutable copy
+    sortedHistory.sort(
+      (a, b) => b.timestamp.compareTo(a.timestamp),
+    ); // Sort descending
+
+    // Remove time component for accurate day comparison
+    DateTime latestLogDate = DateTime(
+      sortedHistory.first.timestamp.year,
+      sortedHistory.first.timestamp.month,
+      sortedHistory.first.timestamp.day,
+    );
+
+    // Check if the latest log is today or yesterday
+    DateTime today = DateTime(
+      currentDate.year,
+      currentDate.month,
+      currentDate.day,
+    );
+    DateTime yesterday = today.subtract(Duration(days: 1));
+
+    if (latestLogDate.isAtSameMomentAs(today) ||
+        latestLogDate.isAtSameMomentAs(yesterday)) {
+      // Start counting streak from the latest log if it's today or yesterday
+      streak = latestLogDate.isAtSameMomentAs(today)
+          ? 1
+          : 0; // Start at 1 if today, 0 if yesterday (will be incremented)
+
+      DateTime expectedDate = latestLogDate.isAtSameMomentAs(today)
+          ? yesterday
+          : today.subtract(Duration(days: 2));
+
+      for (int i = 1; i < sortedHistory.length; i++) {
+        DateTime currentLogDate = DateTime(
+          sortedHistory[i].timestamp.year,
+          sortedHistory[i].timestamp.month,
+          sortedHistory[i].timestamp.day,
+        );
+
+        if (currentLogDate.isAtSameMomentAs(expectedDate)) {
+          streak++;
+          expectedDate = expectedDate.subtract(Duration(days: 1));
+        } else if (currentLogDate.isBefore(expectedDate)) {
+          // Gap in the streak
+          break;
+        } else if (currentLogDate.isAtSameMomentAs(
+          expectedDate.add(Duration(days: 1)),
+        )) {
+          // Handle multiple logs on the same day - continue checking previous days
+        } else {
+          // Log is more than one day before expected, streak broken
+          break;
+        }
+      }
+    } else {
+      // Latest log is older than yesterday, streak is 0
+      streak = 0;
+    }
+
+    // If the latest log is today and the streak is 0, it should be 1
+    if (latestLogDate.isAtSameMomentAs(today) &&
+        streak == 0 &&
+        sortedHistory.length >= 1) {
+      streak = 1;
+    }
+
+    return streak;
+  }
+
+  Future<void> refreshData() async {
+    await _loadMoodsFromFirestore();
+  }
+
+  bool hasTodayEntry() {
+    return hasLoggedMoodToday();
+  }
+
+  Future<void> deleteMoodEntry(String id) async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('moods')
+          .doc(id)
+          .delete();
+
+      _moodHistory.removeWhere((entry) => entry.id == id);
+      notifyListeners();
+    }
+  }
+
+  // Get latest 5 entries
+  List<MoodEntry> getLatestEntries({int limit = 5}) {
+    return _moodHistory.take(limit).toList();
+  }
+
+  // Get all entries for a specific month
+  List<MoodEntry> getEntriesForMonth(DateTime month) {
+    return _moodHistory
+        .where(
+          (entry) =>
+              entry.timestamp.year == month.year &&
+              entry.timestamp.month == month.month,
+        )
+        .toList();
+  }
+
+  // Get entries for a specific date
+  List<MoodEntry> getEntriesForDate(DateTime date) {
+    return _moodHistory
+        .where(
+          (entry) =>
+              entry.timestamp.year == date.year &&
+              entry.timestamp.month == date.month &&
+              entry.timestamp.day == date.day,
+        )
+        .toList();
   }
 }

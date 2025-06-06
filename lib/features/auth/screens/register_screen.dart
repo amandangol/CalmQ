@@ -4,6 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../providers/auth_provider.dart';
 import 'user_info_screen.dart';
 import '../../../app_theme.dart';
+import '../../../utils/snackbar_utils.dart';
+import '../../../utils/auth_error_handler.dart';
+import '../../../widgets/custom_text_field.dart';
+import '../../../widgets/gradient_button.dart';
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -15,8 +19,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
@@ -33,30 +35,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
           _emailController.text,
           _passwordController.text,
         );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => UserInfoScreen()),
-        );
-      } on firebase_auth.FirebaseAuthException catch (e) {
-        String message = 'Something went wrong. Please try again.';
-        if (e.code == 'weak-password') {
-          message = 'Please choose a stronger password for better security.';
-        } else if (e.code == 'email-already-in-use') {
-          message = 'An account already exists with this email.';
-        } else if (e.code == 'invalid-email') {
-          message = 'Please enter a valid email address.';
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => UserInfoScreen()),
+          );
         }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
+      } on firebase_auth.FirebaseAuthException catch (e) {
+        if (mounted) {
+          SnackbarUtils.showError(context, AuthErrorHandler.getErrorMessage(e));
+        }
       }
     }
   }
@@ -68,16 +56,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Scaffold(
       body: Container(
+        height: MediaQuery.of(context).size.height,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary.withOpacity(0.1),
-              AppColors.secondary.withOpacity(0.1),
-              AppColors.background,
-            ],
-            stops: [0.0, 0.3, 1.0],
+            colors: [AppColors.background, AppColors.background],
+            stops: [0.0, 1.0],
           ),
         ),
         child: SafeArea(
@@ -121,8 +106,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.1),
-                        blurRadius: 20,
-                        offset: Offset(0, 10),
+                        blurRadius: 10,
+                        offset: Offset(0, 5),
                       ),
                     ],
                   ),
@@ -135,14 +120,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 SizedBox(height: 32),
                 Text(
                   'Join Auralynn',
-                  style: theme.textTheme.displayLarge,
+                  style: theme.textTheme.displayLarge?.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 8),
                 Text(
                   'Begin your journey to better mental health',
                   style: theme.textTheme.bodyLarge?.copyWith(
-                    color: AppColors.textLight,
+                    color: AppColors.textSecondary,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -151,211 +138,60 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   key: _formKey,
                   child: Column(
                     children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: InputDecoration(
-                            labelText: 'Email',
-                            labelStyle: TextStyle(color: AppColors.textLight),
-                            prefixIcon: Icon(
-                              Icons.email_outlined,
-                              color: AppColors.primary,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: AppColors.surface,
-                            contentPadding: EdgeInsets.symmetric(
-                              vertical: 20,
-                              horizontal: 16,
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your email';
-                            }
-                            if (!RegExp(
-                              r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                            ).hasMatch(value)) {
-                              return 'Please enter a valid email';
-                            }
-                            return null;
-                          },
-                        ),
+                      CustomTextField(
+                        controller: _emailController,
+                        label: 'Email',
+                        prefixIcon: Icons.email_outlined,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your email';
+                          }
+                          if (!RegExp(
+                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                          ).hasMatch(value)) {
+                            return 'Please enter a valid email';
+                          }
+                          return null;
+                        },
                       ),
                       SizedBox(height: 16),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: TextFormField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          decoration: InputDecoration(
-                            labelText: 'Password',
-                            labelStyle: TextStyle(color: AppColors.textLight),
-                            prefixIcon: Icon(
-                              Icons.lock_outlined,
-                              color: AppColors.primary,
-                            ),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                                color: AppColors.textLight,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: AppColors.surface,
-                            contentPadding: EdgeInsets.symmetric(
-                              vertical: 20,
-                              horizontal: 16,
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your password';
-                            }
-                            if (value.length < 6) {
-                              return 'Password must be at least 6 characters';
-                            }
-                            return null;
-                          },
-                        ),
+                      CustomTextField(
+                        controller: _passwordController,
+                        label: 'Password',
+                        prefixIcon: Icons.lock_outlined,
+                        isPassword: true,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your password';
+                          }
+                          if (value.length < 6) {
+                            return 'Password must be at least 6 characters';
+                          }
+                          return null;
+                        },
                       ),
                       SizedBox(height: 16),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: TextFormField(
-                          controller: _confirmPasswordController,
-                          obscureText: _obscureConfirmPassword,
-                          decoration: InputDecoration(
-                            labelText: 'Confirm Password',
-                            labelStyle: TextStyle(color: AppColors.textLight),
-                            prefixIcon: Icon(
-                              Icons.verified_outlined,
-                              color: AppColors.primary,
-                            ),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscureConfirmPassword
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                                color: AppColors.textLight,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscureConfirmPassword =
-                                      !_obscureConfirmPassword;
-                                });
-                              },
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: AppColors.surface,
-                            contentPadding: EdgeInsets.symmetric(
-                              vertical: 20,
-                              horizontal: 16,
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please confirm your password';
-                            }
-                            if (value != _passwordController.text) {
-                              return 'Passwords do not match';
-                            }
-                            return null;
-                          },
-                        ),
+                      CustomTextField(
+                        controller: _confirmPasswordController,
+                        label: 'Confirm Password',
+                        prefixIcon: Icons.verified_outlined,
+                        isPassword: true,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please confirm your password';
+                          }
+                          if (value != _passwordController.text) {
+                            return 'Passwords do not match';
+                          }
+                          return null;
+                        },
                       ),
                       SizedBox(height: 32),
-                      Container(
-                        width: double.infinity,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          gradient: LinearGradient(
-                            colors: [AppColors.primary, AppColors.secondary],
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withOpacity(0.3),
-                              blurRadius: 20,
-                              offset: Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: ElevatedButton(
-                          onPressed: authProvider.isLoading ? null : _signUp,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: authProvider.isLoading
-                              ? SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    color: AppColors.surface,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Text(
-                                  'Start Your Journey',
-                                  style: theme.textTheme.labelLarge?.copyWith(
-                                    color: AppColors.surface,
-                                  ),
-                                ),
-                        ),
+                      GradientButton(
+                        text: 'Start Your Journey',
+                        onPressed: _signUp,
+                        isLoading: authProvider.isLoading,
                       ),
                     ],
                   ),
@@ -366,7 +202,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   children: [
                     Text(
                       "Already have an account? ",
-                      style: theme.textTheme.bodyMedium,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                     TextButton(
                       onPressed: () {
@@ -376,6 +214,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         'Sign In',
                         style: theme.textTheme.labelLarge?.copyWith(
                           color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
