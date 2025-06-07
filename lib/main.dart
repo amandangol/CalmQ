@@ -2,6 +2,7 @@ import 'package:auralynn/features/affirmations/screens/affirmations_screen.dart'
 import 'package:auralynn/features/profile/screens/profile_screen.dart';
 import 'package:auralynn/features/journal/providers/journal_provider.dart';
 import 'package:auralynn/features/mood/screens/mood_screen.dart';
+import 'package:auralynn/widgets/custom_bottom_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
@@ -17,7 +18,6 @@ import 'features/home/screens/home_screen.dart';
 import 'features/breathing/screens/breathing_screen.dart';
 import 'app_theme.dart';
 import 'splash_screen.dart';
-import 'widgets/custom_bottom_navigation.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +43,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Mental Wellness',
         theme: mentalWellnessTheme,
+        navigatorKey: navigatorKey,
         home: const SplashScreenWrapper(),
         debugShowCheckedModeBanner: false,
       ),
@@ -91,7 +92,7 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation>
     with TickerProviderStateMixin {
-  int _selectedIndex = 0;
+  int _selectedIndex = -1;
   late PageController _pageController;
 
   final List<Widget> _screens = [
@@ -104,27 +105,26 @@ class _MainNavigationState extends State<MainNavigation>
 
   final List<NavigationItem> _navigationItems = const [
     NavigationItem(
-      icon: Icons.home_rounded,
-      label: 'Home',
-      color: Color(0xFF6B73FF),
-    ),
-    NavigationItem(
-      icon: Icons.mood_rounded,
+      icon: Icons.mood_outlined,
+      selectedIcon: Icons.mood_rounded,
       label: 'Mood',
       color: Color(0xFF9C27B0),
     ),
     NavigationItem(
-      icon: Icons.air_rounded,
+      icon: Icons.air_outlined,
+      selectedIcon: Icons.air_rounded,
       label: 'Breathe',
       color: Color(0xFF00BCD4),
     ),
     NavigationItem(
-      icon: Icons.format_quote_rounded,
+      icon: Icons.format_quote_outlined,
+      selectedIcon: Icons.format_quote_rounded,
       label: 'Affirmations',
       color: Color(0xFFFF9800),
     ),
     NavigationItem(
-      icon: Icons.person_rounded,
+      icon: Icons.person_outline_rounded,
+      selectedIcon: Icons.person_rounded,
       label: 'Profile',
       color: Color(0xFF4CAF50),
     ),
@@ -133,7 +133,8 @@ class _MainNavigationState extends State<MainNavigation>
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
+    _pageController = PageController(initialPage: 0);
+    _selectedIndex = -1;
   }
 
   @override
@@ -143,16 +144,17 @@ class _MainNavigationState extends State<MainNavigation>
   }
 
   void _onItemTapped(int index) {
+    if (index == _selectedIndex) return;
     setState(() {
       _selectedIndex = index;
     });
-    _pageController.jumpToPage(index);
+    _pageController.jumpToPage(index + 1);
   }
 
   void _onFABPressed() {
-    // Navigate to home screen when FAB is pressed
+    if (_selectedIndex == -1) return;
     setState(() {
-      _selectedIndex = 0; // Home screen index
+      _selectedIndex = -1;
     });
     _pageController.jumpToPage(0);
   }
@@ -161,18 +163,27 @@ class _MainNavigationState extends State<MainNavigation>
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
+      backgroundColor: const Color(0xFFF8F9FA),
       body: PageView(
         controller: _pageController,
         physics: const NeverScrollableScrollPhysics(),
-        children: _screens,
+        onPageChanged: (index) {
+          setState(() {
+            _selectedIndex = index == 0 ? -1 : index - 1;
+          });
+        },
+        children: _screens.map((screen) => screen).toList(),
       ),
-      bottomNavigationBar: CustomBottomNavigation(
+      bottomNavigationBar: CurvedNavigationBar(
         selectedIndex: _selectedIndex,
         items: _navigationItems,
         onItemTapped: _onItemTapped,
         onFABPressed: _onFABPressed,
         fabIcon: Icons.home_rounded,
-        fabColor: _navigationItems[_selectedIndex].color,
+        fabColor: const Color(0xFF6B73FF),
+        backgroundColor: Colors.white,
+        unselectedColor: Colors.grey.shade400,
+        height: 85,
       ),
     );
   }

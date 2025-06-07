@@ -354,6 +354,7 @@ class _MoodScreenState extends State<MoodScreen> {
 
     return Container(
       padding: EdgeInsets.all(20),
+
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),

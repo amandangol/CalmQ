@@ -144,13 +144,14 @@ class _BreathingScreenState extends State<BreathingScreen>
               ),
             ),
             child: SafeArea(
-              child: Column(
-                children: [
-                  _buildAppBar(theme),
-                  Expanded(
+              child: CustomScrollView(
+                physics: AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverToBoxAdapter(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        _buildAppBar(theme),
                         _buildBreathingVisualization(),
                         SizedBox(height: 60),
                         _buildPhaseIndicator(theme),
@@ -158,6 +159,7 @@ class _BreathingScreenState extends State<BreathingScreen>
                         _buildControlButton(theme),
                         SizedBox(height: 60),
                         _buildBreathingPattern(theme),
+                        SizedBox(height: 24), // Bottom padding
                       ],
                     ),
                   ),

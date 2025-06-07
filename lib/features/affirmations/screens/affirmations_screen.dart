@@ -19,6 +19,7 @@ class _AffirmationsScreenState extends State<AffirmationsScreen>
   late AnimationController _fabAnimationController;
   late Animation<double> _fabAnimation;
   final FlutterTts _flutterTts = FlutterTts();
+  bool _mounted = true;
 
   @override
   void initState() {
@@ -43,10 +44,21 @@ class _AffirmationsScreenState extends State<AffirmationsScreen>
 
     // Initialize affirmations when the screen loads
     Future.microtask(() async {
+      if (!_mounted) return;
       final provider = Provider.of<AffirmationProvider>(context, listen: false);
       await provider.refreshData();
-      _fabAnimationController.forward();
+      if (_mounted) {
+        _fabAnimationController.forward();
+      }
     });
+  }
+
+  @override
+  void dispose() {
+    _mounted = false;
+    _fabAnimationController.dispose();
+    _flutterTts.stop();
+    super.dispose();
   }
 
   Future<void> _initTts() async {
@@ -57,13 +69,6 @@ class _AffirmationsScreenState extends State<AffirmationsScreen>
 
   Future<void> _speakAffirmation(String text) async {
     await _flutterTts.speak(text);
-  }
-
-  @override
-  void dispose() {
-    _fabAnimationController.dispose();
-    _flutterTts.stop();
-    super.dispose();
   }
 
   @override

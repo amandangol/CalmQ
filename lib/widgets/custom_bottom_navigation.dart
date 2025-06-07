@@ -1,313 +1,212 @@
-import 'dart:ui';
-
+// curved_navigation_bar.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class NavigationItem {
   final IconData icon;
   final String label;
   final Color color;
+  final IconData? selectedIcon;
 
   const NavigationItem({
     required this.icon,
     required this.label,
     required this.color,
+    this.selectedIcon,
   });
 }
 
-class CustomBottomNavigation extends StatelessWidget {
-  final int selectedIndex;
-  final List<NavigationItem> items;
-  final Function(int) onItemTapped;
-  final VoidCallback? onFABPressed;
-  final IconData? fabIcon;
-  final Color? fabColor;
-
-  const CustomBottomNavigation({
+class CurvedNavigationBar extends StatelessWidget {
+  const CurvedNavigationBar({
     Key? key,
-    required this.selectedIndex,
     required this.items,
-    required this.onItemTapped,
+    required this.selectedIndex,
+    this.onItemTapped,
     this.onFABPressed,
-    this.fabIcon,
-    this.fabColor,
+    this.fabIcon = Icons.home_rounded,
+    this.fabColor = const Color(0xFF6B73FF),
+    this.backgroundColor = Colors.white,
+    this.unselectedColor = Colors.grey,
+    this.height = 80.0,
   }) : super(key: key);
 
-  @override
-  Widget build(BuildContext context) {
-    // Filter out home item from bottom navigation
-    final filteredItems = items.where((item) => item.label != 'Home').toList();
-
-    return AnimatedBottomNavigationBar.builder(
-      itemCount: filteredItems.length,
-      tabBuilder: (int index, bool isActive) {
-        // Adjust index for filtered items
-        final actualIndex = _getActualIndex(index, items, filteredItems);
-        final isSelected = selectedIndex == actualIndex;
-        final color = isSelected
-            ? filteredItems[index].color
-            : Colors.grey[600];
-
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(filteredItems[index].icon, size: 24, color: color),
-            const SizedBox(height: 4),
-            Text(
-              filteredItems[index].label,
-              style: TextStyle(
-                color: color,
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-              ),
-            ),
-          ],
-        );
-      },
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      activeIndex: _getFilteredIndex(selectedIndex, items, filteredItems),
-      splashColor: selectedIndex < items.length
-          ? items[selectedIndex].color
-          : Colors.blue,
-      notchSmoothness: NotchSmoothness.verySmoothEdge,
-      gapLocation: GapLocation.center,
-      leftCornerRadius: 16,
-      rightCornerRadius: 16,
-      onTap: (index) {
-        final actualIndex = _getActualIndex(index, items, filteredItems);
-        onItemTapped(actualIndex);
-      },
-      elevation: 8,
-      height: 65,
-    );
-  }
-
-  int _getActualIndex(
-    int filteredIndex,
-    List<NavigationItem> allItems,
-    List<NavigationItem> filteredItems,
-  ) {
-    final filteredItem = filteredItems[filteredIndex];
-    return allItems.indexWhere((item) => item.label == filteredItem.label);
-  }
-
-  int _getFilteredIndex(
-    int actualIndex,
-    List<NavigationItem> allItems,
-    List<NavigationItem> filteredItems,
-  ) {
-    if (actualIndex >= allItems.length) return 0;
-    final actualItem = allItems[actualIndex];
-    final filteredIndex = filteredItems.indexWhere(
-      (item) => item.label == actualItem.label,
-    );
-    return filteredIndex >= 0 ? filteredIndex : 0;
-  }
-}
-
-class CenterDockedFAB extends StatefulWidget {
-  final VoidCallback? onPressed;
-  final IconData? icon;
-  final Color? backgroundColor;
-  final bool isSelected;
-
-  const CenterDockedFAB({
-    Key? key,
-    this.onPressed,
-    this.icon = Icons.home_rounded,
-    this.backgroundColor,
-    this.isSelected = false,
-  }) : super(key: key);
-
-  @override
-  State<CenterDockedFAB> createState() => _CenterDockedFABState();
-}
-
-class _CenterDockedFABState extends State<CenterDockedFAB>
-    with TickerProviderStateMixin {
-  late AnimationController _scaleController;
-  late AnimationController _pulseController;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _pulseAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 150),
-      vsync: this,
-    );
-
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
-
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut),
-    );
-
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
-    if (widget.isSelected) {
-      _pulseController.repeat(reverse: true);
-    }
-  }
-
-  @override
-  void didUpdateWidget(CenterDockedFAB oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isSelected != oldWidget.isSelected) {
-      if (widget.isSelected) {
-        _pulseController.repeat(reverse: true);
-      } else {
-        _pulseController.stop();
-        _pulseController.reset();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _scaleController.dispose();
-    _pulseController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: Listenable.merge([_scaleController, _pulseController]),
-      builder: (context, child) {
-        return Transform.scale(
-          scale:
-              _scaleAnimation.value *
-              (widget.isSelected ? _pulseAnimation.value : 1.0),
-          child: GestureDetector(
-            onTapDown: (_) => _scaleController.forward(),
-            onTapUp: (_) => _scaleController.reverse(),
-            onTapCancel: () => _scaleController.reverse(),
-            onTap: () {
-              HapticFeedback.mediumImpact();
-              widget.onPressed?.call();
-            },
-            child: Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: widget.isSelected
-                      ? [
-                          widget.backgroundColor ??
-                              Theme.of(context).primaryColor,
-                          (widget.backgroundColor ??
-                                  Theme.of(context).primaryColor)
-                              .withOpacity(0.8),
-                        ]
-                      : [Colors.grey[300]!, Colors.grey[400]!],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: widget.isSelected
-                        ? (widget.backgroundColor ??
-                                  Theme.of(context).primaryColor)
-                              .withOpacity(0.4)
-                        : Colors.grey.withOpacity(0.3),
-                    blurRadius: widget.isSelected ? 20 : 10,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Icon(
-                widget.icon,
-                color: widget.isSelected ? Colors.white : Colors.grey[600],
-                size: 28,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-// Enhanced version with custom app bar for additional actions
-class CustomAppBarNavigation extends StatelessWidget
-    implements PreferredSizeWidget {
-  final String title;
-  final List<Widget>? actions;
-  final Color? backgroundColor;
-  final bool showBackButton;
-  final VoidCallback? onBackPressed;
-
-  const CustomAppBarNavigation({
-    Key? key,
-    required this.title,
-    this.actions,
-    this.backgroundColor,
-    this.showBackButton = false,
-    this.onBackPressed,
-  }) : super(key: key);
+  final List<NavigationItem> items;
+  final int selectedIndex;
+  final ValueChanged<int>? onItemTapped;
+  final VoidCallback? onFABPressed;
+  final IconData fabIcon;
+  final Color fabColor;
+  final Color backgroundColor;
+  final Color unselectedColor;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            backgroundColor ?? Theme.of(context).primaryColor,
-            (backgroundColor ?? Theme.of(context).primaryColor).withOpacity(
-              0.8,
+      height: height,
+      child: Stack(
+        children: [
+          // Curved background
+          ClipPath(
+            clipper: _CurvedClipper(),
+            child: Container(
+              height: height,
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
+              ),
             ),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: (backgroundColor ?? Theme.of(context).primaryColor)
-                .withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+          ),
+
+          // Navigation items
+          Positioned.fill(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: _buildNavigationItems(),
+              ),
+            ),
+          ),
+
+          // Floating Action Button
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: fabColor.withOpacity(0.3),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: FloatingActionButton(
+                  onPressed: onFABPressed,
+                  backgroundColor: fabColor,
+                  elevation: 0,
+                  child: Icon(fabIcon, color: Colors.white, size: 28),
+                ),
+              ),
+            ),
           ),
         ],
-      ),
-      child: AppBar(
-        title: Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: showBackButton
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                onPressed: onBackPressed ?? () => Navigator.of(context).pop(),
-              )
-            : null,
-        actions: actions?.map((action) {
-          if (action is IconButton) {
-            return IconButton(
-              onPressed: action.onPressed,
-              icon: Icon((action.icon as Icon).icon, color: Colors.white),
-            );
-          }
-          return action;
-        }).toList(),
       ),
     );
   }
 
+  List<Widget> _buildNavigationItems() {
+    List<Widget> navigationItems = [];
+    final screenWidth = MediaQuery.of(navigatorKey.currentContext!).size.width;
+    final availableWidth =
+        screenWidth - 32 - 90; // Subtract padding and FAB space
+    final itemWidth = availableWidth / 4; // Divide by 4 items
+
+    for (int i = 0; i < items.length; i++) {
+      final item = items[i];
+      final isSelected = i == selectedIndex;
+
+      navigationItems.add(
+        SizedBox(
+          width: itemWidth,
+          child: GestureDetector(
+            onTap: () => onItemTapped?.call(i),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? item.color.withOpacity(0.1)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Icon(
+                      isSelected ? (item.selectedIcon ?? item.icon) : item.icon,
+                      color: isSelected ? item.color : unselectedColor,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  AnimatedDefaultTextStyle(
+                    duration: const Duration(milliseconds: 200),
+                    style: TextStyle(
+                      color: isSelected ? item.color : unselectedColor,
+                      fontSize: isSelected ? 12 : 10,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                    ),
+                    child: Text(
+                      item.label,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Add space for FAB after second item
+      if (i == 1) {
+        navigationItems.add(const SizedBox(width: 90));
+      }
+    }
+
+    return navigationItems;
+  }
+}
+
+class _CurvedClipper extends CustomClipper<Path> {
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Path getClip(Size size) {
+    final path = Path();
+
+    // Start from top-left
+    path.lineTo(0, 0);
+
+    // Create the curve for the FAB
+    final centerX = size.width / 2;
+    final curveHeight = 35.0;
+
+    // Left side of the curve
+    path.lineTo(centerX - 60, 0);
+    path.quadraticBezierTo(centerX - 40, 0, centerX - 40, 20);
+
+    // Bottom of the curve (where FAB sits)
+    path.quadraticBezierTo(centerX, curveHeight, centerX + 40, 20);
+
+    // Right side of the curve
+    path.quadraticBezierTo(centerX + 40, 0, centerX + 60, 0);
+
+    // Complete the rectangle
+    path.lineTo(size.width, 0);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }

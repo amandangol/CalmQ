@@ -79,7 +79,7 @@ class MoodProvider extends ChangeNotifier {
   }
 
   bool hasLoggedMoodToday() {
-    if (_moodHistory.isEmpty) return false; // Check if history is empty
+    if (_moodHistory.isEmpty) return false;
     final now = DateTime.now();
     // Find the latest entry for today
     final latestTodayEntry = _moodHistory.firstWhere(
@@ -87,9 +87,14 @@ class MoodProvider extends ChangeNotifier {
           e.timestamp.year == now.year &&
           e.timestamp.month == now.month &&
           e.timestamp.day == now.day,
-      orElse: () => null as MoodEntry, // Return null if no entry for today
+      orElse: () => MoodEntry(
+        id: 'placeholder',
+        emoji: moodEmojis['Neutral']!,
+        mood: 'Neutral',
+        timestamp: now,
+      ),
     );
-    return latestTodayEntry != null; // True if a mood was logged today
+    return latestTodayEntry.id != 'placeholder';
   }
 
   Future<void> addMood(String mood, {String? trigger, String? note}) async {
@@ -134,28 +139,22 @@ class MoodProvider extends ChangeNotifier {
       if (newEntry.timestamp.year == today.year &&
           newEntry.timestamp.month == today.month &&
           newEntry.timestamp.day == today.day) {
-        // Find the latest entry for today after adding the new one
-        _todayMood = _moodHistory.firstWhere(
-          (e) =>
-              e.timestamp.year == today.year &&
-              e.timestamp.month == today.month &&
-              e.timestamp.day == today.day,
-          orElse: () =>
-              newEntry, // If somehow it's not the first, it's still today's mood
-        );
+        _todayMood = newEntry;
       } else {
-        // If the new entry is not for today, just update todayMood if it was null or older
-        // This logic seems slightly off - todayMood should always represent the latest entry *today*
-        // Let's simplify this: if the new entry is today, it becomes todayMood (if it's the latest). If not, todayMood remains the latest today entry from the history.
-        final latestTodayEntry = _moodHistory.firstWhere(
+        // If the new entry is not for today, find the latest entry for today
+        final todayEntry = _moodHistory.firstWhere(
           (e) =>
               e.timestamp.year == today.year &&
               e.timestamp.month == today.month &&
               e.timestamp.day == today.day,
-          orElse: () => null as MoodEntry, // Use null if no entry for today
+          orElse: () => MoodEntry(
+            id: 'placeholder',
+            emoji: moodEmojis['Neutral']!,
+            mood: 'Neutral',
+            timestamp: today,
+          ),
         );
-        _todayMood =
-            latestTodayEntry; // Update todayMood based on the latest today entry in history
+        _todayMood = todayEntry.id == 'placeholder' ? null : todayEntry;
       }
 
       notifyListeners();
@@ -182,13 +181,19 @@ class MoodProvider extends ChangeNotifier {
       // Set todayMood after loading history
       if (_moodHistory.isNotEmpty) {
         final today = DateTime.now();
-        _todayMood = _moodHistory.firstWhere(
+        final todayEntry = _moodHistory.firstWhere(
           (e) =>
               e.timestamp.year == today.year &&
               e.timestamp.month == today.month &&
               e.timestamp.day == today.day,
-          orElse: () => null as MoodEntry, // Use null if no entry for today
+          orElse: () => MoodEntry(
+            id: 'placeholder',
+            emoji: moodEmojis['Neutral']!,
+            mood: 'Neutral',
+            timestamp: today,
+          ),
         );
+        _todayMood = todayEntry.id == 'placeholder' ? null : todayEntry;
       }
     }
     _isLoading = false;

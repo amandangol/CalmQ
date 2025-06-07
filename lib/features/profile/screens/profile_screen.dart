@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../auth/providers/user_profile_provider.dart';
 import '../../auth/models/user_profile.dart';
 import '../../../app_theme.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -355,6 +356,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     fontSize: 16,
                     color: Colors.white70,
                     fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  context.read<AuthProvider>().user?.email ?? '',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ],

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../mood/providers/mood_provider.dart';
-import '../../affirmations/providers/affirmation_provider.dart';
 import '../../reminders/screens/reminders_screen.dart';
 import '../../breathing/screens/breathing_screen.dart';
 import '../../focus/screens/focus_screen.dart';
@@ -11,6 +10,7 @@ import '../../journal/screens/journal_screen.dart';
 import '../../sos/screens/sos_screen.dart';
 import '../../../app_theme.dart';
 import '../../mood/screens/mood_screen.dart';
+import '../../auth/providers/user_profile_provider.dart';
 
 class HomeScreen extends StatelessWidget {
   @override
@@ -118,33 +118,8 @@ class HomeScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: _buildDailyInspirationSection(context, theme),
               ),
-              SizedBox(height: 100),
+              SizedBox(height: 24),
             ],
-          ),
-        ),
-      ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppColors.primaryLight, AppColors.secondaryLight],
-          ),
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primaryLight.withOpacity(0.5),
-              blurRadius: 15,
-              offset: Offset(0, 8),
-            ),
-          ],
-        ),
-        child: FloatingActionButton.extended(
-          onPressed: () => _showMoodPicker(context),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          icon: Icon(Icons.favorite, color: Colors.white),
-          label: Text(
-            'Log Mood',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ),
       ),
@@ -154,6 +129,7 @@ class HomeScreen extends StatelessWidget {
   Widget _buildWelcomeSection(BuildContext context, String userName) {
     final now = DateTime.now();
     final theme = Theme.of(context);
+    final userProfile = context.watch<UserProfileProvider>().userProfile;
     String greeting;
     if (now.hour < 12) {
       greeting = 'Good Morning';
@@ -179,7 +155,7 @@ class HomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Hey, $userName!',
+                  'Hey, ${userProfile?.name ?? userName}!',
                   style: theme.textTheme.headlineMedium?.copyWith(
                     color: AppColors.surface,
                     fontWeight: FontWeight.bold,

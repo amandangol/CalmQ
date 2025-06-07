@@ -125,6 +125,25 @@ class RemindersScreen extends StatelessWidget {
                       onTimeSelected: (time) =>
                           reminderProvider.setMoodReminder(time),
                     ),
+                    SizedBox(height: 16),
+                    _ReminderCard(
+                      title: 'Focus Session',
+                      subtitle: 'Set a daily reminder for your focus practice',
+                      icon: Icons.psychology,
+                      time: reminderProvider.focusReminderTime,
+                      onTimeSelected: (time) =>
+                          reminderProvider.setFocusReminder(time),
+                    ),
+                    SizedBox(height: 16),
+                    _ReminderCard(
+                      title: 'Daily Affirmation',
+                      subtitle:
+                          'Set a daily reminder to read your affirmations',
+                      icon: Icons.auto_awesome,
+                      time: reminderProvider.affirmationReminderTime,
+                      onTimeSelected: (time) =>
+                          reminderProvider.setAffirmationReminder(time),
+                    ),
                   ],
                 ),
               ),

@@ -5,15 +5,21 @@ class ReminderProvider extends ChangeNotifier {
   static const String _journalReminderKey = 'journal_reminder_time';
   static const String _breathingReminderKey = 'breathing_reminder_time';
   static const String _moodReminderKey = 'mood_reminder_time';
+  static const String _focusReminderKey = 'focus_reminder_time';
+  static const String _affirmationReminderKey = 'affirmation_reminder_time';
 
   TimeOfDay? _journalReminderTime;
   TimeOfDay? _breathingReminderTime;
   TimeOfDay? _moodReminderTime;
+  TimeOfDay? _focusReminderTime;
+  TimeOfDay? _affirmationReminderTime;
   bool _isLoading = true;
 
   TimeOfDay? get journalReminderTime => _journalReminderTime;
   TimeOfDay? get breathingReminderTime => _breathingReminderTime;
   TimeOfDay? get moodReminderTime => _moodReminderTime;
+  TimeOfDay? get focusReminderTime => _focusReminderTime;
+  TimeOfDay? get affirmationReminderTime => _affirmationReminderTime;
   bool get isLoading => _isLoading;
 
   ReminderProvider() {
@@ -26,6 +32,11 @@ class ReminderProvider extends ChangeNotifier {
     _journalReminderTime = _loadTimeFromPrefs(prefs, _journalReminderKey);
     _breathingReminderTime = _loadTimeFromPrefs(prefs, _breathingReminderKey);
     _moodReminderTime = _loadTimeFromPrefs(prefs, _moodReminderKey);
+    _focusReminderTime = _loadTimeFromPrefs(prefs, _focusReminderKey);
+    _affirmationReminderTime = _loadTimeFromPrefs(
+      prefs,
+      _affirmationReminderKey,
+    );
 
     _isLoading = false;
     notifyListeners();
@@ -63,6 +74,18 @@ class ReminderProvider extends ChangeNotifier {
   Future<void> setMoodReminder(TimeOfDay? time) async {
     _moodReminderTime = time;
     await _saveTimeToPrefs(time, _moodReminderKey);
+    notifyListeners();
+  }
+
+  Future<void> setFocusReminder(TimeOfDay? time) async {
+    _focusReminderTime = time;
+    await _saveTimeToPrefs(time, _focusReminderKey);
+    notifyListeners();
+  }
+
+  Future<void> setAffirmationReminder(TimeOfDay? time) async {
+    _affirmationReminderTime = time;
+    await _saveTimeToPrefs(time, _affirmationReminderKey);
     notifyListeners();
   }
 
