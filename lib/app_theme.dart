@@ -3,9 +3,14 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
   // Primary Colors - Deep, rich blues and purples
-  static const primary = Color(0xFFE57373); // Lighter Red/Pink tone
-  static const primaryDark = Color(0xFFEF9A9A); // Lighter Pink tone
-  static const primaryLight = Color(0xFFFFCDD2); // Very Light Pink tone
+  // Primary - Light Blue
+  static const primary = Color(0xFF64B5F6); // Light Blue (Main Theme Color)
+
+  // Primary Dark - Rich Blue
+  static const primaryDark = Color(0xFF1E88E5); // Medium Blue
+
+  // Primary Light - Pale Blue
+  static const primaryLight = Color(0xFFBBDEFB); // Soft Sky Blue
 
   // Secondary Colors - Rich purples and lavenders
   static const secondary = Color(0xFFCE93D8); // Light Purple tone

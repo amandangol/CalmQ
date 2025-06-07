@@ -5,6 +5,7 @@ import '../../auth/providers/user_profile_provider.dart';
 import '../../auth/models/user_profile.dart';
 import '../../../app_theme.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../widgets/custom_app_bar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -28,6 +29,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background ?? Colors.grey[50],
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(100),
+        child: Consumer<UserProfileProvider>(
+          builder: (context, userProfileProvider, child) {
+            final userProfile = userProfileProvider.userProfile;
+            if (userProfile == null) return const SizedBox.shrink();
+
+            return CustomAppBar(
+              title: 'My Profile',
+              leadingIcon: Icons.person_rounded,
+              actions: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.edit_rounded, color: Colors.white),
+                    onPressed: () =>
+                        _navigateToEditProfile(context, userProfile),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
       floatingActionButton: Consumer<UserProfileProvider>(
         builder: (context, userProfileProvider, child) {
           final userProfile = userProfileProvider.userProfile;
@@ -164,7 +192,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 32),
                 Text(
-                  'Welcome to Auralynn',
+                  'Welcome to CalmQ',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
@@ -224,21 +252,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () {
-                    // Navigate to login or skip for now
-                    Navigator.pop(context);
-                  },
-                  child: Text(
-                    'Skip for now',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppColors.textSecondary,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
@@ -251,10 +264,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return CustomScrollView(
       physics: const BouncingScrollPhysics(),
       slivers: [
-        _buildProfileHeader(context, userProfile),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -277,101 +289,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildProfileHeader(BuildContext context, UserProfile userProfile) {
-    return SliverAppBar(
-      expandedHeight: 280,
-      pinned: true,
-      elevation: 0,
-      title: Text(
-        "My Profile",
-        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-          color: Colors.white.withOpacity(0.9),
-          fontWeight: FontWeight.w300,
-          letterSpacing: 1.2,
-        ),
-      ),
-      backgroundColor: AppColors.primary,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [AppColors.primary, AppColors.secondary],
-            ),
-          ),
-          child: SafeArea(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(height: 20),
-                Hero(
-                  tag: 'profile_avatar',
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: CircleAvatar(
-                      radius: 56,
-                      backgroundColor: AppColors.surface,
-                      child: Text(
-                        userProfile.name.isNotEmpty
-                            ? userProfile.name[0].toUpperCase()
-                            : 'U',
-                        style: TextStyle(
-                          fontSize: 36,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  userProfile.name,
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '${userProfile.age} years old',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.white70,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  context.read<AuthProvider>().user?.email ?? '',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.white70,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 

@@ -18,6 +18,7 @@ import 'features/home/screens/home_screen.dart';
 import 'features/breathing/screens/breathing_screen.dart';
 import 'app_theme.dart';
 import 'splash_screen.dart';
+import 'features/chat/providers/chat_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +40,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AffirmationProvider()),
         ChangeNotifierProvider(create: (_) => ReminderProvider()),
         ChangeNotifierProvider(create: (_) => JournalProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
       child: MaterialApp(
         title: 'Mental Wellness',
@@ -70,7 +72,7 @@ class _SplashScreenWrapperState extends State<SplashScreenWrapper> {
   @override
   Widget build(BuildContext context) {
     if (_showSplash) {
-      return AuralynnSplashScreen(onComplete: _onSplashComplete);
+      return CalmQSplashScreen(onComplete: _onSplashComplete);
     }
 
     return Consumer<AuthProvider>(

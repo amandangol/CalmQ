@@ -6,6 +6,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../providers/mood_provider.dart';
 import '../../../app_theme.dart';
 import 'package:intl/intl.dart';
+import '../../../widgets/custom_app_bar.dart';
 
 class MoodScreen extends StatefulWidget {
   @override
@@ -34,44 +35,55 @@ class _MoodScreenState extends State<MoodScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          'Mood Tracker',
-          style: theme.textTheme.titleLarge?.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: false,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0, top: 8.0),
-            child: Text(
-              DateFormat('MMM yyyy').format(currentMonth),
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: AppColors.textSecondary,
+      appBar: CustomAppBar(
+        title: 'Mood Tracker',
+        leadingIcon: Icons.mood_rounded,
+        trailingWidget: Row(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                DateFormat('MMM yyyy').format(currentMonth),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                ),
               ),
             ),
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.arrow_back_ios,
-              color: AppColors.textSecondary,
-              size: 18,
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back_ios,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    onPressed: () => _navigateMonth(false),
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.arrow_forward_ios,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    onPressed: () => _navigateMonth(true),
+                  ),
+                ],
+              ),
             ),
-            onPressed: () => _navigateMonth(false),
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.arrow_forward_ios,
-              color: AppColors.textSecondary,
-              size: 18,
-            ),
-            onPressed: () => _navigateMonth(true),
-          ),
-        ],
+          ],
+        ),
       ),
       body: moodProvider.isLoading
           ? Center(

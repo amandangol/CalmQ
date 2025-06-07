@@ -6,6 +6,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import '../providers/affirmation_provider.dart';
 import '../models/affirmation.dart';
 import '../../../app_theme.dart';
+import '../../../widgets/custom_app_bar.dart';
 
 class AffirmationsScreen extends StatefulWidget {
   const AffirmationsScreen({Key? key}) : super(key: key);
@@ -75,6 +76,33 @@ class _AffirmationsScreenState extends State<AffirmationsScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background ?? Colors.grey[50],
+      appBar: CustomAppBar(
+        title: 'Daily Affirmations',
+        leadingIcon: Icons.auto_awesome_rounded,
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.favorite_rounded, color: Colors.white),
+              onPressed: () => _showFavorites(context),
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.person_rounded, color: Colors.white),
+              onPressed: () => _showMyAffirmations(context),
+            ),
+          ),
+        ],
+      ),
       body: Consumer<AffirmationProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading && provider.affirmations.isEmpty) {
@@ -88,7 +116,6 @@ class _AffirmationsScreenState extends State<AffirmationsScreen>
           return CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              _buildAppBar(provider),
               _buildDailyAffirmation(provider),
               _buildQuickStats(provider),
               _buildFilters(provider),
@@ -256,69 +283,6 @@ class _AffirmationsScreenState extends State<AffirmationsScreen>
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildAppBar(AffirmationProvider provider) {
-    return SliverAppBar(
-      expandedHeight: 160,
-      floating: true,
-      pinned: true,
-      elevation: 0,
-      backgroundColor: AppColors.primary,
-      flexibleSpace: FlexibleSpaceBar(
-        title: Text(
-          'Daily Affirmations',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: 20,
-            letterSpacing: 0.5,
-          ),
-        ),
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [AppColors.primary, AppColors.secondary],
-            ),
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Colors.black.withOpacity(0.1)],
-              ),
-            ),
-          ),
-        ),
-      ),
-      actions: [
-        Container(
-          margin: const EdgeInsets.only(right: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.favorite_rounded, color: Colors.white),
-            onPressed: () => _showFavorites(context),
-          ),
-        ),
-        Container(
-          margin: const EdgeInsets.only(right: 16),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.person_rounded, color: Colors.white),
-            onPressed: () => _showMyAffirmations(context),
-          ),
-        ),
-      ],
     );
   }
 

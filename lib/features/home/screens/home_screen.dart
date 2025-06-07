@@ -7,10 +7,11 @@ import '../../reminders/screens/reminders_screen.dart';
 import '../../breathing/screens/breathing_screen.dart';
 import '../../focus/screens/focus_screen.dart';
 import '../../journal/screens/journal_screen.dart';
-import '../../sos/screens/sos_screen.dart';
 import '../../../app_theme.dart';
 import '../../mood/screens/mood_screen.dart';
 import '../../auth/providers/user_profile_provider.dart';
+import '../../chat/screens/chat_screen.dart';
+import '../../../widgets/custom_confirmation_dialog.dart';
 
 class HomeScreen extends StatelessWidget {
   @override
@@ -36,46 +37,63 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.secondary],
-                ),
-                borderRadius: BorderRadius.circular(20),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(color: AppColors.primary),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.self_improvement_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'CalmQ',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 20,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: Icon(Icons.logout_rounded, color: Colors.white),
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => CustomConfirmationDialog(
+                            title: 'Sign Out',
+                            message: 'Are you sure you want to sign out?',
+                            confirmText: 'Sign Out',
+                            cancelText: 'Cancel',
+                            confirmColor: AppColors.error,
+                            onConfirm: () => authProvider.signOut(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
-              child: Text(
-                'Auralynn',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: AppColors.surface,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          Container(
-            margin: EdgeInsets.only(right: 16),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(25),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: IconButton(
-              icon: Icon(Icons.logout, color: AppColors.textLight),
-              onPressed: () => authProvider.signOut(),
             ),
           ),
-        ],
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -98,12 +116,29 @@ class HomeScreen extends StatelessWidget {
               // Quick Actions Section
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Text(
-                  'Quick Actions',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.grid_view_rounded,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Text(
+                      'Quick Actions',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               SizedBox(height: 16),
@@ -130,6 +165,7 @@ class HomeScreen extends StatelessWidget {
     final now = DateTime.now();
     final theme = Theme.of(context);
     final userProfile = context.watch<UserProfileProvider>().userProfile;
+
     String greeting;
     if (now.hour < 12) {
       greeting = 'Good Morning';
@@ -139,32 +175,49 @@ class HomeScreen extends StatelessWidget {
       greeting = 'Good Evening';
     }
 
+    final name = userProfile?.name ?? userName;
+
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 32.0),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 36.0),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primaryLight, AppColors.secondaryLight],
-        ),
+        color: AppColors.primary,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Hey, ${userProfile?.name ?? userName}!',
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    color: AppColors.surface,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 28,
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: Colors.white.withOpacity(0.2),
+            child: Icon(Icons.person, color: Colors.white, size: 28),
+          ),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AnimatedOpacity(
+                opacity: 1.0,
+                duration: Duration(milliseconds: 600),
+                child: Text(
+                  '$greeting,',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withOpacity(0.85),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                SizedBox(height: 4),
-              ],
-            ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '$name!',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -216,7 +269,7 @@ class HomeScreen extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        Icons.favorite,
+                        Icons.check_circle,
                         color: AppColors.primary,
                         size: 24,
                       ),
@@ -280,7 +333,7 @@ class HomeScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.favorite, color: AppColors.secondary, size: 20),
+              Icon(Icons.emoji_emotions, color: AppColors.secondary, size: 20),
               SizedBox(width: 8),
               Text(
                 "Today's Mood",
@@ -356,9 +409,9 @@ class HomeScreen extends StatelessWidget {
     final quickActions = [
       QuickActionData(
         icon: Icons.calendar_month,
-        label: 'Your history',
+        label: 'Mood Tracker',
         color: AppColors.primary,
-        description: 'View past entries',
+        description: 'Mood analysis',
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => MoodScreen()),
@@ -372,6 +425,16 @@ class HomeScreen extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => BreathingScreen()),
+        ),
+      ),
+      QuickActionData(
+        icon: Icons.psychology,
+        label: 'Serenity',
+        color: AppColors.accent,
+        description: 'AI Wellness Chat',
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => ChatScreen()),
         ),
       ),
       QuickActionData(
@@ -404,16 +467,6 @@ class HomeScreen extends StatelessWidget {
           MaterialPageRoute(builder: (_) => RemindersScreen()),
         ),
       ),
-      QuickActionData(
-        icon: Icons.emergency,
-        label: 'SOS',
-        color: AppColors.accentWarm,
-        description: 'Crisis support',
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => SOSScreen()),
-        ),
-      ),
     ];
 
     return GridView.builder(
@@ -437,14 +490,7 @@ class HomeScreen extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.secondary.withOpacity(0.1),
-            AppColors.primary.withOpacity(0.1),
-          ],
-        ),
+        color: AppColors.secondary.withOpacity(0.1),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: AppColors.secondary.withOpacity(0.2)),
       ),
@@ -482,9 +528,7 @@ class HomeScreen extends StatelessWidget {
             alignment: Alignment.centerRight,
             child: Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.secondaryLight, AppColors.secondary],
-                ),
+                color: AppColors.secondaryLight,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
@@ -586,9 +630,7 @@ class _QuickActionCard extends StatelessWidget {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [action.color, action.color.withOpacity(0.7)],
-                  ),
+                  color: action.color,
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: [
                     BoxShadow(
@@ -781,11 +823,9 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
           SizedBox(height: 24),
           Container(
             decoration: BoxDecoration(
-              gradient: _selectedMood == null
-                  ? null
-                  : LinearGradient(
-                      colors: [AppColors.primary, AppColors.secondary],
-                    ),
+              color: _selectedMood == null
+                  ? AppColors.surfaceVariant
+                  : AppColors.primary,
               borderRadius: BorderRadius.circular(12),
             ),
             child: ElevatedButton(

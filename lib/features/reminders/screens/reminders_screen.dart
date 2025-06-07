@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/reminder_provider.dart';
 import '../../../app_theme.dart';
+import '../../../widgets/custom_app_bar.dart';
 
 class RemindersScreen extends StatelessWidget {
   @override
@@ -11,20 +12,10 @@ class RemindersScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          'Reminders',
-          style: theme.textTheme.titleLarge?.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
-        ),
+      appBar: CustomAppBar(
+        title: 'Reminders',
+        leadingIcon: Icons.notifications_active_rounded,
+        showBackButton: true,
       ),
       body: SafeArea(
         child: Padding(
