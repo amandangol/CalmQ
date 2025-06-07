@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_profile_provider.dart';
-import '../../home/screens/home_screen.dart';
 import '../../../app_theme.dart';
 
 class UserInfoScreen extends StatefulWidget {
@@ -10,7 +9,6 @@ class UserInfoScreen extends StatefulWidget {
 }
 
 class _UserInfoScreenState extends State<UserInfoScreen> {
-  final _formKey = GlobalKey<FormState>();
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
@@ -206,7 +204,6 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
   @override
   Widget build(BuildContext context) {
     final userProfileProvider = context.watch<UserProfileProvider>();
-    final theme = Theme.of(context);
 
     return Scaffold(
       body: Container(

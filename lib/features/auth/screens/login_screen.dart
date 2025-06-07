@@ -18,6 +18,23 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _rememberMe = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedEmail();
+  }
+
+  Future<void> _loadSavedEmail() async {
+    final savedEmail = await context.read<AuthProvider>().getSavedEmail();
+    if (savedEmail != null) {
+      setState(() {
+        _emailController.text = savedEmail;
+        _rememberMe = true;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -29,6 +46,11 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _signIn() async {
     if (_formKey.currentState!.validate()) {
       try {
+        await context.read<AuthProvider>().setRememberMe(
+          _rememberMe,
+          email: _rememberMe ? _emailController.text : null,
+        );
+
         await context.read<AuthProvider>().signIn(
           _emailController.text,
           _passwordController.text,
@@ -97,7 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 SizedBox(height: 32),
                 // App Name
                 Text(
-                  'Auralynn',
+                  'CalmQ',
                   style: theme.textTheme.displayLarge?.copyWith(
                     color: AppColors.textPrimary,
                   ),
@@ -157,7 +179,31 @@ class _LoginScreenState extends State<LoginScreen> {
                           return null;
                         },
                       ),
-                      SizedBox(height: 32),
+                      SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _rememberMe,
+                            onChanged: (value) {
+                              setState(() {
+                                _rememberMe = value ?? false;
+                              });
+                            },
+                            activeColor: AppColors.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          Text(
+                            'Remember me',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 20),
                       GradientButton(
                         text: 'Sign In',
                         onPressed: _signIn,
@@ -171,7 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "New to Auralynn? ",
+                      "New to CalmQ?",
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: AppColors.textPrimary,
                       ),
@@ -195,7 +241,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
-                SizedBox(height: 24),
+                SizedBox(height: 20),
                 Text(
                   '🌱 Take care of your mind, it\'s the only one you have',
                   style: theme.textTheme.bodyMedium?.copyWith(

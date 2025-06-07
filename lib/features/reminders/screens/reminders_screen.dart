@@ -19,7 +19,7 @@ class RemindersScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.all(16),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

@@ -146,7 +146,6 @@ class _MoodScreenState extends State<MoodScreen> {
                           // Mood Statistics
                           if (weekMoods.isNotEmpty) ...[
                             _buildMoodStats(context, weekMoods),
-                            SizedBox(height: 24),
                           ],
                         ],
                       ),
@@ -284,8 +283,6 @@ class _MoodScreenState extends State<MoodScreen> {
     final theme = Theme.of(context);
     final moodProvider = context.read<MoodProvider>();
     final hasTodayEntry = moodProvider.hasTodayEntry();
-    final todayEntries = moodProvider.getEntriesForDate(DateTime.now());
-    final streak = moodProvider.getMoodStreak();
 
     return Container(
       padding: EdgeInsets.all(20),
@@ -356,17 +353,21 @@ class _MoodScreenState extends State<MoodScreen> {
     final theme = Theme.of(context);
     final moodCounts = <String, int>{};
 
-    for (final mood in weekMoods) {
+    // Filter out placeholder entries (entries with id 'placeholder')
+    final actualMoods = weekMoods
+        .where((mood) => mood.id != 'placeholder')
+        .toList();
+
+    for (final mood in actualMoods) {
       moodCounts[mood.mood] = (moodCounts[mood.mood] ?? 0) + 1;
     }
 
-    final mostFrequentMood = moodCounts.entries
-        .reduce((a, b) => a.value > b.value ? a : b)
-        .key;
+    final mostFrequentMood = moodCounts.isNotEmpty
+        ? moodCounts.entries.reduce((a, b) => a.value > b.value ? a : b).key
+        : 'No data';
 
     return Container(
       padding: EdgeInsets.all(20),
-
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
@@ -389,31 +390,40 @@ class _MoodScreenState extends State<MoodScreen> {
             ),
           ),
           SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(Icons.trending_up, color: AppColors.primary, size: 20),
-              SizedBox(width: 8),
-              Text(
-                'Most frequent mood: $mostFrequentMood',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
+          if (actualMoods.isNotEmpty) ...[
+            Row(
+              children: [
+                Icon(Icons.trending_up, color: AppColors.primary, size: 20),
+                SizedBox(width: 8),
+                Text(
+                  'Most frequent mood: $mostFrequentMood',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(Icons.analytics, color: AppColors.primary, size: 20),
-              SizedBox(width: 8),
-              Text(
-                '${weekMoods.length} mood entries this week',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
+              ],
+            ),
+            SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.analytics, color: AppColors.primary, size: 20),
+                SizedBox(width: 8),
+                Text(
+                  '${actualMoods.length} mood entries this week',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
+              ],
+            ),
+          ] else ...[
+            Text(
+              'No mood entries logged this week',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondary,
               ),
-            ],
-          ),
+            ),
+          ],
         ],
       ),
     );

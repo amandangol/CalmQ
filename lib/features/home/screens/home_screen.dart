@@ -12,6 +12,8 @@ import '../../mood/screens/mood_screen.dart';
 import '../../auth/providers/user_profile_provider.dart';
 import '../../chat/screens/chat_screen.dart';
 import '../../../widgets/custom_confirmation_dialog.dart';
+import '../../affirmations/providers/affirmation_provider.dart';
+import 'package:intl/intl.dart';
 
 class HomeScreen extends StatelessWidget {
   @override
@@ -149,10 +151,7 @@ class HomeScreen extends StatelessWidget {
               SizedBox(height: 24),
 
               // Daily Inspiration Section
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: _buildDailyInspirationSection(context, theme),
-              ),
+              _buildDailyInspirationSection(context, theme),
               SizedBox(height: 24),
             ],
           ),
@@ -176,6 +175,8 @@ class HomeScreen extends StatelessWidget {
     }
 
     final name = userProfile?.name ?? userName;
+    final dateFormat = DateFormat('EEEE, MMMM d');
+    final today = dateFormat.format(now);
 
     return Container(
       width: double.infinity,
@@ -187,12 +188,6 @@ class HomeScreen extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: Colors.white.withOpacity(0.2),
-            child: Icon(Icons.person, color: Colors.white, size: 28),
-          ),
-          const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -216,6 +211,20 @@ class HomeScreen extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.5,
                 ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.calendar_month, size: 15, color: Colors.white),
+                  const SizedBox(width: 5),
+                  Text(
+                    today,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withOpacity(0.85),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -487,79 +496,104 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildDailyInspirationSection(BuildContext context, ThemeData theme) {
+    final affirmationProvider = context.watch<AffirmationProvider>();
+    final dailyAffirmation = affirmationProvider.getDailyAffirmation();
+
     return Container(
-      padding: EdgeInsets.all(24),
+      margin: EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: AppColors.secondary.withOpacity(0.1),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.secondary.withOpacity(0.1),
+            AppColors.secondary.withOpacity(0.05),
+          ],
+        ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.secondary.withOpacity(0.2)),
+        border: Border.all(
+          color: AppColors.secondary.withOpacity(0.2),
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.secondary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.auto_awesome,
-                  color: AppColors.secondary,
-                  size: 24,
-                ),
-              ),
-              SizedBox(width: 12),
-              Text(
-                'Daily Inspiration',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 20),
-
-          Align(
-            alignment: Alignment.centerRight,
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.secondaryLight,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.secondary.withOpacity(0.3),
-                    blurRadius: 10,
-                    offset: Offset(0, 4),
+          Padding(
+            padding: EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ],
-              ),
-              child: TextButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => AffirmationsScreen()),
-                  );
-                },
-                icon: Icon(
-                  Icons.arrow_forward,
-                  size: 18,
-                  color: AppColors.surface,
+                  child: Icon(
+                    Icons.auto_awesome,
+                    color: AppColors.secondary,
+                    size: 20,
+                  ),
                 ),
-                label: Text(
-                  'More Affirmations',
+                SizedBox(width: 12),
+                Text(
+                  'Daily Inspiration',
                   style: TextStyle(
-                    color: AppColors.surface,
+                    fontSize: 18,
                     fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                Spacer(),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => AffirmationsScreen()),
+                    );
+                  },
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    backgroundColor: AppColors.secondary.withOpacity(0.1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'More',
+                        style: TextStyle(
+                          color: AppColors.secondary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 16,
+                        color: AppColors.secondary,
+                      ),
+                    ],
+                  ),
                 ),
+              ],
+            ),
+          ),
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.fromLTRB(20, 0, 20, 24),
+            child: Text(
+              '"${dailyAffirmation.text}"',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary,
+                height: 1.6,
+                fontStyle: FontStyle.italic,
               ),
             ),
           ),

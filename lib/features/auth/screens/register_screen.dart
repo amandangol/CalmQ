@@ -19,6 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  bool _agreeToTerms = false;
 
   @override
   void dispose() {
@@ -29,6 +30,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _signUp() async {
+    if (!_agreeToTerms) {
+      SnackbarUtils.showError(
+        context,
+        'Please agree to the Terms and Conditions',
+      );
+      return;
+    }
+
     if (_formKey.currentState!.validate()) {
       try {
         await context.read<AuthProvider>().signUp(
@@ -47,6 +56,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
       }
     }
+  }
+
+  void _showTermsAndConditions() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Terms and Conditions'),
+        content: SingleChildScrollView(
+          child: Text(
+            'By using CalmQ, you agree to:\n\n'
+            '1. Use the app responsibly and ethically\n'
+            '2. Keep your account information secure\n'
+            '3. Not share your account with others\n'
+            '4. Respect the privacy of other users\n'
+            '5. Use the app in accordance with applicable laws\n\n'
+            'We are committed to protecting your privacy and providing a safe environment for mental wellness.',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -119,7 +154,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 SizedBox(height: 32),
                 Text(
-                  'Join Auralynn',
+                  'Join CalmQ',
                   style: theme.textTheme.displayLarge?.copyWith(
                     color: AppColors.textPrimary,
                   ),
@@ -186,6 +221,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           }
                           return null;
                         },
+                      ),
+                      SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _agreeToTerms,
+                            onChanged: (value) {
+                              setState(() {
+                                _agreeToTerms = value ?? false;
+                              });
+                            },
+                            activeColor: AppColors.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: _showTermsAndConditions,
+                              child: RichText(
+                                text: TextSpan(
+                                  text: 'I agree to the ',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: AppColors.textPrimary,
+                                  ),
+                                  children: [
+                                    TextSpan(
+                                      text: 'Terms and Conditions',
+                                      style: TextStyle(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       SizedBox(height: 32),
                       GradientButton(

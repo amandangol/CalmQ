@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import '../../auth/providers/user_profile_provider.dart';
 import '../../auth/models/user_profile.dart';
 import '../../../app_theme.dart';
-import '../../auth/providers/auth_provider.dart';
 import '../../../widgets/custom_app_bar.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -28,7 +28,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background ?? Colors.grey[50],
+      backgroundColor: AppColors.background,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(100),
         child: Consumer<UserProfileProvider>(
@@ -304,33 +304,116 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildStatsSection(UserProfile userProfile) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
-            AppColors.primary.withOpacity(0.1),
-            AppColors.secondary.withOpacity(0.1),
+            AppColors.primary.withOpacity(0.15),
+            AppColors.secondary.withOpacity(0.15),
           ],
         ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.primary.withOpacity(0.2), width: 1),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+      child: Column(
         children: [
-          _buildStatItem('Goals', userProfile.goals.length.toString()),
-          _buildStatDivider(),
-          _buildStatItem('Focus Areas', userProfile.causes.length.toString()),
-          _buildStatDivider(),
-          _buildStatItem('Profile', '100%'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatItem(
+                'Goals',
+                userProfile.goals.length.toString(),
+                Icons.flag_rounded,
+              ),
+              _buildStatDivider(),
+              _buildStatItem(
+                'Focus Areas',
+                userProfile.causes.length.toString(),
+                Icons.category_rounded,
+              ),
+              _buildStatDivider(),
+              _buildStatItem('Profile', '100%', Icons.person_rounded),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildProfileCompletionIndicator(userProfile),
         ],
       ),
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
+  Widget _buildProfileCompletionIndicator(UserProfile userProfile) {
+    final completedFields = [
+      userProfile.name.isNotEmpty,
+      userProfile.age > 0,
+      userProfile.gender != null,
+      userProfile.goals.isNotEmpty,
+      userProfile.causes.isNotEmpty,
+      userProfile.stressFrequency != null,
+      userProfile.sleepQuality != null,
+      userProfile.happinessLevel != null,
+    ].where((field) => field).length;
+
+    final totalFields = 8;
+    final completionPercentage = (completedFields / totalFields * 100).round();
+
     return Column(
       children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Profile Completion',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            Text(
+              '$completionPercentage%',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: completedFields / totalFields,
+            backgroundColor: AppColors.primary.withOpacity(0.1),
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            minHeight: 8,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, IconData icon) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 24, color: AppColors.primary),
+        ),
+        const SizedBox(height: 8),
         Text(
           value,
           style: TextStyle(
@@ -389,8 +472,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildPersonalInfoCard(BuildContext context, UserProfile userProfile) {
+    final authProvider = context.read<AuthProvider>();
+    final email = authProvider.user?.email ?? '';
+
     return _buildInfoCard(context, [
       _buildInfoRow(Icons.person_rounded, 'Name', userProfile.name),
+      _buildInfoRow(Icons.email_rounded, 'Email', email),
       _buildInfoRow(Icons.cake_rounded, 'Age', '${userProfile.age} years'),
       if (userProfile.gender != null)
         _buildInfoRow(Icons.wc_rounded, 'Gender', userProfile.gender!),
@@ -467,7 +554,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
@@ -477,53 +564,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(children: children),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: children.map((child) {
+            final isLast = child == children.last;
+            return Column(
+              children: [
+                child,
+                if (!isLast)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Divider(
+                      color: AppColors.primary.withOpacity(0.1),
+                      height: 1,
+                    ),
+                  ),
+              ],
+            );
+          }).toList(),
+        ),
       ),
     );
   }
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 20, color: AppColors.primary),
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
-                    letterSpacing: 0.5,
-                  ),
+          child: Icon(icon, size: 24, color: AppColors.primary),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary,
+                  letterSpacing: 0.5,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -534,7 +635,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: AppColors.primary.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: AppColors.primary.withOpacity(0.2),
             width: 1,
@@ -543,8 +644,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Row(
           children: [
             Container(
-              width: 6,
-              height: 6,
+              width: 8,
+              height: 8,
               decoration: BoxDecoration(
                 color: AppColors.primary,
                 shape: BoxShape.circle,

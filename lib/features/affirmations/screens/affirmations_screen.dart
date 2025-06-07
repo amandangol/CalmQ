@@ -7,6 +7,7 @@ import '../providers/affirmation_provider.dart';
 import '../models/affirmation.dart';
 import '../../../app_theme.dart';
 import '../../../widgets/custom_app_bar.dart';
+import '../screens/my_affirmations_screen.dart';
 
 class AffirmationsScreen extends StatefulWidget {
   const AffirmationsScreen({Key? key}) : super(key: key);
@@ -75,7 +76,7 @@ class _AffirmationsScreenState extends State<AffirmationsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background ?? Colors.grey[50],
+      backgroundColor: AppColors.background,
       appBar: CustomAppBar(
         title: 'Daily Affirmations',
         leadingIcon: Icons.auto_awesome_rounded,
@@ -1083,102 +1084,9 @@ class _AffirmationsScreenState extends State<AffirmationsScreen>
   }
 
   void _showMyAffirmations(BuildContext context) {
-    final provider = Provider.of<AffirmationProvider>(context, listen: false);
-    final customAffirmations = provider.customAffirmations;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.9,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      Icons.person_rounded,
-                      color: AppColors.primary,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'My Affirmations',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: customAffirmations.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.add_circle_outline_rounded,
-                            size: 64,
-                            color: AppColors.textLight,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No custom affirmations yet',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textLight,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Tap the + button to add your own affirmations',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: customAffirmations.length,
-                      itemBuilder: (context, index) {
-                        final affirmation = customAffirmations[index];
-                        return _buildAffirmationCard(affirmation, provider);
-                      },
-                    ),
-            ),
-          ],
-        ),
-      ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const MyAffirmationsScreen()),
     );
   }
 }
