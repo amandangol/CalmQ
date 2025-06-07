@@ -19,6 +19,7 @@ import 'features/breathing/screens/breathing_screen.dart';
 import 'app_theme.dart';
 import 'splash_screen.dart';
 import 'features/chat/providers/chat_provider.dart';
+import 'features/web3/providers/web3_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,6 +42,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ReminderProvider()),
         ChangeNotifierProvider(create: (_) => JournalProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(create: (_) => Web3Provider()),
       ],
       child: MaterialApp(
         title: 'Mental Wellness',

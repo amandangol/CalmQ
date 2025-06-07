@@ -6,6 +6,7 @@ import '../../auth/models/user_profile.dart';
 import '../../../app_theme.dart';
 import '../../../widgets/custom_app_bar.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../web3/providers/web3_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -19,9 +20,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
 
-    // Initialize the provider
+    // Initialize the providers
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<UserProfileProvider>().initialize();
+      context.read<Web3Provider>().initialize(context);
     });
   }
 
@@ -56,24 +58,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
           },
         ),
       ),
-      floatingActionButton: Consumer<UserProfileProvider>(
-        builder: (context, userProfileProvider, child) {
-          final userProfile = userProfileProvider.userProfile;
-          if (userProfile == null) return const SizedBox.shrink();
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Consumer<Web3Provider>(
+            builder: (context, web3Provider, child) {
+              return FloatingActionButton.extended(
+                onPressed: web3Provider.isConnected
+                    ? () => web3Provider.disconnectWallet()
+                    : () => web3Provider.connectWallet(),
+                backgroundColor: web3Provider.isConnected
+                    ? AppColors.error
+                    : AppColors.secondary,
+                icon: Icon(
+                  web3Provider.isConnected
+                      ? Icons.hourglass_empty
+                      : Icons.account_balance_wallet,
+                  color: Colors.white,
+                ),
+                label: Text(
+                  web3Provider.isConnected
+                      ? 'Disconnect Wallet'
+                      : 'Connect Wallet',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+          Consumer<UserProfileProvider>(
+            builder: (context, userProfileProvider, child) {
+              final userProfile = userProfileProvider.userProfile;
+              if (userProfile == null) return const SizedBox.shrink();
 
-          return FloatingActionButton.extended(
-            onPressed: () => _navigateToEditProfile(context, userProfile),
-            backgroundColor: AppColors.primary,
-            icon: const Icon(Icons.edit_rounded, color: Colors.white),
-            label: const Text(
-              'Edit Profile',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          );
-        },
+              return FloatingActionButton.extended(
+                onPressed: () => _navigateToEditProfile(context, userProfile),
+                backgroundColor: AppColors.primary,
+                icon: const Icon(Icons.edit_rounded, color: Colors.white),
+                label: const Text(
+                  'Edit Profile',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Consumer<UserProfileProvider>(
         builder: (context, userProfileProvider, child) {
@@ -473,6 +508,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildPersonalInfoCard(BuildContext context, UserProfile userProfile) {
     final authProvider = context.read<AuthProvider>();
+    final web3Provider = context.watch<Web3Provider>();
     final email = authProvider.user?.email ?? '';
 
     return _buildInfoCard(context, [
@@ -481,6 +517,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _buildInfoRow(Icons.cake_rounded, 'Age', '${userProfile.age} years'),
       if (userProfile.gender != null)
         _buildInfoRow(Icons.wc_rounded, 'Gender', userProfile.gender!),
+      if (web3Provider.isConnected)
+        _buildInfoRow(
+          Icons.account_balance_wallet,
+          'Wallet Address',
+          '${web3Provider.walletAddress!.substring(0, 6)}...${web3Provider.walletAddress!.substring(web3Provider.walletAddress!.length - 4)}',
+        ),
     ]);
   }
 

@@ -37,7 +37,7 @@ dependencies:
   provider: ^6.1.5
   firebase_core: ^3.13.1
   firebase_auth: ^5.5.4
-  url_launcher: ^6.3.1
+  url_launcher: ^6.2.4
   shared_preferences: ^2.5.3
   cloud_firestore: ^5.6.8
   google_fonts: ^6.2.1
@@ -51,6 +51,10 @@ dependencies:
   speech_to_text: ^7.0.0
   google_generative_ai: ^0.4.7
   image_picker: ^1.1.2
+  web3dart: ^2.7.1
+  crypto: ^3.0.6
+  eth_sig_util: ^0.0.9
+  reown_appkit: ^1.4.4
   
 
 dev_dependencies:

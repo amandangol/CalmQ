@@ -15,15 +15,34 @@ import '../../../widgets/custom_confirmation_dialog.dart';
 import '../../affirmations/providers/affirmation_provider.dart';
 import 'package:intl/intl.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _initializeProfile();
+  }
+
+  Future<void> _initializeProfile() async {
+    await Future.delayed(Duration.zero);
+    if (mounted) {
+      context.read<UserProfileProvider>().initialize();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final moodProvider = context.watch<MoodProvider>();
+    final userProfileProvider = context.watch<UserProfileProvider>();
     final theme = Theme.of(context);
     final user = authProvider.user;
 
-    if (authProvider.isLoading) {
+    if (authProvider.isLoading || userProfileProvider.isLoading) {
       return Scaffold(
         backgroundColor: AppColors.background,
         body: Center(
