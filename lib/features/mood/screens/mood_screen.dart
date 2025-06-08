@@ -270,8 +270,18 @@ class _MoodScreenState extends State<MoodScreen> {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Navigate to mood entry screen
-          Navigator.pushNamed(context, '/add-mood');
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => Container(
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: MoodPickerSheet(),
+            ),
+          );
         },
         backgroundColor: AppColors.primary,
         child: Icon(Icons.add, color: Colors.white),
@@ -283,6 +293,7 @@ class _MoodScreenState extends State<MoodScreen> {
     final theme = Theme.of(context);
     final moodProvider = context.read<MoodProvider>();
     final hasTodayEntry = moodProvider.hasTodayEntry();
+    final streak = moodProvider.getMoodStreak();
 
     return Container(
       padding: EdgeInsets.all(20),
@@ -298,52 +309,86 @@ class _MoodScreenState extends State<MoodScreen> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.primary.withOpacity(0.2)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  hasTodayEntry
-                      ? 'Today\'s mood logged!'
-                      : 'How are you feeling today?',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  hasTodayEntry
-                      ? 'Great job tracking your mood!'
-                      : 'Take a moment to check in with yourself',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(width: 16),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(
-                Icons.local_fire_department,
-                color: AppColors.accent,
-                size: 32,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    hasTodayEntry
+                        ? 'Today\'s mood logged!'
+                        : 'How are you feeling today?',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    hasTodayEntry
+                        ? 'Great job tracking your mood!'
+                        : 'Take a moment to check in with yourself',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(width: 5),
-              Text(
-                '${moodProvider.getMoodStreak()} days',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.local_fire_department,
+                    color: AppColors.accent,
+                    size: 32,
+                  ),
+                  SizedBox(width: 5),
+                  Text(
+                    '$streak days',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
+          if (!hasTodayEntry) ...[
+            SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
+                    ),
+                    child: MoodPickerSheet(),
+                  ),
+                );
+              },
+              icon: Icon(Icons.add, color: Colors.white),
+              label: Text('Log Your Mood'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -351,20 +396,8 @@ class _MoodScreenState extends State<MoodScreen> {
 
   Widget _buildMoodStats(BuildContext context, List<MoodEntry> weekMoods) {
     final theme = Theme.of(context);
-    final moodCounts = <String, int>{};
-
-    // Filter out placeholder entries (entries with id 'placeholder')
-    final actualMoods = weekMoods
-        .where((mood) => mood.id != 'placeholder')
-        .toList();
-
-    for (final mood in actualMoods) {
-      moodCounts[mood.mood] = (moodCounts[mood.mood] ?? 0) + 1;
-    }
-
-    final mostFrequentMood = moodCounts.isNotEmpty
-        ? moodCounts.entries.reduce((a, b) => a.value > b.value ? a : b).key
-        : 'No data';
+    final moodProvider = context.watch<MoodProvider>();
+    final sentimentAnalysis = moodProvider.analyzeSentimentTrends();
 
     return Container(
       padding: EdgeInsets.all(20),
@@ -383,50 +416,156 @@ class _MoodScreenState extends State<MoodScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'This Week\'s Insights',
+            'Mood Insights',
             style: theme.textTheme.titleMedium?.copyWith(
               color: AppColors.textPrimary,
               fontWeight: FontWeight.bold,
             ),
           ),
-          SizedBox(height: 12),
-          if (actualMoods.isNotEmpty) ...[
-            Row(
-              children: [
-                Icon(Icons.trending_up, color: AppColors.primary, size: 20),
-                SizedBox(width: 8),
-                Text(
-                  'Most frequent mood: $mostFrequentMood',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+          SizedBox(height: 16),
+          Row(
+            children: [
+              _buildSentimentIndicator(
+                context,
+                sentimentAnalysis['overall_sentiment'],
+                sentimentAnalysis['trend'],
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Overall Mood',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      _formatSentiment(sentimentAnalysis['overall_sentiment']),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: _getSentimentColor(
+                          sentimentAnalysis['overall_sentiment'],
+                        ),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(Icons.analytics, color: AppColors.primary, size: 20),
-                SizedBox(width: 8),
-                Text(
-                  '${actualMoods.length} mood entries this week',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ] else ...[
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          if (sentimentAnalysis['insights'].isNotEmpty) ...[
             Text(
-              'No mood entries logged this week',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
+              'Insights',
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.bold,
               ),
             ),
+            SizedBox(height: 8),
+            ...sentimentAnalysis['insights']
+                .map(
+                  (insight) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.insights,
+                          size: 16,
+                          color: AppColors.primary,
+                        ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            insight,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+                .toList(),
           ],
         ],
       ),
     );
+  }
+
+  Widget _buildSentimentIndicator(
+    BuildContext context,
+    String sentiment,
+    String trend,
+  ) {
+    final color = _getSentimentColor(sentiment);
+    final icon = _getTrendIcon(trend);
+
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 20),
+          SizedBox(width: 4),
+          Icon(Icons.mood, color: color, size: 24),
+        ],
+      ),
+    );
+  }
+
+  String _formatSentiment(String sentiment) {
+    switch (sentiment) {
+      case 'very positive':
+        return 'Very Positive';
+      case 'positive':
+        return 'Positive';
+      case 'neutral':
+        return 'Neutral';
+      case 'negative':
+        return 'Negative';
+      case 'very negative':
+        return 'Very Negative';
+      default:
+        return 'Neutral';
+    }
+  }
+
+  Color _getSentimentColor(String sentiment) {
+    switch (sentiment) {
+      case 'very positive':
+        return Colors.green;
+      case 'positive':
+        return Colors.lightGreen;
+      case 'neutral':
+        return Colors.orange;
+      case 'negative':
+        return Colors.orangeAccent;
+      case 'very negative':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getTrendIcon(String trend) {
+    switch (trend) {
+      case 'improving':
+        return Icons.trending_up;
+      case 'declining':
+        return Icons.trending_down;
+      default:
+        return Icons.trending_flat;
+    }
   }
 
   Widget _buildEmptyState(BuildContext context) {

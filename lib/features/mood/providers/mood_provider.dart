@@ -42,6 +42,7 @@ class MoodProvider extends ChangeNotifier {
   MoodEntry? _todayMood;
   List<MoodEntry> _moodHistory = [];
   bool _isLoading = false;
+  int _currentStreak = 0;
 
   final _firestore = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
@@ -53,6 +54,7 @@ class MoodProvider extends ChangeNotifier {
   MoodEntry? get todayMood => _todayMood;
   List<MoodEntry> get moodHistory => _moodHistory;
   bool get isLoading => _isLoading;
+  int get currentStreak => _currentStreak;
 
   final Map<String, String> moodEmojis = {
     'Angry': '😠',
@@ -157,6 +159,14 @@ class MoodProvider extends ChangeNotifier {
         _todayMood = todayEntry.id == 'placeholder' ? null : todayEntry;
       }
 
+      // Update streak in Firestore
+      int newStreak = getMoodStreak();
+      await _firestore.collection('users').doc(user.uid).update({
+        'mood_streak': newStreak,
+        'last_mood_date': today.toIso8601String(),
+      });
+      _currentStreak = newStreak;
+
       notifyListeners();
     }
     _isLoading = false;
@@ -168,6 +178,7 @@ class MoodProvider extends ChangeNotifier {
     notifyListeners();
     final user = _auth.currentUser;
     if (user != null) {
+      // Load mood history
       final snapshot = await _firestore
           .collection('users')
           .doc(user.uid)
@@ -177,6 +188,10 @@ class MoodProvider extends ChangeNotifier {
       _moodHistory = snapshot.docs
           .map((doc) => MoodEntry.fromJson(doc.data(), doc.id))
           .toList();
+
+      // Load streak from user document
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      _currentStreak = userDoc.data()?['mood_streak'] ?? 0;
 
       // Set todayMood after loading history
       if (_moodHistory.isNotEmpty) {
@@ -290,76 +305,52 @@ class MoodProvider extends ChangeNotifier {
   // Calculate the consecutive daily mood logging streak
   int getMoodStreak() {
     if (_moodHistory.isEmpty) {
-      return 0; // No streak if no history
+      return 0;
     }
 
-    int streak = 0;
-    DateTime currentDate = DateTime.now();
-    List<MoodEntry> sortedHistory = List.from(
-      _moodHistory,
-    ); // Create a mutable copy
-    sortedHistory.sort(
-      (a, b) => b.timestamp.compareTo(a.timestamp),
-    ); // Sort descending
+    // Sort history by date in descending order
+    List<MoodEntry> sortedHistory = List.from(_moodHistory);
+    sortedHistory.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
-    // Remove time component for accurate day comparison
-    DateTime latestLogDate = DateTime(
+    // Get today's date at midnight for comparison
+    DateTime today = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
+
+    // Get the latest entry's date at midnight
+    DateTime latestEntryDate = DateTime(
       sortedHistory.first.timestamp.year,
       sortedHistory.first.timestamp.month,
       sortedHistory.first.timestamp.day,
     );
 
-    // Check if the latest log is today or yesterday
-    DateTime today = DateTime(
-      currentDate.year,
-      currentDate.month,
-      currentDate.day,
-    );
-    DateTime yesterday = today.subtract(Duration(days: 1));
-
-    if (latestLogDate.isAtSameMomentAs(today) ||
-        latestLogDate.isAtSameMomentAs(yesterday)) {
-      // Start counting streak from the latest log if it's today or yesterday
-      streak = latestLogDate.isAtSameMomentAs(today)
-          ? 1
-          : 0; // Start at 1 if today, 0 if yesterday (will be incremented)
-
-      DateTime expectedDate = latestLogDate.isAtSameMomentAs(today)
-          ? yesterday
-          : today.subtract(Duration(days: 2));
-
-      for (int i = 1; i < sortedHistory.length; i++) {
-        DateTime currentLogDate = DateTime(
-          sortedHistory[i].timestamp.year,
-          sortedHistory[i].timestamp.month,
-          sortedHistory[i].timestamp.day,
-        );
-
-        if (currentLogDate.isAtSameMomentAs(expectedDate)) {
-          streak++;
-          expectedDate = expectedDate.subtract(Duration(days: 1));
-        } else if (currentLogDate.isBefore(expectedDate)) {
-          // Gap in the streak
-          break;
-        } else if (currentLogDate.isAtSameMomentAs(
-          expectedDate.add(Duration(days: 1)),
-        )) {
-          // Handle multiple logs on the same day - continue checking previous days
-        } else {
-          // Log is more than one day before expected, streak broken
-          break;
-        }
-      }
-    } else {
-      // Latest log is older than yesterday, streak is 0
-      streak = 0;
+    // If the latest entry is not today or yesterday, streak is broken
+    if (latestEntryDate.isBefore(today.subtract(Duration(days: 1)))) {
+      return 0;
     }
 
-    // If the latest log is today and the streak is 0, it should be 1
-    if (latestLogDate.isAtSameMomentAs(today) &&
-        streak == 0 &&
-        sortedHistory.length >= 1) {
-      streak = 1;
+    int streak = 1; // Start with 1 for the latest entry
+    DateTime currentDate = latestEntryDate;
+
+    // Check previous entries for consecutive days
+    for (int i = 1; i < sortedHistory.length; i++) {
+      DateTime entryDate = DateTime(
+        sortedHistory[i].timestamp.year,
+        sortedHistory[i].timestamp.month,
+        sortedHistory[i].timestamp.day,
+      );
+
+      // If this entry is from the previous day, increment streak
+      if (entryDate.isAtSameMomentAs(currentDate.subtract(Duration(days: 1)))) {
+        streak++;
+        currentDate = entryDate;
+      } else if (entryDate.isBefore(currentDate.subtract(Duration(days: 1)))) {
+        // If there's a gap, break the streak
+        break;
+      }
+      // If entry is from the same day, continue checking
     }
 
     return streak;
@@ -414,5 +405,143 @@ class MoodProvider extends ChangeNotifier {
               entry.timestamp.day == date.day,
         )
         .toList();
+  }
+
+  // Sentiment analysis methods
+  Map<String, dynamic> analyzeSentimentTrends() {
+    if (_moodHistory.isEmpty) {
+      return {
+        'overall_sentiment': 'neutral',
+        'trend': 'stable',
+        'insights': [],
+        'weekly_average': 0.0,
+      };
+    }
+
+    // Get entries from the last 7 days
+    final now = DateTime.now();
+    final weekAgo = now.subtract(Duration(days: 7));
+    final recentEntries = _moodHistory
+        .where((entry) => entry.timestamp.isAfter(weekAgo))
+        .toList();
+
+    // Calculate sentiment scores
+    List<double> sentimentScores = recentEntries.map((entry) {
+      return _getMoodScore(entry.mood);
+    }).toList();
+
+    // Calculate weekly average
+    double weeklyAverage = sentimentScores.isEmpty
+        ? 0.0
+        : sentimentScores.reduce((a, b) => a + b) / sentimentScores.length;
+
+    // Determine overall sentiment
+    String overallSentiment = _getSentimentFromScore(weeklyAverage);
+
+    // Determine trend
+    String trend = 'stable';
+    if (sentimentScores.length >= 2) {
+      double firstHalf =
+          sentimentScores
+              .take(sentimentScores.length ~/ 2)
+              .reduce((a, b) => a + b) /
+          (sentimentScores.length ~/ 2);
+      double secondHalf =
+          sentimentScores
+              .skip(sentimentScores.length ~/ 2)
+              .reduce((a, b) => a + b) /
+          (sentimentScores.length - (sentimentScores.length ~/ 2));
+
+      if (secondHalf > firstHalf + 0.5) {
+        trend = 'improving';
+      } else if (secondHalf < firstHalf - 0.5) {
+        trend = 'declining';
+      }
+    }
+
+    // Generate insights
+    List<String> insights = _generateInsights(recentEntries, weeklyAverage);
+
+    return {
+      'overall_sentiment': overallSentiment,
+      'trend': trend,
+      'insights': insights,
+      'weekly_average': weeklyAverage,
+    };
+  }
+
+  double _getMoodScore(String mood) {
+    switch (mood.toLowerCase()) {
+      case 'very happy':
+        return 5.0;
+      case 'happy':
+        return 4.0;
+      case 'neutral':
+        return 3.0;
+      case 'sad':
+        return 2.0;
+      case 'angry':
+        return 1.0;
+      default:
+        return 3.0;
+    }
+  }
+
+  String _getSentimentFromScore(double score) {
+    if (score >= 4.5) return 'very positive';
+    if (score >= 3.5) return 'positive';
+    if (score >= 2.5) return 'neutral';
+    if (score >= 1.5) return 'negative';
+    return 'very negative';
+  }
+
+  List<String> _generateInsights(List<MoodEntry> entries, double averageScore) {
+    List<String> insights = [];
+
+    // Analyze mood patterns
+    Map<String, int> moodFrequency = {};
+    for (var entry in entries) {
+      moodFrequency[entry.mood] = (moodFrequency[entry.mood] ?? 0) + 1;
+    }
+
+    // Most frequent mood
+    String mostFrequentMood = moodFrequency.entries
+        .reduce((a, b) => a.value > b.value ? a : b)
+        .key;
+    insights.add('Most frequent mood: $mostFrequentMood');
+
+    // Trend analysis
+    if (entries.length >= 3) {
+      double recentAverage =
+          entries
+              .take(3)
+              .map((e) => _getMoodScore(e.mood))
+              .reduce((a, b) => a + b) /
+          3;
+
+      if (recentAverage > averageScore + 0.5) {
+        insights.add('Your mood has been improving recently');
+      } else if (recentAverage < averageScore - 0.5) {
+        insights.add('Your mood has been declining recently');
+      }
+    }
+
+    // Trigger analysis
+    Map<String, int> triggerFrequency = {};
+    for (var entry in entries) {
+      if (entry.trigger != null && entry.trigger!.isNotEmpty) {
+        triggerFrequency[entry.trigger!] =
+            (triggerFrequency[entry.trigger!] ?? 0) + 1;
+      }
+    }
+
+    if (triggerFrequency.isNotEmpty) {
+      String mostFrequentTrigger = triggerFrequency.entries
+          .reduce((a, b) => a.value > b.value ? a : b)
+          .key;
+      insights.add('Most common trigger: $mostFrequentTrigger');
+    }
+
+    return insights;
   }
 }
