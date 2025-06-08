@@ -1,3 +1,5 @@
+import 'package:auralynn/features/achievements/providers/achievements_provider.dart';
+import 'package:auralynn/features/achievements/screens/achievements_screen.dart';
 import 'package:auralynn/features/affirmations/screens/affirmations_screen.dart';
 import 'package:auralynn/features/profile/screens/profile_screen.dart';
 import 'package:auralynn/features/journal/providers/journal_provider.dart';
@@ -43,6 +45,12 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => JournalProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => Web3Provider()),
+        ChangeNotifierProxyProvider<Web3Provider, AchievementsProvider>(
+          create: (context) =>
+              AchievementsProvider(context.read<Web3Provider>()),
+          update: (context, web3Provider, previous) =>
+              AchievementsProvider(web3Provider),
+        ),
       ],
       child: MaterialApp(
         title: 'Mental Wellness',
@@ -64,6 +72,17 @@ class SplashScreenWrapper extends StatefulWidget {
 
 class _SplashScreenWrapperState extends State<SplashScreenWrapper> {
   bool _showSplash = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeWeb3();
+  }
+
+  Future<void> _initializeWeb3() async {
+    final web3Provider = Provider.of<Web3Provider>(context, listen: false);
+    await web3Provider.initialize(context);
+  }
 
   void _onSplashComplete() {
     setState(() {
@@ -103,7 +122,7 @@ class _MainNavigationState extends State<MainNavigation>
     HomeScreen(),
     MoodScreen(),
     BreathingScreen(),
-    AffirmationsScreen(),
+    AchievementsScreen(),
     ProfileScreen(),
   ];
 
@@ -121,9 +140,9 @@ class _MainNavigationState extends State<MainNavigation>
       color: Color(0xFF00BCD4),
     ),
     NavigationItem(
-      icon: Icons.format_quote_outlined,
-      selectedIcon: Icons.format_quote_rounded,
-      label: 'Affirmations',
+      icon: Icons.redeem_outlined,
+      selectedIcon: Icons.redeem_outlined,
+      label: 'Achievements',
       color: Color(0xFFFF9800),
     ),
     NavigationItem(
@@ -166,7 +185,6 @@ class _MainNavigationState extends State<MainNavigation>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
       backgroundColor: const Color(0xFFF8F9FA),
       body: PageView(
         controller: _pageController,

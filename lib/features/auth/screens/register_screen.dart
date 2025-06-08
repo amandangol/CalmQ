@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../providers/auth_provider.dart';
+import '../../web3/providers/web3_provider.dart';
 import 'user_info_screen.dart';
 import '../../../app_theme.dart';
 import '../../../utils/snackbar_utils.dart';
@@ -44,6 +45,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           _emailController.text,
           _passwordController.text,
         );
+
         if (mounted) {
           Navigator.pushReplacement(
             context,
@@ -53,6 +55,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       } on firebase_auth.FirebaseAuthException catch (e) {
         if (mounted) {
           SnackbarUtils.showError(context, AuthErrorHandler.getErrorMessage(e));
+        }
+      } catch (e) {
+        if (mounted) {
+          SnackbarUtils.showError(
+            context,
+            'An unexpected error occurred. Please try again.',
+          );
         }
       }
     }

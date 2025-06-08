@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../providers/auth_provider.dart';
+import '../../web3/providers/web3_provider.dart';
 import 'register_screen.dart';
 import '../../../app_theme.dart';
 import '../../../utils/snackbar_utils.dart';

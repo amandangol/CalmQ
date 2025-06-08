@@ -147,7 +147,7 @@ class CurvedNavigationBar extends StatelessWidget {
                     duration: const Duration(milliseconds: 200),
                     style: TextStyle(
                       color: isSelected ? item.color : unselectedColor,
-                      fontSize: isSelected ? 12 : 10,
+                      fontSize: isSelected ? 14 : 12,
                       fontWeight: isSelected
                           ? FontWeight.w600
                           : FontWeight.w400,
@@ -165,7 +165,7 @@ class CurvedNavigationBar extends StatelessWidget {
         ),
       );
 
-      // Add space for FAB after second item
+      //  space for FAB after second item
       if (i == 1) {
         navigationItems.add(const SizedBox(width: 90));
       }

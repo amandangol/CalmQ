@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_profile_provider.dart';
+import '../../web3/providers/web3_provider.dart';
 import '../../../app_theme.dart';
 
 class UserInfoScreen extends StatefulWidget {
@@ -172,6 +173,59 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
         sleepQuality: sleepQuality,
         happinessLevel: happinessLevel,
       );
+
+      // Initialize Web3Auth after profile completion
+      if (mounted) {
+        final web3Provider = context.read<Web3Provider>();
+        await web3Provider.initialize(context);
+
+        // Show a dialog to connect wallet
+        if (mounted) {
+          final shouldConnectWallet = await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              title: const Text('Connect Solana Wallet'),
+              content: const Text(
+                'Would you like to connect your Solana wallet now? You can also do this later from your profile.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Later'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Connect Now'),
+                ),
+              ],
+            ),
+          );
+
+          if (shouldConnectWallet == true && mounted) {
+            try {
+              await web3Provider.connectWallet();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Wallet connected successfully!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Failed to connect wallet: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          }
+        }
+      }
 
       // Pop back to profile screen
       Navigator.pop(context);
