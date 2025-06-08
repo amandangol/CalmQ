@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/reminder_provider.dart';
 import '../../../app_theme.dart';
-import '../../../widgets/custom_app_bar.dart';
 
 class RemindersScreen extends StatelessWidget {
   @override
@@ -12,135 +11,190 @@ class RemindersScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: CustomAppBar(
-        title: 'Reminders',
-        leadingIcon: Icons.notifications_active_rounded,
-        showBackButton: true,
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Header Section
-              Container(
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [AppColors.primary, AppColors.secondary],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 15,
-                      offset: Offset(0, 8),
+      body: Column(
+        children: [
+          // Custom App Bar
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+              ),
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    const SizedBox(width: 12),
+                    const Icon(
+                      Icons.notifications_active_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Reminders',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
+              ),
+            ),
+          ),
+          // Body content
+          Expanded(
+            child: SafeArea(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Icon(
-                            Icons.notifications_active,
-                            color: AppColors.surface,
-                            size: 28,
-                          ),
+                    // Header Section
+                    Container(
+                      padding: EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [AppColors.primary, AppColors.secondary],
                         ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.3),
+                            blurRadius: 15,
+                            offset: Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Text(
-                                'Daily Reminders',
-                                style: theme.textTheme.titleLarge?.copyWith(
+                              Container(
+                                padding: EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surface.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Icon(
+                                  Icons.notifications_active,
                                   color: AppColors.surface,
-                                  fontWeight: FontWeight.bold,
+                                  size: 28,
                                 ),
                               ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Set reminders for your wellness activities',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: AppColors.surface.withOpacity(0.9),
+                              SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Daily Reminders',
+                                      style: theme.textTheme.titleLarge
+                                          ?.copyWith(
+                                            color: AppColors.surface,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      'Set reminders for your wellness activities',
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                            color: AppColors.surface
+                                                .withOpacity(0.9),
+                                          ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 24),
+                    // Reminders List
+                    Expanded(
+                      child: ListView(
+                        children: [
+                          _ReminderCard(
+                            title: 'Journal Reminder',
+                            subtitle:
+                                'Set a daily reminder to write in your journal',
+                            icon: Icons.edit_note,
+                            time: reminderProvider.journalReminderTime,
+                            onTimeSelected: (time) =>
+                                reminderProvider.setJournalReminder(time),
+                          ),
+                          SizedBox(height: 16),
+                          _ReminderCard(
+                            title: 'Breathing Exercise',
+                            subtitle:
+                                'Set a daily reminder for breathing exercises',
+                            icon: Icons.air,
+                            time: reminderProvider.breathingReminderTime,
+                            onTimeSelected: (time) =>
+                                reminderProvider.setBreathingReminder(time),
+                          ),
+                          SizedBox(height: 16),
+                          _ReminderCard(
+                            title: 'Mood Check-in',
+                            subtitle: 'Set a daily reminder to log your mood',
+                            icon: Icons.mood,
+                            time: reminderProvider.moodReminderTime,
+                            onTimeSelected: (time) =>
+                                reminderProvider.setMoodReminder(time),
+                          ),
+                          SizedBox(height: 16),
+                          _ReminderCard(
+                            title: 'Focus Session',
+                            subtitle:
+                                'Set a daily reminder for your focus practice',
+                            icon: Icons.psychology,
+                            time: reminderProvider.focusReminderTime,
+                            onTimeSelected: (time) =>
+                                reminderProvider.setFocusReminder(time),
+                          ),
+                          SizedBox(height: 16),
+                          _ReminderCard(
+                            title: 'Daily Affirmation',
+                            subtitle:
+                                'Set a daily reminder to read your affirmations',
+                            icon: Icons.auto_awesome,
+                            time: reminderProvider.affirmationReminderTime,
+                            onTimeSelected: (time) =>
+                                reminderProvider.setAffirmationReminder(time),
+                          ),
+                          SizedBox(height: 16),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-              SizedBox(height: 24),
-              // Reminders List
-              Expanded(
-                child: ListView(
-                  children: [
-                    _ReminderCard(
-                      title: 'Journal Reminder',
-                      subtitle: 'Set a daily reminder to write in your journal',
-                      icon: Icons.edit_note,
-                      time: reminderProvider.journalReminderTime,
-                      onTimeSelected: (time) =>
-                          reminderProvider.setJournalReminder(time),
-                    ),
-                    SizedBox(height: 16),
-                    _ReminderCard(
-                      title: 'Breathing Exercise',
-                      subtitle: 'Set a daily reminder for breathing exercises',
-                      icon: Icons.air,
-                      time: reminderProvider.breathingReminderTime,
-                      onTimeSelected: (time) =>
-                          reminderProvider.setBreathingReminder(time),
-                    ),
-                    SizedBox(height: 16),
-                    _ReminderCard(
-                      title: 'Mood Check-in',
-                      subtitle: 'Set a daily reminder to log your mood',
-                      icon: Icons.mood,
-                      time: reminderProvider.moodReminderTime,
-                      onTimeSelected: (time) =>
-                          reminderProvider.setMoodReminder(time),
-                    ),
-                    SizedBox(height: 16),
-                    _ReminderCard(
-                      title: 'Focus Session',
-                      subtitle: 'Set a daily reminder for your focus practice',
-                      icon: Icons.psychology,
-                      time: reminderProvider.focusReminderTime,
-                      onTimeSelected: (time) =>
-                          reminderProvider.setFocusReminder(time),
-                    ),
-                    SizedBox(height: 16),
-                    _ReminderCard(
-                      title: 'Daily Affirmation',
-                      subtitle:
-                          'Set a daily reminder to read your affirmations',
-                      icon: Icons.auto_awesome,
-                      time: reminderProvider.affirmationReminderTime,
-                      onTimeSelected: (time) =>
-                          reminderProvider.setAffirmationReminder(time),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

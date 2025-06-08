@@ -28,37 +28,75 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: CustomAppBar(
-        title: 'Achievements',
-        leadingIcon: Icons.workspace_premium_rounded,
-      ),
-      body: SafeArea(
-        child: Consumer<AchievementsProvider>(
-          builder: (context, provider, _) {
-            if (provider.isLoading) {
-              return _buildLoadingState();
-            }
-
-            final achievements = provider.allAchievements;
-            if (achievements.isEmpty) {
-              return _buildEmptyState(context);
-            }
-
-            return RefreshIndicator(
-              onRefresh: () => provider.loadAchievements(),
-              color: AppColors.primary,
-              child: SingleChildScrollView(
-                child: Column(
+      body: Column(
+        children: [
+          // Custom App Bar
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+              ),
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                child: Row(
                   children: [
-                    _buildStatsRow(context),
-                    _buildCompletedAchievements(provider),
-                    _buildCategoryAchievements(provider),
+                    const Icon(
+                      Icons.workspace_premium_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Achievements',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
               ),
-            );
-          },
-        ),
+            ),
+          ),
+          // Body content
+          Expanded(
+            child: Consumer<AchievementsProvider>(
+              builder: (context, provider, _) {
+                if (provider.isLoading) {
+                  return _buildLoadingState();
+                }
+
+                final achievements = provider.allAchievements;
+                if (achievements.isEmpty) {
+                  return _buildEmptyState(context);
+                }
+
+                return RefreshIndicator(
+                  onRefresh: () => provider.loadAchievements(),
+                  color: AppColors.primary,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        _buildStatsRow(context),
+                        _buildCompletedAchievements(provider),
+                        _buildCategoryAchievements(provider),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

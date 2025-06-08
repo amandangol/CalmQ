@@ -7,7 +7,6 @@ import 'dart:io';
 import '../providers/chat_provider.dart';
 import '../../../app_theme.dart';
 import '../../../widgets/custom_confirmation_dialog.dart';
-import '../../../widgets/custom_app_bar.dart';
 
 class ChatScreen extends StatefulWidget {
   @override
@@ -115,8 +114,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _sendButtonAnimationController.dispose();
 
     // Stop any ongoing speech when leaving the screen
-    final chatProvider = context.read<ChatProvider>();
-    chatProvider.stopSpeaking();
+    if (mounted) {
+      final chatProvider = context.read<ChatProvider>();
+      chatProvider.stopSpeaking();
+    }
 
     super.dispose();
   }
@@ -228,162 +229,205 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       child: Scaffold(
         backgroundColor: Color(0xFFF5F7FA),
         resizeToAvoidBottomInset: true,
-        appBar: CustomAppBar(
-          title: 'Serenity',
-          leadingIcon: Icons.chat_rounded,
-          trailingWidget: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                margin: EdgeInsets.only(right: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  icon: Icon(Icons.delete_outline, color: Colors.white),
-                  onPressed: chatProvider.messages.isEmpty
-                      ? null
-                      : () {
-                          HapticFeedback.mediumImpact();
-                          showDialog(
-                            context: context,
-                            builder: (context) => CustomConfirmationDialog(
-                              title: 'Clear Chat',
-                              message:
-                                  'Are you sure you want to clear all messages? This action cannot be undone.',
-                              confirmText: 'Clear',
-                              cancelText: 'Cancel',
-                              confirmColor: AppColors.error,
-                              onConfirm: () {
-                                chatProvider.clearChat();
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                          );
-                        },
-                ),
-              ),
-            ],
-          ),
-        ),
-        body: Stack(
+        body: Column(
           children: [
+            // Custom App Bar
             Container(
+              width: double.infinity,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFFF5F7FA), Color(0xFFE8ECF4)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.primary,
+                    AppColors.primary.withOpacity(0.8),
+                  ],
                 ),
               ),
-            ),
-            Column(
-              children: [
-                Expanded(
-                  child: chatProvider.messages.isEmpty
-                      ? _EmptyStateWidget()
-                      : ListView.builder(
-                          controller: _scrollController,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          itemCount: chatProvider.messages.length,
-                          itemBuilder: (context, index) {
-                            final message = chatProvider.messages[index];
-                            return AnimatedSlide(
-                              offset: Offset(0, 0),
-                              duration: Duration(milliseconds: 300),
-                              curve: Curves.easeOutCubic,
-                              child: AnimatedOpacity(
-                                opacity: 1.0,
-                                duration: Duration(milliseconds: 300),
-                                child: _ChatBubble(
-                                  message: message,
-                                  isLastMessage:
-                                      index == chatProvider.messages.length - 1,
-                                  onCopy: () => _copyMessage(message.text),
-                                  onSpeak: () =>
-                                      chatProvider.speak(message.text),
-                                  isSpeaking:
-                                      chatProvider.isSpeaking &&
-                                      chatProvider.currentSpeakingMessage ==
-                                          message.text,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                ),
-                if (chatProvider.isLoading && chatProvider.messages.isNotEmpty)
-                  _TypingIndicator(),
-                if (_isListening)
-                  Container(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    color: Colors.white.withOpacity(0.9),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        AnimatedBuilder(
-                          animation: _listeningScaleAnimation,
-                          builder: (context, child) {
-                            return Transform.scale(
-                              scale: _listeningScaleAnimation.value,
-                              child: Icon(
-                                Icons.mic,
-                                color: AppColors.primary,
-                                size: 20,
-                              ),
-                            );
-                          },
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Listening...',
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
                   ),
-                AnimatedContainer(
-                  duration: Duration(milliseconds: 200),
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    12,
-                    16,
-                    16 + keyboardHeight * 0.05,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: Offset(0, -5),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.chat_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Serenity',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        margin: EdgeInsets.only(right: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: IconButton(
+                          icon: Icon(Icons.delete_outline, color: Colors.white),
+                          onPressed: chatProvider.messages.isEmpty
+                              ? null
+                              : () {
+                                  HapticFeedback.mediumImpact();
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => CustomConfirmationDialog(
+                                      title: 'Clear Chat',
+                                      message:
+                                          'Are you sure you want to clear all messages? This action cannot be undone.',
+                                      confirmText: 'Clear',
+                                      cancelText: 'Cancel',
+                                      confirmColor: AppColors.error,
+                                      onConfirm: () {
+                                        chatProvider.clearChat();
+                                        Navigator.of(context).pop();
+                                      },
+                                    ),
+                                  );
+                                },
+                        ),
                       ),
                     ],
                   ),
-                  child: SafeArea(
-                    child: _MessageInputWidget(
-                      controller: _messageController,
-                      focusNode: _textFieldFocusNode,
-                      isComposing: _isComposing,
-                      onSend: _sendMessage,
-                      sendButtonAnimation: _sendButtonScaleAnimation,
-                      isEnabled: !chatProvider.isLoading,
-                      isListening: _isListening,
-                      onVoicePressed: _startListening,
-                      onImagePick: _pickImage,
-                      selectedImage: _selectedImage,
-                      onRemoveImage: _removeSelectedImage,
+                ),
+              ),
+            ),
+            // Body content
+            Expanded(
+              child: Stack(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0xFFF5F7FA), Color(0xFFE8ECF4)],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  Column(
+                    children: [
+                      Expanded(
+                        child: chatProvider.messages.isEmpty
+                            ? _EmptyStateWidget()
+                            : ListView.builder(
+                                controller: _scrollController,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                itemCount: chatProvider.messages.length,
+                                itemBuilder: (context, index) {
+                                  final message = chatProvider.messages[index];
+                                  return AnimatedSlide(
+                                    offset: Offset(0, 0),
+                                    duration: Duration(milliseconds: 300),
+                                    curve: Curves.easeOutCubic,
+                                    child: AnimatedOpacity(
+                                      opacity: 1.0,
+                                      duration: Duration(milliseconds: 300),
+                                      child: _ChatBubble(
+                                        message: message,
+                                        isLastMessage:
+                                            index ==
+                                            chatProvider.messages.length - 1,
+                                        onCopy: () =>
+                                            _copyMessage(message.text),
+                                        onSpeak: () =>
+                                            chatProvider.speak(message.text),
+                                        isSpeaking:
+                                            chatProvider.isSpeaking &&
+                                            chatProvider
+                                                    .currentSpeakingMessage ==
+                                                message.text,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                      if (chatProvider.isLoading &&
+                          chatProvider.messages.isNotEmpty)
+                        _TypingIndicator(),
+                      if (_isListening)
+                        Container(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          color: Colors.white.withOpacity(0.9),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              AnimatedBuilder(
+                                animation: _listeningScaleAnimation,
+                                builder: (context, child) {
+                                  return Transform.scale(
+                                    scale: _listeningScaleAnimation.value,
+                                    child: Icon(
+                                      Icons.mic,
+                                      color: AppColors.primary,
+                                      size: 20,
+                                    ),
+                                  );
+                                },
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Listening...',
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      AnimatedContainer(
+                        duration: Duration(milliseconds: 200),
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          12,
+                          16,
+                          16 + keyboardHeight * 0.05,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: Offset(0, -5),
+                            ),
+                          ],
+                        ),
+                        child: SafeArea(
+                          child: _MessageInputWidget(
+                            controller: _messageController,
+                            focusNode: _textFieldFocusNode,
+                            isComposing: _isComposing,
+                            onSend: _sendMessage,
+                            sendButtonAnimation: _sendButtonScaleAnimation,
+                            isEnabled: !chatProvider.isLoading,
+                            isListening: _isListening,
+                            onVoicePressed: _startListening,
+                            onImagePick: _pickImage,
+                            selectedImage: _selectedImage,
+                            onRemoveImage: _removeSelectedImage,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),

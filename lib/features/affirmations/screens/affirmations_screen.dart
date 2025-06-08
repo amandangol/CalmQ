@@ -77,53 +77,98 @@ class _AffirmationsScreenState extends State<AffirmationsScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: CustomAppBar(
-        title: 'Daily Affirmations',
-        leadingIcon: Icons.auto_awesome_rounded,
-        actions: [
+      body: Column(
+        children: [
+          // Custom App Bar
           Container(
-            margin: const EdgeInsets.only(right: 8),
+            width: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+              ),
             ),
-            child: IconButton(
-              icon: const Icon(Icons.favorite_rounded, color: Colors.white),
-              onPressed: () => _showFavorites(context),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.auto_awesome_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Daily Affirmations',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.favorite_rounded,
+                          color: Colors.white,
+                        ),
+                        onPressed: () => _showFavorites(context),
+                      ),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.person_rounded,
+                          color: Colors.white,
+                        ),
+                        onPressed: () => _showMyAffirmations(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.person_rounded, color: Colors.white),
-              onPressed: () => _showMyAffirmations(context),
+          // Body content
+          Expanded(
+            child: Consumer<AffirmationProvider>(
+              builder: (context, provider, child) {
+                if (provider.isLoading && provider.affirmations.isEmpty) {
+                  return _buildLoadingScreen();
+                }
+
+                if (provider.error != null) {
+                  return _buildErrorScreen(provider);
+                }
+
+                return CustomScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  slivers: [
+                    _buildDailyAffirmation(provider),
+                    _buildQuickStats(provider),
+                    _buildFilters(provider),
+                    _buildAffirmationsList(provider),
+                  ],
+                );
+              },
             ),
           ),
         ],
-      ),
-      body: Consumer<AffirmationProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading && provider.affirmations.isEmpty) {
-            return _buildLoadingScreen();
-          }
-
-          if (provider.error != null) {
-            return _buildErrorScreen(provider);
-          }
-
-          return CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              _buildDailyAffirmation(provider),
-              _buildQuickStats(provider),
-              _buildFilters(provider),
-              _buildAffirmationsList(provider),
-            ],
-          );
-        },
       ),
       floatingActionButton: ScaleTransition(
         scale: _fabAnimation,
@@ -694,6 +739,13 @@ class _AffirmationsScreenState extends State<AffirmationsScreen>
                   ),
                   Row(
                     children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.volume_up_rounded,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () => _speakAffirmation(affirmation.text),
+                      ),
                       IconButton(
                         icon: Icon(
                           provider.isFavorite(affirmation)

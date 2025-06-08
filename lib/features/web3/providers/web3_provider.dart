@@ -172,6 +172,8 @@ class Web3Provider with ChangeNotifier {
         _walletAddress = prefs.getString('wallet_address');
         _isConnected = _walletAddress != null;
         if (_isConnected) {
+          // If we have a local address but not in Firebase, save it
+          await _saveWalletAddressToFirebase(_walletAddress!);
           _loadWalletData();
         }
       }

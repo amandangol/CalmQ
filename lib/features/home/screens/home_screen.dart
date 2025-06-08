@@ -55,124 +55,142 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(color: AppColors.primary),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
+      body: Column(
+        children: [
+          // Custom App Bar
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+              ),
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.self_improvement_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'CalmQ',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 20,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.logout_rounded,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => CustomConfirmationDialog(
+                              title: 'Sign Out',
+                              message: 'Are you sure you want to sign out?',
+                              confirmText: 'Sign Out',
+                              cancelText: 'Cancel',
+                              confirmColor: AppColors.error,
+                              onConfirm: () => authProvider.signOut(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Body content
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.zero,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.self_improvement_rounded,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'CalmQ',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 20,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: IconButton(
-                      icon: Icon(Icons.logout_rounded, color: Colors.white),
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => CustomConfirmationDialog(
-                            title: 'Sign Out',
-                            message: 'Are you sure you want to sign out?',
-                            confirmText: 'Sign Out',
-                            cancelText: 'Cancel',
-                            confirmColor: AppColors.error,
-                            onConfirm: () => authProvider.signOut(),
+                  // Welcome Section
+                  _buildWelcomeSection(context, user?.displayName ?? 'Friend'),
+                  SizedBox(height: 24),
+
+                  // Today's Check-in Section (Streak)
+                  _buildTodayCheckinSection(context, moodProvider, theme),
+                  SizedBox(height: 24),
+
+                  // Today's Mood Section (Log Mood)
+                  _buildTodaysMoodSection(context, moodProvider, theme),
+                  SizedBox(height: 24),
+
+                  // Quick Actions Section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        );
-                      },
+                          child: Icon(
+                            Icons.grid_view_rounded,
+                            color: AppColors.primary,
+                            size: 20,
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          'Quick Actions',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                  SizedBox(height: 24),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: _buildQuickActionsGrid(context),
+                  ),
+                  SizedBox(height: 24),
+
+                  // Daily Inspiration Section
+                  _buildDailyInspirationSection(context, theme),
+                  SizedBox(height: 24),
                 ],
               ),
             ),
           ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.zero,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Welcome Section
-            _buildWelcomeSection(context, user?.displayName ?? 'Friend'),
-            SizedBox(height: 24),
-
-            // Today's Check-in Section (Streak)
-            _buildTodayCheckinSection(context, moodProvider, theme),
-            SizedBox(height: 24),
-
-            // Today's Mood Section (Log Mood)
-            _buildTodaysMoodSection(context, moodProvider, theme),
-            SizedBox(height: 24),
-
-            // Quick Actions Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.grid_view_rounded,
-                      color: AppColors.primary,
-                      size: 20,
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Text(
-                    'Quick Actions',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: _buildQuickActionsGrid(context),
-            ),
-            SizedBox(height: 24),
-
-            // Daily Inspiration Section
-            _buildDailyInspirationSection(context, theme),
-            SizedBox(height: 24),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -197,9 +215,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 36.0),
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+        ),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
       ),
       child: Row(
@@ -210,16 +232,38 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               AnimatedOpacity(
                 opacity: 1.0,
-                duration: Duration(milliseconds: 600),
-                child: Text(
-                  '$greeting,',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withOpacity(0.85),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
+                duration: const Duration(milliseconds: 600),
+                curve: Curves.easeInOut,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0.95, end: 1.0),
+                  duration: const Duration(milliseconds: 800),
+                  curve: Curves.easeOutBack,
+                  builder: (context, scale, child) {
+                    return Transform.scale(
+                      scale: scale,
+
+                      child: Text(
+                        '$greeting,',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          shadows: [
+                            Shadow(
+                              blurRadius: 8.0,
+                              color: Colors.white.withOpacity(0.3),
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
+
               const SizedBox(height: 6),
               Text(
                 '$name!',
@@ -497,6 +541,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return GridView.builder(
+      padding: const EdgeInsets.all(0),
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(

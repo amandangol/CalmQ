@@ -34,74 +34,84 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(100),
-        child: Consumer<UserProfileProvider>(
-          builder: (context, userProfileProvider, child) {
-            final userProfile = userProfileProvider.userProfile;
-            if (userProfile == null) return const SizedBox.shrink();
-
-            return CustomAppBar(
-              title: 'My Profile',
-              leadingIcon: Icons.person_rounded,
-              actions: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.edit_rounded, color: Colors.white),
-                    onPressed: () =>
-                        _navigateToEditProfile(context, userProfile),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
+      body: Column(
         children: [
-          Consumer<UserProfileProvider>(
-            builder: (context, userProfileProvider, child) {
-              final userProfile = userProfileProvider.userProfile;
-              if (userProfile == null) return const SizedBox.shrink();
-
-              return FloatingActionButton.extended(
-                onPressed: () => _navigateToEditProfile(context, userProfile),
-                backgroundColor: AppColors.primary,
-                icon: const Icon(Icons.edit_rounded, color: Colors.white),
-                label: const Text(
-                  'Edit Profile',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
+          // Custom App Bar
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+              ),
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
                 ),
-              );
-            },
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.person_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'My Profile',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.edit_rounded,
+                          color: Colors.white,
+                        ),
+                        onPressed: () => _navigateToEditProfile(
+                          context,
+                          context.read<UserProfileProvider>().userProfile!,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Body content
+          Expanded(
+            child: Consumer<UserProfileProvider>(
+              builder: (context, userProfileProvider, child) {
+                // Show loading screen if provider is not initialized or loading
+                if (!userProfileProvider.isInitialized ||
+                    userProfileProvider.isLoading) {
+                  return _buildLoadingScreen();
+                }
+
+                final userProfile = userProfileProvider.userProfile;
+
+                // Show no profile screen if user is not authenticated or has no profile
+                if (userProfile == null) {
+                  return _buildNoProfileScreen(context);
+                }
+
+                return _buildProfileContent(context, userProfile);
+              },
+            ),
           ),
         ],
-      ),
-      body: Consumer<UserProfileProvider>(
-        builder: (context, userProfileProvider, child) {
-          // Show loading screen if provider is not initialized or loading
-          if (!userProfileProvider.isInitialized ||
-              userProfileProvider.isLoading) {
-            return _buildLoadingScreen();
-          }
-
-          final userProfile = userProfileProvider.userProfile;
-
-          // Show no profile screen if user is not authenticated or has no profile
-          if (userProfile == null) {
-            return _buildNoProfileScreen(context);
-          }
-
-          return _buildProfileContent(context, userProfile);
-        },
       ),
     );
   }

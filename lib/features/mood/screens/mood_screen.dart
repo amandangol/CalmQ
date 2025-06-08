@@ -6,7 +6,6 @@ import 'package:fl_chart/fl_chart.dart';
 import '../providers/mood_provider.dart';
 import '../../../app_theme.dart';
 import 'package:intl/intl.dart';
-import '../../../widgets/custom_app_bar.dart';
 
 class MoodScreen extends StatefulWidget {
   @override
@@ -35,239 +34,284 @@ class _MoodScreenState extends State<MoodScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: CustomAppBar(
-        title: 'Mood Tracker',
-        leadingIcon: Icons.mood_rounded,
-        trailingWidget: Row(
-          children: [
-            Container(
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
+      body: Column(
+        children: [
+          // Custom App Bar as a widget, not as Scaffold.appBar
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
               ),
-              child: Text(
-                DateFormat('MMM yyyy').format(currentMonth),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
                 ),
-              ),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_ios,
-                      color: Colors.white,
-                      size: 18,
+                child: Row(
+                  children: [
+                    Icon(Icons.mood_rounded, color: Colors.white, size: 24),
+                    SizedBox(width: 12),
+                    Text(
+                      'Mood Tracker',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    onPressed: () => _navigateMonth(false),
-                  ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.arrow_forward_ios,
-                      color: Colors.white,
-                      size: 18,
-                    ),
-                    onPressed: () => _navigateMonth(true),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      body: moodProvider.isLoading
-          ? Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: () async {
-                await moodProvider.refreshData();
-              },
-              child: CustomScrollView(
-                physics: AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Padding(
+                    Spacer(),
+                    Container(
+                      margin: const EdgeInsets.only(right: 8),
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 20.0,
-                        vertical: 16.0,
+                        horizontal: 12,
+                        vertical: 6,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Today's Quick Check-in Section
-                          _buildTodayCheckinSection(context),
-                          SizedBox(height: 24),
-
-                          // Mood Chart Section
-                          if (weekMoods.isNotEmpty) ...[
-                            Text(
-                              'Weekly Mood Trend',
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                color: AppColors.textPrimary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 16),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 20,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.surface,
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 10,
-                                    offset: Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              height: 280,
-                              child: _MoodBarChart(weekMoods: weekMoods),
-                            ),
-                            SizedBox(height: 24),
-                          ],
-
-                          // Mood Statistics
-                          if (weekMoods.isNotEmpty) ...[
-                            _buildMoodStats(context, weekMoods),
-                          ],
-                        ],
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                    ),
-                  ),
-
-                  // Recent Entries Section (Grouped by Date)
-                  if (groupedMoodHistory.isNotEmpty) ...[
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                      sliver: SliverToBoxAdapter(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Recent Entries',
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                color: AppColors.textPrimary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => AllMoodsScreen(),
-                                  ),
-                                );
-                              },
-                              child: Text(
-                                'View All',
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
+                      child: Text(
+                        DateFormat('MMM yyyy').format(currentMonth),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
                         ),
                       ),
                     ),
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20.0,
-                        vertical: 16.0,
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate((context, index) {
-                          final dateKey = groupedMoodHistory.keys.elementAt(
-                            index,
-                          );
-                          final entries = groupedMoodHistory[dateKey]!;
-                          // Only show entries for the first 5 days
-                          if (index >= 5) return null;
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12.0,
-                                ),
-                                child: Text(
-                                  dateKey,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    color: AppColors.textPrimary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              ...entries.map(
-                                (entry) => _MoodEntryCard(entry: entry),
-                              ),
-                            ],
-                          );
-                        }, childCount: groupedMoodHistory.length),
-                      ),
-                    ),
-                  ] else ...[
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: _buildEmptyState(context),
-                    ),
-                  ],
-
-                  // Tips Section
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
                         children: [
-                          if (groupedMoodHistory.isNotEmpty) ...[
-                            Text(
-                              'Wellness Tips',
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                color: AppColors.textPrimary,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.arrow_back_ios,
+                              color: Colors.white,
+                              size: 18,
                             ),
-                            SizedBox(height: 16),
-                            _buildTipSection(
-                              context,
-                              'Connect with nature',
-                              'Spend time outdoors, surrounded by greenery and fresh air',
-                              Icons.nature,
+                            onPressed: () => _navigateMonth(false),
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.arrow_forward_ios,
+                              color: Colors.white,
+                              size: 18,
                             ),
-                            SizedBox(height: 16),
-                            _buildTipSection(
-                              context,
-                              'Practice mindfulness',
-                              'Take a few minutes each day to focus on your breathing',
-                              Icons.self_improvement,
-                            ),
-                          ],
+                            onPressed: () => _navigateMonth(true),
+                          ),
                         ],
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
+          ),
+          // Body content
+          Expanded(
+            child: moodProvider.isLoading
+                ? Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.primary,
+                      ),
+                    ),
+                  )
+                : RefreshIndicator(
+                    onRefresh: () async {
+                      await moodProvider.refreshData();
+                    },
+                    child: CustomScrollView(
+                      physics: AlwaysScrollableScrollPhysics(),
+                      slivers: [
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20.0,
+                              vertical: 16.0,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Today's Quick Check-in Section
+                                _buildTodayCheckinSection(context),
+                                SizedBox(height: 24),
+
+                                // Mood Chart Section
+                                if (weekMoods.isNotEmpty) ...[
+                                  Text(
+                                    'Weekly Mood Trend',
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                      color: AppColors.textPrimary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(height: 16),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 20,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surface,
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.05),
+                                          blurRadius: 10,
+                                          offset: Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    height: 280,
+                                    child: _MoodBarChart(weekMoods: weekMoods),
+                                  ),
+                                  SizedBox(height: 24),
+                                ],
+
+                                // Mood Statistics
+                                if (weekMoods.isNotEmpty) ...[
+                                  _buildMoodStats(context, weekMoods),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        // Recent Entries Section (Grouped by Date)
+                        if (groupedMoodHistory.isNotEmpty) ...[
+                          SliverPadding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20.0,
+                            ),
+                            sliver: SliverToBoxAdapter(
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Recent Entries',
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                      color: AppColors.textPrimary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              AllMoodsScreen(),
+                                        ),
+                                      );
+                                    },
+                                    child: Text(
+                                      'View All',
+                                      style: TextStyle(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          SliverPadding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20.0,
+                              vertical: 16.0,
+                            ),
+                            sliver: SliverList(
+                              delegate: SliverChildBuilderDelegate((
+                                context,
+                                index,
+                              ) {
+                                final dateKey = groupedMoodHistory.keys
+                                    .elementAt(index);
+                                final entries = groupedMoodHistory[dateKey]!;
+                                // Only show entries for the first 5 days
+                                if (index >= 5) return null;
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12.0,
+                                      ),
+                                      child: Text(
+                                        dateKey,
+                                        style: theme.textTheme.titleMedium
+                                            ?.copyWith(
+                                              color: AppColors.textPrimary,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
+                                    ),
+                                    ...entries.map(
+                                      (entry) => _MoodEntryCard(entry: entry),
+                                    ),
+                                  ],
+                                );
+                              }, childCount: groupedMoodHistory.length),
+                            ),
+                          ),
+                        ] else ...[
+                          SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: _buildEmptyState(context),
+                          ),
+                        ],
+
+                        // Tips Section
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (groupedMoodHistory.isNotEmpty) ...[
+                                  Text(
+                                    'Wellness Tips',
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                      color: AppColors.textPrimary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(height: 16),
+                                  _buildTipSection(
+                                    context,
+                                    'Connect with nature',
+                                    'Spend time outdoors, surrounded by greenery and fresh air',
+                                    Icons.nature,
+                                  ),
+                                  SizedBox(height: 16),
+                                  _buildTipSection(
+                                    context,
+                                    'Practice mindfulness',
+                                    'Take a few minutes each day to focus on your breathing',
+                                    Icons.self_improvement,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           showModalBottomSheet(
