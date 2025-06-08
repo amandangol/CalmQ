@@ -210,6 +210,8 @@ class MoodProvider extends ChangeNotifier {
         );
         _todayMood = todayEntry.id == 'placeholder' ? null : todayEntry;
       }
+
+      notifyListeners();
     }
     _isLoading = false;
     notifyListeners();
@@ -234,55 +236,24 @@ class MoodProvider extends ChangeNotifier {
   // Get the latest mood entry for each of the last 7 days (for chart)
   List<MoodEntry> getLatestMoodPerDayForWeek() {
     final now = DateTime.now();
-    final startOfWeek = now.subtract(
-      Duration(days: now.weekday - 1),
-    ); // Assuming Monday is the start of the week
-
-    final Map<String, MoodEntry> dayMap = {};
-
-    // Filter entries for the current week (from startOfWeek to now)
-    final weekEntries = _moodHistory
-        .where(
-          (entry) => entry.timestamp.isAfter(
-            startOfWeek.subtract(Duration(days: 1)),
-          ), // Include entries from the start of the week
-        )
-        .toList();
-
-    // Get the latest entry for each day of the week
-    for (final entry in weekEntries) {
-      final dateKey = DateFormat('yyyy-MM-dd').format(entry.timestamp);
-      // Only keep the latest entry for each day
-      if (!dayMap.containsKey(dateKey) ||
-          entry.timestamp.isAfter(dayMap[dateKey]!.timestamp)) {
-        dayMap[dateKey] = entry;
-      }
-    }
-
-    // Create a list of entries for the last 7 days of the current week
-    final List<MoodEntry> week = [];
-    for (int i = 0; i < 7; i++) {
-      final day = startOfWeek.add(Duration(days: i));
-      final dateKey = DateFormat('yyyy-MM-dd').format(day);
-      // Add the mood entry if it exists for the day, otherwise add a placeholder neutral entry
-      week.add(
-        dayMap[dateKey] ??
-            MoodEntry(
-              id: 'placeholder',
-              emoji: moodEmojis['Neutral']!,
-              mood: 'Neutral',
-              timestamp: DateTime(
-                day.year,
-                day.month,
-                day.day,
-                12,
-              ), // Use midday for consistency
-            ),
+    List<MoodEntry> weekMoods = [];
+    for (int i = 6; i >= 0; i--) {
+      final day = now.subtract(Duration(days: i));
+      final entry = _moodHistory.firstWhere(
+        (e) =>
+            e.timestamp.year == day.year &&
+            e.timestamp.month == day.month &&
+            e.timestamp.day == day.day,
+        orElse: () => MoodEntry(
+          id: 'placeholder',
+          emoji: moodEmojis['Neutral']!,
+          mood: 'Neutral',
+          timestamp: day,
+        ),
       );
+      weekMoods.add(entry);
     }
-
-    // Ensure the list has exactly 7 entries for the chart
-    return week;
+    return weekMoods;
   }
 
   // Group mood history by date

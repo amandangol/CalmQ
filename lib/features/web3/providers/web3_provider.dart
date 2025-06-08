@@ -225,11 +225,22 @@ class Web3Provider with ChangeNotifier {
       _ethBalance = BigInt.zero;
       notifyListeners();
 
-      // Open the wallet connection modal
-      await _appKitModal!.openModalView(ReownAppKitModalMainWalletsPage());
+      // Reinitialize modal before opening
+      await _appKitModal!.init();
+
+      // Open the wallet connection modal with error handling
+      try {
+        await _appKitModal!.openModalView(ReownAppKitModalMainWalletsPage());
+      } catch (modalError) {
+        debugPrint('Error opening modal: $modalError');
+        // Try to reinitialize and open again
+        await _appKitModal!.init();
+        await _appKitModal!.openModalView(ReownAppKitModalMainWalletsPage());
+      }
     } catch (e) {
       _error = 'Failed to connect wallet: $e';
       _isConnected = false;
+      debugPrint('Wallet connection error: $e');
     } finally {
       _isConnecting = false;
       notifyListeners();
@@ -401,6 +412,97 @@ class Web3Provider with ChangeNotifier {
       await Future.wait([loadWellnessTokens(), loadWellnessNFTs()]);
     } catch (e) {
       _error = 'Failed to complete achievement: $e';
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> awardTokens(int amount) async {
+    if (!_isConnected || _walletAddress == null) {
+      throw Exception('Wallet not connected');
+    }
+
+    try {
+      final mintFunction = _wellnessTokenContract.function('mint');
+      final data = mintFunction.encodeCall([
+        EthereumAddress.fromHex(_walletAddress!),
+        BigInt.from(amount),
+      ]);
+
+      final tx = await _appKitModal!.request(
+        topic: _appKitModal!.session!.topic,
+        chainId: '11155111', // Sepolia testnet
+        request: SessionRequestParams(
+          method: 'eth_sendTransaction',
+          params: [
+            {
+              'from': _walletAddress,
+              'to': wellnessTokenAddress,
+              'data': data,
+              'value': '0x0',
+            },
+          ],
+        ),
+      );
+
+      if (tx == null) {
+        throw Exception('Transaction failed');
+      }
+
+      await loadWellnessTokens();
+    } catch (e) {
+      _error = 'Failed to award tokens: $e';
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> mintAchievementNFT(
+    String achievementId,
+    String title,
+    String description,
+    String category,
+    int difficulty,
+    String imageUri,
+  ) async {
+    if (!_isConnected || _walletAddress == null) {
+      throw Exception('Wallet not connected');
+    }
+
+    try {
+      final mintFunction = _wellnessNFTContract.function('mintAchievement');
+      final data = mintFunction.encodeCall([
+        EthereumAddress.fromHex(_walletAddress!),
+        title,
+        description,
+        category,
+        BigInt.from(difficulty),
+        imageUri,
+      ]);
+
+      final tx = await _appKitModal!.request(
+        topic: _appKitModal!.session!.topic,
+        chainId: '11155111', // Sepolia testnet
+        request: SessionRequestParams(
+          method: 'eth_sendTransaction',
+          params: [
+            {
+              'from': _walletAddress,
+              'to': wellnessNFTAddress,
+              'data': data,
+              'value': '0x0',
+            },
+          ],
+        ),
+      );
+
+      if (tx == null) {
+        throw Exception('Transaction failed');
+      }
+
+      await loadWellnessNFTs();
+    } catch (e) {
+      _error = 'Failed to mint achievement NFT: $e';
       notifyListeners();
       rethrow;
     }

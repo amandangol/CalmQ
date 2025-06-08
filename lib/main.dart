@@ -1,6 +1,5 @@
 import 'package:auralynn/features/achievements/providers/achievements_provider.dart';
 import 'package:auralynn/features/achievements/screens/achievements_screen.dart';
-import 'package:auralynn/features/affirmations/screens/affirmations_screen.dart';
 import 'package:auralynn/features/profile/screens/profile_screen.dart';
 import 'package:auralynn/features/journal/providers/journal_provider.dart';
 import 'package:auralynn/features/mood/screens/mood_screen.dart';
@@ -45,17 +44,25 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => JournalProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => Web3Provider()),
-        ChangeNotifierProxyProvider<Web3Provider, AchievementsProvider>(
+        ChangeNotifierProxyProvider2<
+          Web3Provider,
+          AuthProvider,
+          AchievementsProvider
+        >(
           create: (context) =>
               AchievementsProvider(context.read<Web3Provider>()),
-          update: (context, web3Provider, previous) =>
-              AchievementsProvider(web3Provider),
+          update: (context, web3Provider, authProvider, previous) {
+            if (previous == null) {
+              return AchievementsProvider(web3Provider);
+            }
+            return previous..updateWeb3Provider(web3Provider);
+          },
         ),
       ],
       child: MaterialApp(
+        navigatorKey: navigatorKey,
         title: 'Mental Wellness',
         theme: mentalWellnessTheme,
-        navigatorKey: navigatorKey,
         home: const SplashScreenWrapper(),
         debugShowCheckedModeBanner: false,
       ),

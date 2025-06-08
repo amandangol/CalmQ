@@ -10,6 +10,7 @@ class Achievement {
   final DateTime? earnedAt;
   final int difficulty;
   final Progress? progress;
+  final bool isNetworkImage;
 
   Achievement({
     required this.id,
@@ -21,6 +22,7 @@ class Achievement {
     this.earnedAt,
     this.difficulty = 1,
     this.progress,
+    this.isNetworkImage = false,
   });
 
   factory Achievement.fromJson(Map<String, dynamic> json) {
@@ -38,6 +40,7 @@ class Achievement {
       progress: json['progress'] != null
           ? Progress.fromJson(json['progress'] as Map<String, dynamic>)
           : null,
+      isNetworkImage: json['isNetworkImage'] as bool? ?? false,
     );
   }
 
@@ -52,6 +55,7 @@ class Achievement {
       'earnedAt': earnedAt,
       'difficulty': difficulty,
       'progress': progress?.toJson(),
+      'isNetworkImage': isNetworkImage,
     };
   }
 
@@ -65,6 +69,7 @@ class Achievement {
     DateTime? earnedAt,
     int? difficulty,
     Progress? progress,
+    bool? isNetworkImage,
   }) {
     return Achievement(
       id: id ?? this.id,
@@ -76,6 +81,7 @@ class Achievement {
       earnedAt: earnedAt ?? this.earnedAt,
       difficulty: difficulty ?? this.difficulty,
       progress: progress ?? this.progress,
+      isNetworkImage: isNetworkImage ?? this.isNetworkImage,
     );
   }
 

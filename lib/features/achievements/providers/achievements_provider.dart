@@ -5,15 +5,23 @@ import '../../web3/providers/web3_provider.dart';
 
 class AchievementsProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final Web3Provider _web3Provider;
+  Web3Provider _web3Provider;
   List<Achievement> _achievements = [];
   bool _isLoading = false;
   bool _isDisposed = false;
+  bool _isInitialized = false;
 
   AchievementsProvider(this._web3Provider);
 
   List<Achievement> get allAchievements => _achievements;
   bool get isLoading => _isLoading;
+
+  void updateWeb3Provider(Web3Provider web3Provider) {
+    _web3Provider = web3Provider;
+    if (_web3Provider.isConnected) {
+      Future.microtask(() => _loadOnChainAchievements());
+    }
+  }
 
   @override
   void notifyListeners() {
@@ -25,18 +33,32 @@ class AchievementsProvider with ChangeNotifier {
   Future<void> loadAchievements() async {
     if (_isDisposed) return;
 
+    // If we already have achievements and are initialized, don't reload
+    if (_isInitialized && _achievements.isNotEmpty) {
+      return;
+    }
+
     _isLoading = true;
     notifyListeners();
 
     try {
+      debugPrint('Loading achievements from Firestore...');
       final snapshot = await _firestore.collection('achievements').get();
+
       if (_isDisposed) return;
 
-      _achievements = snapshot.docs
+      final loadedAchievements = snapshot.docs
           .map((doc) => Achievement.fromJson(doc.data()))
           .toList();
 
-      // Load on-chain achievement status if wallet is connected
+      debugPrint(
+        'Loaded ${loadedAchievements.length} achievements from Firestore',
+      );
+
+      _achievements = loadedAchievements;
+      _isInitialized = true;
+      notifyListeners();
+
       if (_web3Provider.isConnected) {
         await _loadOnChainAchievements();
       }
@@ -51,16 +73,19 @@ class AchievementsProvider with ChangeNotifier {
   }
 
   Future<void> _loadOnChainAchievements() async {
+    if (_isDisposed) return;
+
     try {
-      // Load user's NFTs
       await _web3Provider.loadWellnessNFTs();
 
-      // Update achievement status based on NFTs
-      for (var achievement in _achievements) {
+      final updatedAchievements = _achievements.map((achievement) {
         final isEarned = _web3Provider.wellnessNFTs.contains(achievement.id);
-        if (isEarned != achievement.isEarned) {
-          achievement = achievement.copyWith(isEarned: isEarned);
-        }
+        return achievement.copyWith(isEarned: isEarned);
+      }).toList();
+
+      if (!_isDisposed) {
+        _achievements = updatedAchievements;
+        notifyListeners();
       }
     } catch (e) {
       debugPrint('Error loading on-chain achievements: $e');
@@ -77,7 +102,8 @@ class AchievementsProvider with ChangeNotifier {
     try {
       final featureAchievements = getAchievementsByFeature(feature);
       for (final achievement in featureAchievements) {
-        if (!achievement.isEarned && achievement.checkProgress()) {
+        if (!achievement.isEarned &&
+            (achievement.progress == null || achievement.checkProgress())) {
           await _awardAchievement(achievement);
         }
       }
@@ -88,29 +114,34 @@ class AchievementsProvider with ChangeNotifier {
 
   Future<void> _awardAchievement(Achievement achievement) async {
     try {
-      // Award on-chain
-      await _web3Provider.completeAchievement(
+      final tokenReward = achievement.difficulty * 10;
+
+      await _web3Provider.awardTokens(tokenReward);
+      await _web3Provider.mintAchievementNFT(
         achievement.id,
+        achievement.title,
         achievement.description,
         achievement.feature,
         achievement.difficulty,
         achievement.imageUrl,
       );
 
-      // Update Firestore
       await _firestore.collection('achievements').doc(achievement.id).update({
         'isEarned': true,
         'earnedAt': FieldValue.serverTimestamp(),
+        'tokenReward': tokenReward,
       });
 
-      // Update local state
-      final index = _achievements.indexWhere((a) => a.id == achievement.id);
-      if (index != -1) {
-        _achievements[index] = achievement.copyWith(isEarned: true);
-        notifyListeners();
+      if (!_isDisposed) {
+        final index = _achievements.indexWhere((a) => a.id == achievement.id);
+        if (index != -1) {
+          _achievements[index] = achievement.copyWith(isEarned: true);
+          notifyListeners();
+        }
       }
     } catch (e) {
       debugPrint('Error awarding achievement: $e');
+      rethrow;
     }
   }
 

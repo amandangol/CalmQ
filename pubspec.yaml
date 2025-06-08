@@ -61,6 +61,7 @@ dependencies:
   web3auth_flutter: ^6.2.0
   solana: ^0.31.2+1
   hex: ^0.2.0
+  cached_network_image: ^3.4.1
   
 
 dev_dependencies:

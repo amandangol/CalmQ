@@ -407,6 +407,7 @@ class _FocusScreenState extends State<FocusScreen>
     });
 
     _progressController.value = 1;
+
     _showCompletionDialog();
     HapticFeedback.heavyImpact();
   }
