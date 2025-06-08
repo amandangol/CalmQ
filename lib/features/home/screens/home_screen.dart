@@ -116,64 +116,62 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Welcome Section
-              _buildWelcomeSection(context, user?.displayName ?? 'Friend'),
-              SizedBox(height: 24),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.zero,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Welcome Section
+            _buildWelcomeSection(context, user?.displayName ?? 'Friend'),
+            SizedBox(height: 24),
 
-              // Today's Check-in Section (Streak)
-              _buildTodayCheckinSection(context, moodProvider, theme),
-              SizedBox(height: 24),
+            // Today's Check-in Section (Streak)
+            _buildTodayCheckinSection(context, moodProvider, theme),
+            SizedBox(height: 24),
 
-              // Today's Mood Section (Log Mood)
-              _buildTodaysMoodSection(context, moodProvider, theme),
-              SizedBox(height: 24),
+            // Today's Mood Section (Log Mood)
+            _buildTodaysMoodSection(context, moodProvider, theme),
+            SizedBox(height: 24),
 
-              // Quick Actions Section
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.grid_view_rounded,
-                        color: AppColors.primary,
-                        size: 20,
-                      ),
+            // Quick Actions Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    SizedBox(width: 12),
-                    Text(
-                      'Quick Actions',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
+                    child: Icon(
+                      Icons.grid_view_rounded,
+                      color: AppColors.primary,
+                      size: 20,
                     ),
-                  ],
-                ),
+                  ),
+                  SizedBox(width: 12),
+                  Text(
+                    'Quick Actions',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: _buildQuickActionsGrid(context),
-              ),
-              SizedBox(height: 24),
+            ),
+            SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: _buildQuickActionsGrid(context),
+            ),
+            SizedBox(height: 24),
 
-              // Daily Inspiration Section
-              _buildDailyInspirationSection(context, theme),
-              SizedBox(height: 24),
-            ],
-          ),
+            // Daily Inspiration Section
+            _buildDailyInspirationSection(context, theme),
+            SizedBox(height: 24),
+          ],
         ),
       ),
     );
@@ -193,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
       greeting = 'Good Evening';
     }
 
-    final name = userProfile?.name ?? userName;
+    final name = userProfile?.name ?? "Friend";
     final dateFormat = DateFormat('EEEE, MMMM d');
     final today = dateFormat.format(now);
 
@@ -373,7 +371,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           SizedBox(height: 12),
-          if (moodProvider.hasLoggedMoodToday()) ...[
+          if (moodProvider.hasLoggedMoodToday() &&
+              moodProvider.todayMood != null) ...[
             Row(
               children: [
                 Container(

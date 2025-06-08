@@ -52,16 +52,8 @@ dependencies:
   google_generative_ai: ^0.4.7
   image_picker: ^1.1.2
   web3dart: ^2.7.1
-  crypto: ^3.0.6
-  eth_sig_util: ^0.0.9
   reown_appkit: ^1.4.4
-  aptos: ^0.0.3
-  aptos_connect: ^0.0.3
-  flutter_secure_storage: ^9.2.4  # Required for aptos_connect storage
-  web3auth_flutter: ^6.2.0
-  solana: ^0.31.2+1
   hex: ^0.2.0
-  cached_network_image: ^3.4.1
   
 
 dev_dependencies:

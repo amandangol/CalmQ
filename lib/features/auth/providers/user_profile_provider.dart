@@ -22,19 +22,29 @@ class UserProfileProvider extends ChangeNotifier {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    // Listen to auth state changes
-    _auth.authStateChanges().listen((User? user) async {
-      if (user != null) {
-        // User is signed in, load their profile
-        await loadUserProfile();
-      } else {
-        // User is signed out, clear profile
-        clearProfile();
-      }
-    });
+    try {
+      _isLoading = true;
+      notifyListeners();
 
-    _isInitialized = true;
-    notifyListeners();
+      // Listen to auth state changes
+      _auth.authStateChanges().listen((User? user) async {
+        if (user != null) {
+          // User is signed in, load their profile
+          await loadUserProfile();
+        } else {
+          // User is signed out, clear profile
+          clearProfile();
+        }
+      });
+
+      _isInitialized = true;
+    } catch (e) {
+      _error = e.toString();
+      print('Error initializing UserProfileProvider: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> saveUserProfile({
@@ -63,7 +73,6 @@ class UserProfileProvider extends ChangeNotifier {
       final docRef = _firestore.collection('users').doc(user.uid);
       final existingDoc = await docRef.get();
 
-      final now = DateTime.now();
       final userProfile = UserProfile(
         uid: user.uid,
         name: name,
@@ -77,11 +86,8 @@ class UserProfileProvider extends ChangeNotifier {
         sleepQuality: sleepQuality,
         happinessLevel: happinessLevel,
         createdAt: existingDoc.exists
-            ? (existingDoc.data()?['createdAt'] != null
-                  ? DateTime.parse(existingDoc.data()!['createdAt'])
-                  : now)
-            : now,
-        updatedAt: now,
+            ? (existingDoc.data()?['createdAt'] as Timestamp?)
+            : null,
       );
 
       // Save to Firestore
@@ -157,7 +163,7 @@ class UserProfileProvider extends ChangeNotifier {
       }
 
       final profileWithTimestamp = updatedProfile.copyWith(
-        updatedAt: DateTime.now(),
+        updatedAt: Timestamp.now(),
       );
 
       await _firestore
@@ -216,6 +222,7 @@ class UserProfileProvider extends ChangeNotifier {
     _error = null;
     _isLoading = false;
     _hasLoadedProfile = false;
+    _isInitialized = false;
     notifyListeners();
   }
 

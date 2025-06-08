@@ -340,4 +340,15 @@ class JournalProvider with ChangeNotifier {
 
     return trend;
   }
+
+  void clearData() {
+    _entries = [];
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    clearData();
+    super.dispose();
+  }
 }

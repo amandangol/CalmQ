@@ -47,9 +47,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
 
         if (mounted) {
-          Navigator.pushReplacement(
-            context,
+          Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (_) => UserInfoScreen()),
+            (route) => false,
           );
         }
       } on firebase_auth.FirebaseAuthException catch (e) {

@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class UserProfile {
   final String uid;
   final String name;
@@ -11,8 +13,8 @@ class UserProfile {
   final String? sleepQuality;
   final String? happinessLevel;
   final String? profilePictureUrl;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
+  final Timestamp? createdAt;
+  final Timestamp? updatedAt;
 
   UserProfile({
     required this.uid,
@@ -46,8 +48,8 @@ class UserProfile {
       'sleepQuality': sleepQuality,
       'happinessLevel': happinessLevel,
       'profilePictureUrl': profilePictureUrl,
-      'createdAt': createdAt?.toIso8601String(),
-      'updatedAt': DateTime.now().toIso8601String(),
+      'createdAt': createdAt ?? FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
     };
   }
 
@@ -66,12 +68,8 @@ class UserProfile {
       sleepQuality: json['sleepQuality'],
       happinessLevel: json['happinessLevel'],
       profilePictureUrl: json['profilePictureUrl'],
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : null,
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'])
-          : null,
+      createdAt: json['createdAt'] as Timestamp?,
+      updatedAt: json['updatedAt'] as Timestamp?,
     );
   }
 
@@ -89,8 +87,8 @@ class UserProfile {
     String? sleepQuality,
     String? happinessLevel,
     String? profilePictureUrl,
-    DateTime? createdAt,
-    DateTime? updatedAt,
+    Timestamp? createdAt,
+    Timestamp? updatedAt,
   }) {
     return UserProfile(
       uid: uid ?? this.uid,

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/user_profile_provider.dart';
 import '../../web3/providers/web3_provider.dart';
 import '../../../app_theme.dart';
+import '../../../main.dart';
 
 class UserInfoScreen extends StatefulWidget {
   @override
@@ -161,6 +162,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
 
   Future<void> _saveData() async {
     try {
+      // First save the user profile
       await context.read<UserProfileProvider>().saveUserProfile(
         name: nameController.text,
         age: int.parse(ageController.text),
@@ -174,61 +176,13 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
         happinessLevel: happinessLevel,
       );
 
-      // Initialize Web3Auth after profile completion
+      // Navigate to main navigation and clear all previous routes
       if (mounted) {
-        final web3Provider = context.read<Web3Provider>();
-        await web3Provider.initialize(context);
-
-        // Show a dialog to connect wallet
-        if (mounted) {
-          final shouldConnectWallet = await showDialog<bool>(
-            context: context,
-            barrierDismissible: false,
-            builder: (context) => AlertDialog(
-              title: const Text('Connect Solana Wallet'),
-              content: const Text(
-                'Would you like to connect your Solana wallet now? You can also do this later from your profile.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Later'),
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Connect Now'),
-                ),
-              ],
-            ),
-          );
-
-          if (shouldConnectWallet == true && mounted) {
-            try {
-              await web3Provider.connectWallet();
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Wallet connected successfully!'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              }
-            } catch (e) {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Failed to connect wallet: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            }
-          }
-        }
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const MainNavigation()),
+          (route) => false,
+        );
       }
-
-      // Pop back to profile screen
-      Navigator.pop(context);
     } catch (e) {
       String errorMessage = 'We encountered an issue saving your profile';
       if (e.toString().contains('unable to start connection')) {
@@ -237,22 +191,59 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
         errorMessage = 'Authentication issue. Please sign in again.';
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          backgroundColor: Colors.red.shade300,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red.shade300,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: _saveData,
+            ),
           ),
-          action: SnackBarAction(
-            label: 'Retry',
-            textColor: Colors.white,
-            onPressed: _saveData,
-          ),
-        ),
-      );
+        );
+      }
     }
+  }
+
+  void _skipProfileSetup() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Skip Profile Setup?'),
+        content: Text(
+          'You can always complete your profile later from the profile. Would you like to skip for now?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Continue Setup',
+              style: TextStyle(color: AppColors.textPrimary),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Close dialog
+              // Navigate to main screen
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const MainNavigation()),
+                (route) => false,
+              );
+            },
+            child: Text(
+              'Skip for Now',
+              style: TextStyle(color: AppColors.primary),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -294,6 +285,16 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                           _buildWellnessAssessmentPage(),
                           _buildLifestylePage(),
                         ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _skipProfileSetup,
+                      child: Text(
+                        'Do it later',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                     _buildNavigationButtons(),
@@ -375,7 +376,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
             child: Column(
               children: [
                 Text(
-                  'Welcome to Auralynn',
+                  'Welcome to CalmQ',
                   style: theme.textTheme.titleLarge?.copyWith(
                     color: AppColors.textPrimary,
                   ),

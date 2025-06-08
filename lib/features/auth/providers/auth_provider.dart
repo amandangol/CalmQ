@@ -20,9 +20,35 @@ class AuthProvider with ChangeNotifier {
   AuthProvider() {
     _auth.authStateChanges().listen((user) {
       _user = user;
+      if (user != null) {
+        _initializeUserData();
+      } else {
+        // Clear all data when user signs out
+        _clearAllData();
+      }
       notifyListeners();
     });
     _loadRememberMePreference();
+  }
+
+  void _clearAllData() {
+    // This will be called when user signs out
+    // The actual clearing is handled by each provider's clearData method
+    // which is called when the provider is disposed
+    _user = null;
+  }
+
+  Future<void> _initializeUserData() async {
+    if (_user == null) return;
+
+    try {
+      // Only update last login timestamp
+      await _firestore.collection('users').doc(_user!.uid).update({
+        'lastLogin': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint('Error initializing user data: $e');
+    }
   }
 
   Future<void> _loadRememberMePreference() async {
@@ -102,7 +128,18 @@ class AuthProvider with ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
+      // Clear user data from Firestore
+      if (_user != null) {
+        await _firestore.collection('users').doc(_user!.uid).update({
+          'lastLogout': FieldValue.serverTimestamp(),
+        });
+      }
+
       await _auth.signOut();
+      _user = null;
+
+      // Clear remember me data
+      await setRememberMe(false);
     } finally {
       _isLoading = false;
       notifyListeners();

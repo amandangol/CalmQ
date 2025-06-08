@@ -96,6 +96,14 @@ class AchievementsProvider with ChangeNotifier {
     return _achievements.where((a) => a.feature == feature).toList();
   }
 
+  List<Achievement> getCompletedAchievements() {
+    return _achievements.where((a) => a.isEarned).toList();
+  }
+
+  List<String> getUniqueFeatures() {
+    return _achievements.map((a) => a.feature).toSet().toList();
+  }
+
   Future<void> checkAndAwardAchievements(String feature) async {
     if (!_web3Provider.isConnected) return;
 
@@ -145,9 +153,16 @@ class AchievementsProvider with ChangeNotifier {
     }
   }
 
+  void clearData() {
+    _achievements = [];
+    _isInitialized = false;
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _isDisposed = true;
+    clearData();
     super.dispose();
   }
 }

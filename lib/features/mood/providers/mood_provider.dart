@@ -515,4 +515,17 @@ class MoodProvider extends ChangeNotifier {
 
     return insights;
   }
+
+  void clearData() {
+    _todayMood = null;
+    _moodHistory = [];
+    _currentStreak = 0;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    clearData();
+    super.dispose();
+  }
 }

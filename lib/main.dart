@@ -201,7 +201,7 @@ class _MainNavigationState extends State<MainNavigation>
             _selectedIndex = index == 0 ? -1 : index - 1;
           });
         },
-        children: _screens.map((screen) => screen).toList(),
+        children: _screens,
       ),
       bottomNavigationBar: CurvedNavigationBar(
         selectedIndex: _selectedIndex,

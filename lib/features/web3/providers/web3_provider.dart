@@ -1,9 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:reown_appkit/reown_appkit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:web3dart/web3dart.dart';
 import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
 
 class Web3Provider with ChangeNotifier {
   ReownAppKitModal? _appKitModal;
@@ -137,31 +139,41 @@ class Web3Provider with ChangeNotifier {
       );
 
       // Listen to connection events
-      _appKitModal?.onModalConnect.subscribe((event) {
+      _appKitModal?.onModalConnect.subscribe((event) async {
         if (event?.session != null) {
           _walletAddress = event!.session.getAddress('eip155');
           _isConnected = true;
-          _saveWalletAddress(_walletAddress!);
+          await _saveWalletAddress(_walletAddress!);
+          await _saveWalletAddressToFirebase(_walletAddress!);
           _loadWalletData();
           notifyListeners();
         }
       });
 
-      _appKitModal?.onModalDisconnect.subscribe((event) {
+      _appKitModal?.onModalDisconnect.subscribe((event) async {
         _walletAddress = null;
         _isConnected = false;
-        _removeWalletAddress();
+        await _removeWalletAddress();
         _clearWalletData();
         notifyListeners();
       });
 
       await _appKitModal!.init();
 
-      final prefs = await SharedPreferences.getInstance();
-      _walletAddress = prefs.getString('wallet_address');
-      _isConnected = _walletAddress != null;
-      if (_isConnected) {
+      // Try to load wallet address from Firebase first
+      final savedAddress = await _loadWalletAddressFromFirebase();
+      if (savedAddress != null) {
+        _walletAddress = savedAddress;
+        _isConnected = true;
         _loadWalletData();
+      } else {
+        // Fallback to local storage
+        final prefs = await SharedPreferences.getInstance();
+        _walletAddress = prefs.getString('wallet_address');
+        _isConnected = _walletAddress != null;
+        if (_isConnected) {
+          _loadWalletData();
+        }
       }
       notifyListeners();
     } catch (e) {
@@ -255,6 +267,10 @@ class Web3Provider with ChangeNotifier {
       _walletAddress = null;
       _isConnected = false;
       _error = null;
+      _wellnessNFTs = [];
+      _wellnessTokens = 0;
+      _ethBalance = BigInt.zero;
+      _tokenBalance = 0;
       await _removeWalletAddress();
       notifyListeners();
     } catch (e) {
@@ -505,6 +521,51 @@ class Web3Provider with ChangeNotifier {
       _error = 'Failed to mint achievement NFT: $e';
       notifyListeners();
       rethrow;
+    }
+  }
+
+  Future<void> _saveWalletAddressToFirebase(String address) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('User not authenticated');
+      }
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .update({
+            'walletAddress': address,
+            'walletConnectedAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+
+      debugPrint('Wallet address saved to Firebase for user: ${user.uid}');
+    } catch (e) {
+      _error = 'Failed to save wallet address to Firebase: $e';
+      debugPrint('Error saving wallet address to Firebase: $e');
+      notifyListeners();
+    }
+  }
+
+  Future<String?> _loadWalletAddressFromFirebase() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('User not authenticated');
+      }
+
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      return doc.data()?['walletAddress'] as String?;
+    } catch (e) {
+      _error = 'Failed to load wallet address from Firebase: $e';
+      debugPrint('Error loading wallet address from Firebase: $e');
+      notifyListeners();
+      return null;
     }
   }
 

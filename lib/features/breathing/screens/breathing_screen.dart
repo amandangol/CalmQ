@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/breathing_provider.dart';
+import '../../achievements/providers/achievements_provider.dart';
 import 'dart:math' as math;
 
 class BreathingScreen extends StatefulWidget {
@@ -20,6 +21,9 @@ class _BreathingScreenState extends State<BreathingScreen>
 
   int _currentCount = 0;
   bool _isBreathing = false;
+  int _completedCycles = 0;
+  static const int CYCLES_FOR_ACHIEVEMENT =
+      3; // Number of cycles needed for achievement
 
   @override
   void initState() {
@@ -89,6 +93,16 @@ class _BreathingScreenState extends State<BreathingScreen>
         _currentCount = count;
       });
 
+      // Track completed cycles
+      if (_currentPhase == BreathingPhase.inhale && _currentCount == 1) {
+        _completedCycles++;
+
+        // Check for achievement after completing required cycles
+        if (_completedCycles >= CYCLES_FOR_ACHIEVEMENT) {
+          _checkAndAwardAchievement();
+        }
+      }
+
       // Trigger ripple effect on phase change
       if (_currentPhase != newPhase) {
         _rippleController.reset();
@@ -97,11 +111,17 @@ class _BreathingScreenState extends State<BreathingScreen>
     }
   }
 
+  void _checkAndAwardAchievement() {
+    final achievementsProvider = context.read<AchievementsProvider>();
+    achievementsProvider.checkAndAwardAchievements('breathing');
+  }
+
   void _startBreathing() {
     setState(() {
       _isBreathing = true;
       _currentPhase = BreathingPhase.inhale;
       _currentCount = 1;
+      _completedCycles = 0; // Reset cycles when starting new session
     });
     _breathingController.repeat();
   }

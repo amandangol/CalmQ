@@ -1,6 +1,7 @@
 import 'package:auralynn/features/auth/screens/user_info_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../auth/providers/user_profile_provider.dart';
 import '../../auth/models/user_profile.dart';
 import '../../../app_theme.dart';
@@ -291,47 +292,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               indicatorColor: AppColors.primary,
               indicatorWeight: 3,
               tabs: const [
-                Tab(icon: Icon(Icons.person_rounded), text: 'Profile'),
                 Tab(
-                  icon: Icon(Icons.account_balance_wallet_rounded),
+                  icon: Icon(Icons.account_balance_outlined),
                   text: 'Web3 Wallet',
                 ),
+                Tab(icon: Icon(Icons.person_rounded), text: 'Profile'),
               ],
             ),
           ),
           Expanded(
             child: TabBarView(
               children: [
-                // Profile Tab
-                CustomScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildStatsSection(userProfile),
-                            const SizedBox(height: 24),
-                            _buildSectionTitle('Personal Information'),
-                            _buildPersonalInfoCard(context, userProfile),
-                            const SizedBox(height: 24),
-                            _buildSectionTitle('Wellness Goals'),
-                            _buildGoalsCard(context, userProfile.goals),
-                            const SizedBox(height: 24),
-                            _buildSectionTitle('Areas of Focus'),
-                            _buildCausesCard(context, userProfile.causes),
-                            const SizedBox(height: 24),
-                            _buildSectionTitle('Wellness Assessment'),
-                            _buildAssessmentCard(context, userProfile),
-                            const SizedBox(height: 100), // Bottom padding
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
                 // Web3 Wallet Tab
                 CustomScrollView(
                   physics: const BouncingScrollPhysics(),
@@ -351,7 +322,133 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ],
                 ),
+                // Profile Tab
+                CustomScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (!_isProfileComplete(userProfile))
+                              _buildCompleteProfileSetupCard(context)
+                            else ...[
+                              _buildStatsSection(userProfile),
+                              const SizedBox(height: 24),
+                              _buildSectionTitle('Personal Information'),
+                              _buildPersonalInfoCard(context, userProfile),
+                              const SizedBox(height: 24),
+                              _buildSectionTitle('Wellness Goals'),
+                              _buildGoalsCard(context, userProfile.goals),
+                              const SizedBox(height: 24),
+                              _buildSectionTitle('Areas of Focus'),
+                              _buildCausesCard(context, userProfile.causes),
+                              const SizedBox(height: 24),
+                              _buildSectionTitle('Wellness Assessment'),
+                              _buildAssessmentCard(context, userProfile),
+                            ],
+                            const SizedBox(height: 100), // Bottom padding
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _isProfileComplete(UserProfile userProfile) {
+    return userProfile.name.isNotEmpty &&
+        userProfile.age > 0 &&
+        userProfile.gender != null &&
+        userProfile.goals.isNotEmpty &&
+        userProfile.causes.isNotEmpty &&
+        userProfile.stressFrequency != null &&
+        userProfile.sleepQuality != null &&
+        userProfile.happinessLevel != null;
+  }
+
+  Widget _buildCompleteProfileSetupCard(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 24),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary.withOpacity(0.1),
+            AppColors.secondary.withOpacity(0.1),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.person_add_rounded,
+              size: 40,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Complete Your Profile',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Set up your profile to get personalized wellness recommendations and track your progress.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _navigateToEditProfile(
+                context,
+                context.read<UserProfileProvider>().userProfile!,
+              ),
+              icon: const Icon(Icons.edit_rounded, color: Colors.white),
+              label: const Text(
+                'Complete Profile Setup',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
+              ),
             ),
           ),
         ],
@@ -1110,6 +1207,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _buildInfoRow(Icons.cake_rounded, 'Age', '${userProfile.age} years'),
       if (userProfile.gender != null)
         _buildInfoRow(Icons.wc_rounded, 'Gender', userProfile.gender!),
+      if (userProfile.createdAt != null)
+        _buildInfoRow(
+          Icons.calendar_today_rounded,
+          'Member Since',
+          _formatDate(userProfile.createdAt!),
+        ),
       if (web3Provider.isConnected)
         _buildInfoRow(
           Icons.account_balance_wallet,
@@ -1117,6 +1220,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
           '${web3Provider.walletAddress!.substring(0, 6)}...${web3Provider.walletAddress!.substring(web3Provider.walletAddress!.length - 4)}',
         ),
     ]);
+  }
+
+  String _formatDate(Timestamp timestamp) {
+    final date = timestamp.toDate();
+    final months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
   Widget _buildGoalsCard(BuildContext context, List<String> goals) {
