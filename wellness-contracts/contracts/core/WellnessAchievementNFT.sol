@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -8,81 +8,58 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 contract WellnessAchievementNFT is ERC721, Ownable {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
+
+    // Mapping from user address to their achievement IDs
+    mapping(address => uint256[]) private _userAchievements;
     
-    struct Achievement {
-        string name;
-        string description;
-        string category; // Mood, Journal, Focus, Breathing, Meditation
-        uint256 difficulty; // 1-5
-        string imageUri;
-        uint256 timestamp;
+    // Mapping from achievement ID to whether it exists
+    mapping(uint256 => bool) private _validAchievementIds;
+    
+    // Mapping from user address to whether they've minted a specific achievement
+    mapping(address => mapping(uint256 => bool)) private _hasMintedAchievement;
+
+    // Event emitted when a new achievement is minted
+    event AchievementMinted(address indexed user, uint256 indexed achievementId, uint256 tokenId);
+
+    constructor() ERC721("Wellness Achievement", "WELL") {
+        // Initialize valid achievement IDs (1-10 for now)
+        for(uint256 i = 1; i <= 10; i++) {
+            _validAchievementIds[i] = true;
+        }
     }
-    
-    mapping(uint256 => Achievement) public achievements;
-    mapping(address => bool) public minters;
-    mapping(string => mapping(address => bool)) public userAchievements;
-    
-    event AchievementMinted(address indexed user, uint256 tokenId, string achievementName);
-    event MinterStatusChanged(address indexed minter, bool status);
-    
-    constructor() ERC721("Wellness Achievement", "WELLACH") {}
-    
-    modifier onlyMinter() {
-        require(minters[msg.sender], "Not authorized to mint");
-        _;
-    }
-    
-    function setMinter(address minter, bool status) external onlyOwner {
-        minters[minter] = status;
-        emit MinterStatusChanged(minter, status);
-    }
-    
-    function mintAchievement(
-        address to,
-        string memory name,
-        string memory description,
-        string memory category,
-        uint256 difficulty,
-        string memory imageUri
-    ) external onlyMinter returns (uint256) {
-        require(!userAchievements[name][to], "Achievement already earned");
+
+    // Function to mint a new achievement NFT
+    function mintAchievement(uint256 achievementId) public {
+        require(_validAchievementIds[achievementId], "Invalid achievement ID");
+        require(!_hasMintedAchievement[msg.sender][achievementId], "Already minted this achievement");
         
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
         
-        achievements[newTokenId] = Achievement({
-            name: name,
-            description: description,
-            category: category,
-            difficulty: difficulty,
-            imageUri: imageUri,
-            timestamp: block.timestamp
-        });
-        
-        userAchievements[name][to] = true;
-        _mint(to, newTokenId);
-        
-        emit AchievementMinted(to, newTokenId, name);
-        return newTokenId;
+        _mint(msg.sender, newTokenId);
+        _userAchievements[msg.sender].push(achievementId);
+        _hasMintedAchievement[msg.sender][achievementId] = true;
+
+        emit AchievementMinted(msg.sender, achievementId, newTokenId);
     }
-    
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        require(_exists(tokenId), "Token does not exist");
-        return achievements[tokenId].imageUri;
+
+    // Function to get all achievements for a user
+    function getUserAchievements(address user) public view returns (uint256[] memory) {
+        return _userAchievements[user];
     }
-    
-    function getUserAchievements(address user) external view returns (uint256[] memory) {
-        uint256 balance = balanceOf(user);
-        uint256[] memory tokenIds = new uint256[](balance);
-        uint256 index = 0;
-        
-        for (uint256 i = 1; i <= _tokenIds.current(); i++) {
-            if (ownerOf(i) == user) {
-                tokenIds[index] = i;
-                index++;
-            }
-        }
-        
-        return tokenIds;
+
+    // Function to add new valid achievement IDs (only owner)
+    function addValidAchievementId(uint256 achievementId) public onlyOwner {
+        _validAchievementIds[achievementId] = true;
+    }
+
+    // Function to check if an achievement ID is valid
+    function isValidAchievementId(uint256 achievementId) public view returns (bool) {
+        return _validAchievementIds[achievementId];
+    }
+
+    // Function to check if a user has minted a specific achievement
+    function hasMintedAchievement(address user, uint256 achievementId) public view returns (bool) {
+        return _hasMintedAchievement[user][achievementId];
     }
 } 

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../web3/providers/web3_provider.dart';
+import '../../achievements/providers/achievement_provider.dart';
+import '../../achievements/models/achievement.dart';
 
 class BreathingProvider extends ChangeNotifier {
   final Web3Provider _web3Provider;
@@ -139,6 +142,23 @@ class BreathingProvider extends ChangeNotifier {
     _totalBreathingTime = 0;
     _lastSessionDate = null;
     await _saveBreathingStats();
+    notifyListeners();
+  }
+
+  Future<void> completeBreathingSession(BuildContext context) async {
+    if (!_isInitialized) return;
+
+    // Increment achievement count
+    Provider.of<AchievementProvider>(
+      context,
+      listen: false,
+    ).incrementActivityCount(AchievementType.breathing);
+
+    // Update stats
+    _totalSessions++;
+    _totalBreathingTime += _selectedDuration * 60;
+    await _saveBreathingStats();
+
     notifyListeners();
   }
 }

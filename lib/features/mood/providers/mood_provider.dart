@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../../achievements/providers/achievement_provider.dart';
+import '../../achievements/models/achievement.dart';
 
 class MoodEntry {
   final String emoji;
@@ -527,5 +530,15 @@ class MoodProvider extends ChangeNotifier {
   void dispose() {
     clearData();
     super.dispose();
+  }
+
+  Future<void> trackMood(BuildContext context, String mood, String note) async {
+    await addMood(mood, note: note);
+
+    // Increment achievement count
+    Provider.of<AchievementProvider>(
+      context,
+      listen: false,
+    ).incrementActivityCount(AchievementType.mood);
   }
 }

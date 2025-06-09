@@ -2,113 +2,297 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/achievement_provider.dart';
 import '../models/achievement.dart';
+import '../../web3/providers/web3_provider.dart';
+import '../../../app_theme.dart';
 
-class AchievementsScreen extends StatelessWidget {
+class AchievementsScreen extends StatefulWidget {
   const AchievementsScreen({Key? key}) : super(key: key);
+
+  @override
+  State<AchievementsScreen> createState() => _AchievementsScreenState();
+}
+
+class _AchievementsScreenState extends State<AchievementsScreen> {
+  bool _isClaiming = false;
+  String? _claimingAchievementId;
+
+  @override
+  void initState() {
+    super.initState();
+    // Set up Web3Provider in AchievementProvider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final web3Provider = context.read<Web3Provider>();
+      context.read<AchievementProvider>().setWeb3Provider(web3Provider);
+    });
+  }
+
+  Future<void> _claimAchievement(String achievementId) async {
+    setState(() {
+      _isClaiming = true;
+      _claimingAchievementId = achievementId;
+    });
+
+    try {
+      await context.read<AchievementProvider>().claimAchievement(achievementId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Achievement claimed and NFT minted successfully!',
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to claim achievement: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isClaiming = false;
+          _claimingAchievementId = null;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Achievements'), centerTitle: true),
-      body: Consumer<AchievementProvider>(
-        builder: (context, achievementProvider, _) {
-          final achievements = achievementProvider.achievements;
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: achievements.length,
-            itemBuilder: (context, index) {
-              final achievement = achievements[index];
-              return AchievementCard(achievement: achievement);
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('Achievements'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: () {
+              context.read<AchievementProvider>().notifyListeners();
             },
-          );
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          context.read<AchievementProvider>().notifyListeners();
         },
+        child: Consumer<AchievementProvider>(
+          builder: (context, achievementProvider, child) {
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: achievementProvider.achievements.length,
+              itemBuilder: (context, index) {
+                final achievement = achievementProvider.achievements[index];
+                return _buildAchievementCard(achievement);
+              },
+            );
+          },
+        ),
       ),
     );
   }
-}
 
-class AchievementCard extends StatelessWidget {
-  final Achievement achievement;
+  Widget _buildAchievementCard(Achievement achievement) {
+    final isClaiming = _isClaiming && _claimingAchievementId == achievement.id;
+    final web3Provider = context.watch<Web3Provider>();
+    final isWalletConnected = web3Provider.isConnected;
 
-  const AchievementCard({Key? key, required this.achievement})
-    : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          ListTile(
+            contentPadding: const EdgeInsets.all(16),
+            leading: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: achievement.isUnlocked
+                    ? AppColors.primary.withOpacity(0.1)
+                    : Colors.grey.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.workspace_premium_rounded,
+                color: achievement.isUnlocked ? AppColors.primary : Colors.grey,
+              ),
+            ),
+            title: Text(
+              achievement.title,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: achievement.isUnlocked
+                    ? AppColors.textPrimary
+                    : Colors.grey,
+              ),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Image.asset(achievement.iconPath, width: 48, height: 48),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        achievement.title,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        achievement.description,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ],
+                const SizedBox(height: 4),
+                Text(
+                  achievement.description,
+                  style: TextStyle(
+                    color: achievement.isUnlocked
+                        ? AppColors.textSecondary
+                        : Colors.grey,
                   ),
                 ),
+                if (achievement.isUnlocked && !achievement.isClaimed) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Connect your wallet to claim this achievement as an NFT',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ],
             ),
-            const SizedBox(height: 16),
-            LinearProgressIndicator(
-              value:
-                  context.read<AchievementProvider>().getActivityCount(
-                    achievement.type,
-                  ) /
-                  achievement.requiredCount,
-              backgroundColor: Colors.grey[300],
-              valueColor: AlwaysStoppedAnimation<Color>(
-                achievement.isUnlocked
-                    ? Colors.green
-                    : Theme.of(context).primaryColor,
-              ),
+            trailing: _buildAchievementStatus(
+              achievement,
+              isClaiming,
+              isWalletConnected,
             ),
-            const SizedBox(height: 8),
-            Text(
-              '${context.read<AchievementProvider>().getActivityCount(achievement.type)}/${achievement.requiredCount}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            if (achievement.isUnlocked && !achievement.isClaimed)
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: ElevatedButton(
-                  onPressed: () {
-                    context.read<AchievementProvider>().claimAchievement(
-                      achievement.id,
-                    );
-                  },
-                  child: const Text('Claim Achievement'),
+          ),
+          if (achievement.isUnlocked && !achievement.isClaimed)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.05),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
                 ),
               ),
-            if (achievement.isClaimed)
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: Text(
-                  'Claimed on ${achievement.claimedAt?.toString().split('.')[0] ?? ''}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: Colors.green),
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Progress: ${context.read<AchievementProvider>().getActivityCount(achievement.type)}/${achievement.requiredCount}',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value:
+                          context.read<AchievementProvider>().getActivityCount(
+                            achievement.type,
+                          ) /
+                          achievement.requiredCount,
+                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.primary,
+                      ),
+                      minHeight: 8,
+                    ),
+                  ),
+                ],
               ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAchievementStatus(
+    Achievement achievement,
+    bool isClaiming,
+    bool isWalletConnected,
+  ) {
+    if (!achievement.isUnlocked) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.grey.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Text(
+          'Locked',
+          style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+        ),
+      );
+    }
+
+    if (achievement.isClaimed) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.green.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.check_circle, size: 16, color: Colors.green),
+            const SizedBox(width: 4),
+            const Text(
+              'Claimed',
+              style: TextStyle(
+                color: Colors.green,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ),
+      );
+    }
+
+    if (!isWalletConnected) {
+      return TextButton(
+        onPressed: () {
+          context.read<Web3Provider>().connectWallet();
+        },
+        child: const Text('Connect Wallet'),
+      );
+    }
+
+    return ElevatedButton(
+      onPressed: isClaiming ? null : () => _claimAchievement(achievement.id),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
+      child: isClaiming
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+          : const Text('Claim NFT'),
     );
   }
 }

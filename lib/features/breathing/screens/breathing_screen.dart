@@ -139,6 +139,7 @@ class _BreathingScreenState extends State<BreathingScreen>
       _isBreathing = false;
     });
     context.read<BreathingProvider>().stopBreathing();
+    context.read<BreathingProvider>().completeBreathingSession(context);
     _breathingController.stop();
     _breathingController.reset();
   }

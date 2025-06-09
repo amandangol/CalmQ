@@ -15,6 +15,7 @@ import 'features/journal/providers/journal_provider.dart';
 import 'features/chat/providers/chat_provider.dart';
 import 'features/web3/providers/web3_provider.dart';
 import 'features/settings/providers/settings_provider.dart';
+import 'features/achievements/providers/achievement_provider.dart';
 import 'app_theme.dart';
 import 'splash_screen.dart';
 import 'navigation/main_navigation.dart';
@@ -60,6 +61,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => WaterTrackerProvider()),
         ChangeNotifierProvider(create: (_) => FocusProvider()),
+        ChangeNotifierProvider(create: (_) => AchievementProvider()),
       ],
       child: Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {

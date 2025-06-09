@@ -1,6 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:typed_data';
+
+import 'package:cloud_firestore/cloud_firestore.dart' hide Transaction;
 import 'package:flutter/material.dart';
-import 'package:reown_appkit/reown_appkit.dart';
+import 'package:reown_appkit/reown_appkit.dart' hide Transaction;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web3dart/web3dart.dart';
 import 'package:http/http.dart' as http;
@@ -33,7 +35,8 @@ class Web3Provider with ChangeNotifier {
 
   static const String wellnessNFTABI = '''[
     {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
-    {"inputs":[{"name":"user","type":"address"}],"name":"getUserAchievements","outputs":[{"name":"","type":"uint256[]"}],"stateMutability":"view","type":"function"}
+    {"inputs":[{"name":"user","type":"address"}],"name":"getUserAchievements","outputs":[{"name":"","type":"uint256[]"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"name":"achievementId","type":"uint256"}],"name":"mintAchievement","outputs":[],"stateMutability":"nonpayable","type":"function"}
   ]''';
 
   // Web3 client and contracts
@@ -51,6 +54,11 @@ class Web3Provider with ChangeNotifier {
   int get nftCount => _wellnessNFTs.length;
   List<dynamic> get wellnessNFTs => _wellnessNFTs;
   String? get error => _error;
+
+  // Getters for external access
+  Web3Client get client => _client;
+  DeployedContract get wellnessNFTContract => _wellnessNFTContract;
+  ReownAppKitModal? get appKitModal => _appKitModal;
 
   String _formatEthBalance(BigInt balance) {
     final ethValue = balance / BigInt.from(10).pow(18);
@@ -330,6 +338,71 @@ class Web3Provider with ChangeNotifier {
       _error = 'Failed to load wellness tokens: $e';
       _isLoadingTokens = false;
       notifyListeners();
+    }
+  }
+
+  // Method to send transactions using the connected wallet
+  Future<String?> sendTransaction({
+    required EthereumAddress to,
+    required Uint8List data,
+    BigInt? value,
+    BigInt? gasPrice,
+    int? gasLimit,
+  }) async {
+    try {
+      if (!_isConnected ||
+          _appKitModal == null ||
+          _appKitModal!.session == null) {
+        debugPrint(
+          'Wallet connection check failed: connected=$_isConnected, modal=${_appKitModal != null}, session=${_appKitModal?.session != null}',
+        );
+        throw Exception('Wallet not connected');
+      }
+
+      debugPrint('Preparing transaction to: ${to.hex}');
+      debugPrint(
+        'Data: 0x${data.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}',
+      );
+
+      final transaction = {
+        'from': _walletAddress,
+        'to': to.hex,
+        'data':
+            '0x${data.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}',
+        if (value != null) 'value': '0x${value.toRadixString(16)}',
+        if (gasLimit != null) 'gas': '0x${gasLimit.toRadixString(16)}',
+        if (gasPrice != null) 'gasPrice': '0x${gasPrice.toRadixString(16)}',
+      };
+
+      debugPrint('Sending transaction: $transaction');
+
+      final result = await _appKitModal!.request(
+        topic: _appKitModal!.session!.topic,
+        chainId: 'eip155:11155111',
+        request: SessionRequestParams(
+          method: 'eth_sendTransaction',
+          params: [transaction],
+        ),
+      );
+
+      debugPrint('Transaction result: $result');
+
+      if (result == null) {
+        throw Exception('No response from wallet');
+      }
+
+      final txHash = result.toString();
+      if (txHash.isEmpty) {
+        throw Exception('Empty transaction hash received');
+      }
+
+      return txHash;
+    } catch (e, stackTrace) {
+      debugPrint('Error in sendTransaction: $e');
+      debugPrint('Stack trace: $stackTrace');
+      _error = 'Failed to send transaction: $e';
+      notifyListeners();
+      return null;
     }
   }
 

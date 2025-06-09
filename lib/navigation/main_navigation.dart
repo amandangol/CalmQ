@@ -1,3 +1,4 @@
+import 'package:auralynn/features/achievements/screens/achievements_screen.dart';
 import 'package:auralynn/features/chat/screens/chat_screen.dart';
 import 'package:flutter/material.dart';
 import '../features/home/screens/home_screen.dart';
@@ -22,7 +23,7 @@ class _MainNavigationState extends State<MainNavigation> {
     HomeScreen(),
     MoodScreen(),
     BreathingScreen(),
-    ChatScreen(),
+    AchievementsScreen(),
     ProfileScreen(),
   ];
 
