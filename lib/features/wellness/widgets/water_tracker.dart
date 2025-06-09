@@ -107,6 +107,12 @@ class _WaterTrackerState extends State<WaterTracker> {
   }
 
   Widget _buildWaterProgress(WaterTrackerProvider provider) {
+    final todayTotal = provider.getTodayTotal();
+    final progressPercentage = (todayTotal / provider.dailyGoal).clamp(
+      0.0,
+      1.0,
+    );
+
     return Column(
       children: [
         Stack(
@@ -116,7 +122,7 @@ class _WaterTrackerState extends State<WaterTracker> {
               width: 150,
               height: 150,
               child: CircularProgressIndicator(
-                value: provider.progressPercentage,
+                value: progressPercentage,
                 backgroundColor: AppColors.info.withOpacity(0.1),
                 valueColor: AlwaysStoppedAnimation<Color>(AppColors.info),
                 strokeWidth: 12,
@@ -126,7 +132,7 @@ class _WaterTrackerState extends State<WaterTracker> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '${provider.todayIntake.toInt()}',
+                  '$todayTotal',
                   style: TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 32,
@@ -149,7 +155,7 @@ class _WaterTrackerState extends State<WaterTracker> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'Goal: ${provider.dailyGoal.toInt()} ml',
+              'Goal: ${provider.dailyGoal} ml',
               style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
             ),
             SizedBox(width: 8),
@@ -170,7 +176,7 @@ class _WaterTrackerState extends State<WaterTracker> {
       alignment: WrapAlignment.center,
       children: _quickAddAmounts.map((amount) {
         return GestureDetector(
-          onTap: () => provider.addIntake(amount),
+          onTap: () => provider.addWaterIntake(amount.toInt()),
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
@@ -193,11 +199,12 @@ class _WaterTrackerState extends State<WaterTracker> {
   }
 
   Widget _buildIntakeHistory(WaterTrackerProvider provider) {
-    final todayIntakes = provider.intakes.where((intake) {
+    final todayIntakes = provider.waterIntakes.where((intake) {
       final now = DateTime.now();
-      return intake.timestamp.year == now.year &&
-          intake.timestamp.month == now.month &&
-          intake.timestamp.day == now.day;
+      final timestamp = intake['timestamp'] as DateTime;
+      return timestamp.year == now.year &&
+          timestamp.month == now.month &&
+          timestamp.day == now.day;
     }).toList();
 
     return Column(
@@ -221,6 +228,7 @@ class _WaterTrackerState extends State<WaterTracker> {
           )
         else
           ...todayIntakes.map((intake) {
+            final timestamp = intake['timestamp'] as DateTime;
             return Container(
               margin: EdgeInsets.only(bottom: 8),
               padding: EdgeInsets.all(12),
@@ -249,28 +257,18 @@ class _WaterTrackerState extends State<WaterTracker> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${intake.amount.toInt()} ml',
+                          '${intake['amount']} ml',
                           style: TextStyle(
                             color: AppColors.textPrimary,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        if (intake.note != null) ...[
-                          SizedBox(height: 4),
-                          Text(
-                            intake.note!,
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ),
                   Text(
-                    '${intake.timestamp.hour}:${intake.timestamp.minute.toString().padLeft(2, '0')}',
+                    '${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}',
                     style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 12,
@@ -282,7 +280,8 @@ class _WaterTrackerState extends State<WaterTracker> {
                       color: AppColors.error,
                       size: 20,
                     ),
-                    onPressed: () => provider.removeIntake(intake.id),
+                    onPressed: () =>
+                        provider.removeWaterIntake(intake['id'] as String),
                   ),
                 ],
               ),
@@ -447,7 +446,7 @@ class _WaterTrackerState extends State<WaterTracker> {
     WaterTrackerProvider provider,
   ) {
     final controller = TextEditingController(
-      text: provider.dailyGoal.toInt().toString(),
+      text: provider.dailyGoal.toString(),
     );
 
     showDialog(
@@ -469,7 +468,7 @@ class _WaterTrackerState extends State<WaterTracker> {
           ),
           TextButton(
             onPressed: () {
-              final goal = double.tryParse(controller.text) ?? 2000;
+              final goal = int.tryParse(controller.text) ?? 2000;
               provider.updateDailyGoal(goal);
               Navigator.pop(context);
             },

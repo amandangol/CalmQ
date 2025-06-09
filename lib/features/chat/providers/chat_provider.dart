@@ -60,6 +60,12 @@ class ChatProvider with ChangeNotifier {
 
   void _initializeChat() {
     _chat = _model.startChat();
+    _messages.clear();
+    _error = '';
+    _isLoading = false;
+    _isSpeaking = false;
+    _currentSpeakingMessage = null;
+    notifyListeners();
   }
 
   List<ChatMessage> get messages => List.unmodifiable(_messages);
@@ -189,8 +195,10 @@ class ChatProvider with ChangeNotifier {
   void clearChat() {
     _messages.clear();
     _error = '';
+    _isLoading = false;
+    _isSpeaking = false;
+    _currentSpeakingMessage = null;
     _initializeChat();
-    stopSpeaking();
     notifyListeners();
   }
 
@@ -198,6 +206,8 @@ class ChatProvider with ChangeNotifier {
   void dispose() {
     _flutterTts.stop();
     _flutterTts.setCompletionHandler(() {});
+    _messages.clear();
+    _chat = null;
     super.dispose();
   }
 }

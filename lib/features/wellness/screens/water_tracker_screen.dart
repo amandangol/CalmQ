@@ -18,31 +18,7 @@ class WaterTrackerScreen extends StatelessWidget {
         ),
         child: Column(
           children: [
-            CustomAppBar(
-              title: 'Water Tracker',
-              showBackButton: true,
-              subtitle: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.water_drop, color: Colors.white, size: 16),
-                    SizedBox(width: 8),
-                    Text(
-                      'Stay hydrated, stay healthy',
-                      style: TextStyle(
-                        color: Colors.grey.withOpacity(0.9),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            CustomAppBar(title: 'Water Tracker', showBackButton: true),
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.all(16),

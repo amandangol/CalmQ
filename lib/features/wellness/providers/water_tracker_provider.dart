@@ -1,141 +1,163 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/water_intake.dart';
 
-class WaterTrackerProvider with ChangeNotifier {
-  List<WaterIntake> _intakes = [];
-  double _dailyGoal = 2000.0; // Default goal: 2000ml
+class WaterTrackerProvider extends ChangeNotifier {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  List<Map<String, dynamic>> _waterIntakes = [];
+  int _dailyGoal = 2000; // ml
   bool _remindersEnabled = false;
-  List<TimeOfDay> _reminderTimes = [];
+  List<String> _reminderTimes = [];
 
   // Getters
-  List<WaterIntake> get intakes => _intakes;
-  double get dailyGoal => _dailyGoal;
+  List<Map<String, dynamic>> get waterIntakes => _waterIntakes;
+  int get dailyGoal => _dailyGoal;
   bool get remindersEnabled => _remindersEnabled;
-  List<TimeOfDay> get reminderTimes => _reminderTimes;
+  List<String> get reminderTimes => _reminderTimes;
 
-  double get todayIntake {
-    final now = DateTime.now();
-    return _intakes
-        .where(
-          (intake) =>
-              intake.timestamp.year == now.year &&
-              intake.timestamp.month == now.month &&
-              intake.timestamp.day == now.day,
-        )
-        .fold(0.0, (sum, intake) => sum + intake.amount);
+  // Initialize data
+  Future<void> initialize() async {
+    await _loadPreferences();
+    await _loadWaterIntakes();
   }
 
-  double get progressPercentage => (todayIntake / _dailyGoal).clamp(0.0, 1.0);
-
-  WaterTrackerProvider() {
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
+  // Load preferences from SharedPreferences
+  Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
-
-    // Load intakes
-    final intakesJson = prefs.getString('water_intakes');
-    if (intakesJson != null) {
-      final List<dynamic> decoded = json.decode(intakesJson);
-      _intakes = decoded.map((item) => WaterIntake.fromJson(item)).toList();
-    }
-
-    // Load daily goal
-    _dailyGoal = prefs.getDouble('water_daily_goal') ?? 2000.0;
-
-    // Load reminder settings
-    _remindersEnabled = prefs.getBool('water_reminders_enabled') ?? false;
-
-    // Load reminder times
-    final reminderTimesJson = prefs.getString('water_reminder_times');
-    if (reminderTimesJson != null) {
-      final List<dynamic> decoded = json.decode(reminderTimesJson);
-      _reminderTimes = decoded
-          .map((item) => TimeOfDay(hour: item['hour'], minute: item['minute']))
-          .toList();
-    }
-
+    _dailyGoal = prefs.getInt('daily_goal') ?? 2000;
+    _remindersEnabled = prefs.getBool('reminders_enabled') ?? false;
+    _reminderTimes = List<String>.from(
+      jsonDecode(prefs.getString('reminder_times') ?? '[]'),
+    );
     notifyListeners();
   }
 
-  Future<void> _saveData() async {
+  // Save preferences to SharedPreferences
+  Future<void> _savePreferences() async {
     final prefs = await SharedPreferences.getInstance();
-
-    // Save intakes
-    final intakesJson = json.encode(_intakes.map((e) => e.toJson()).toList());
-    await prefs.setString('water_intakes', intakesJson);
-
-    // Save daily goal
-    await prefs.setDouble('water_daily_goal', _dailyGoal);
-
-    // Save reminder settings
-    await prefs.setBool('water_reminders_enabled', _remindersEnabled);
-
-    // Save reminder times
-    final reminderTimesJson = json.encode(
-      _reminderTimes
-          .map((time) => {'hour': time.hour, 'minute': time.minute})
-          .toList(),
-    );
-    await prefs.setString('water_reminder_times', reminderTimesJson);
+    await prefs.setInt('daily_goal', _dailyGoal);
+    await prefs.setBool('reminders_enabled', _remindersEnabled);
+    await prefs.setString('reminder_times', jsonEncode(_reminderTimes));
   }
 
-  void addIntake(double amount, {String? note}) {
-    _intakes.add(
-      WaterIntake(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        amount: amount,
-        timestamp: DateTime.now(),
-        note: note,
-      ),
-    );
-    _saveData();
-    notifyListeners();
-  }
+  // Load water intakes from Firebase
+  Future<void> _loadWaterIntakes() async {
+    if (_auth.currentUser == null) return;
 
-  void removeIntake(String id) {
-    _intakes.removeWhere((intake) => intake.id == id);
-    _saveData();
-    notifyListeners();
-  }
+    try {
+      final today = DateTime.now();
+      final startOfDay = DateTime(today.year, today.month, today.day);
 
-  void updateDailyGoal(double goal) {
-    _dailyGoal = goal;
-    _saveData();
-    notifyListeners();
-  }
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(_auth.currentUser!.uid)
+          .collection('water_intakes')
+          .where('timestamp', isGreaterThanOrEqualTo: startOfDay)
+          .orderBy('timestamp', descending: true)
+          .get();
 
-  void toggleReminders(bool enabled) {
-    _remindersEnabled = enabled;
-    _saveData();
-    notifyListeners();
-  }
+      _waterIntakes = snapshot.docs.map((doc) => doc.data()).toList();
 
-  void addReminderTime(TimeOfDay time) {
-    if (!_reminderTimes.contains(time)) {
-      _reminderTimes.add(time);
-      _reminderTimes.sort((a, b) {
-        final aMinutes = a.hour * 60 + a.minute;
-        final bMinutes = b.hour * 60 + b.minute;
-        return aMinutes.compareTo(bMinutes);
-      });
-      _saveData();
       notifyListeners();
+    } catch (e) {
+      print('Error loading water intakes: $e');
     }
   }
 
-  void removeReminderTime(TimeOfDay time) {
-    _reminderTimes.remove(time);
-    _saveData();
+  // Add water intake
+  Future<void> addWaterIntake(int amount) async {
+    if (_auth.currentUser == null) return;
+
+    try {
+      final intake = {
+        'amount': amount,
+        'timestamp': FieldValue.serverTimestamp(),
+      };
+
+      // Add to Firebase
+      await _firestore
+          .collection('users')
+          .doc(_auth.currentUser!.uid)
+          .collection('water_intakes')
+          .add(intake);
+
+      // Update local state
+      _waterIntakes.insert(0, {...intake, 'timestamp': DateTime.now()});
+
+      notifyListeners();
+    } catch (e) {
+      print('Error adding water intake: $e');
+      rethrow;
+    }
+  }
+
+  // Remove water intake
+  Future<void> removeWaterIntake(String id) async {
+    if (_auth.currentUser == null) return;
+
+    try {
+      // Remove from Firebase
+      await _firestore
+          .collection('users')
+          .doc(_auth.currentUser!.uid)
+          .collection('water_intakes')
+          .doc(id)
+          .delete();
+
+      // Update local state
+      _waterIntakes.removeWhere((intake) => intake['id'] == id);
+
+      notifyListeners();
+    } catch (e) {
+      print('Error removing water intake: $e');
+      rethrow;
+    }
+  }
+
+  // Update daily goal
+  Future<void> updateDailyGoal(int goal) async {
+    _dailyGoal = goal;
+    await _savePreferences();
     notifyListeners();
   }
 
-  void updateReminderTimes(List<TimeOfDay> times) {
-    _reminderTimes = times;
-    _saveData();
+  // Toggle reminders
+  Future<void> toggleReminders(bool enabled) async {
+    _remindersEnabled = enabled;
+    await _savePreferences();
     notifyListeners();
+  }
+
+  // Add reminder time
+  Future<void> addReminderTime(String time) async {
+    _reminderTimes.add(time);
+    _reminderTimes.sort();
+    await _savePreferences();
+    notifyListeners();
+  }
+
+  // Remove reminder time
+  Future<void> removeReminderTime(String time) async {
+    _reminderTimes.remove(time);
+    await _savePreferences();
+    notifyListeners();
+  }
+
+  // Get today's total water intake
+  int getTodayTotal() {
+    final today = DateTime.now();
+    return _waterIntakes
+        .where((intake) {
+          final timestamp = intake['timestamp'] as DateTime;
+          return timestamp.year == today.year &&
+              timestamp.month == today.month &&
+              timestamp.day == today.day;
+        })
+        .fold(0, (sum, intake) => sum + (intake['amount'] as int));
   }
 }

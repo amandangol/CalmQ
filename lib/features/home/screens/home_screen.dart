@@ -16,6 +16,7 @@ import '../../../widgets/custom_confirmation_dialog.dart';
 import '../../../widgets/custom_app_bar.dart';
 import '../../affirmations/providers/affirmation_provider.dart';
 import 'package:intl/intl.dart';
+import '../../chat/providers/chat_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -45,14 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final user = authProvider.user;
 
     if (authProvider.isLoading || userProfileProvider.isLoading) {
-      return Scaffold(
-        backgroundColor: AppColors.background,
-        body: Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-          ),
-        ),
-      );
+      return _buildLoadingState();
     }
 
     return Scaffold(
@@ -67,77 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: Column(
           children: [
-            CustomAppBar(
-              title: 'CalmQ',
-              showBackButton: false,
-              leadingIcon: Icons.self_improvement_rounded,
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.logout_rounded, color: Colors.white),
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => CustomConfirmationDialog(
-                        title: 'Sign Out',
-                        message: 'Are you sure you want to sign out?',
-                        confirmText: 'Sign Out',
-                        cancelText: 'Cancel',
-                        confirmColor: AppColors.error,
-                        onConfirm: () async {
-                          try {
-                            // Clear all providers' data
-                            context.read<MoodProvider>().clearData();
-                            context.read<UserProfileProvider>().clearProfile();
-
-                            // Sign out
-                            await context.read<AuthProvider>().signOut();
-
-                            if (context.mounted) {
-                              // Navigate to login screen and clear all previous routes
-                              Navigator.of(context).pushNamedAndRemoveUntil(
-                                '/login',
-                                (route) => false,
-                              );
-                            }
-                          } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Error signing out: $e'),
-                                  backgroundColor: AppColors.error,
-                                ),
-                              );
-                            }
-                          }
-                        },
-                      ),
-                    );
-                  },
-                ),
-              ],
-              subtitle: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.auto_awesome, color: Colors.white, size: 16),
-                    SizedBox(width: 8),
-                    Text(
-                      'Your wellness companion',
-                      style: TextStyle(
-                        color: Colors.grey.withOpacity(0.9),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // Body content
+            _buildAppBar(context, authProvider),
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.zero,
@@ -145,60 +69,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SizedBox(height: 16),
-
-                    // Welcome Section
                     _buildWelcomeSection(
                       context,
                       user?.displayName ?? 'Friend',
                     ),
                     SizedBox(height: 16),
-
-                    // Today's Check-in Section (Streak)
+                    _buildDailyInspirationSection(context, theme),
+                    SizedBox(height: 16),
                     _buildTodayCheckinSection(context, moodProvider, theme),
                     SizedBox(height: 16),
-
-                    // Today's Mood Section (Log Mood)
                     _buildTodaysMoodSection(context, moodProvider, theme),
                     SizedBox(height: 16),
-
-                    // Quick Actions Section
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.grid_view_rounded,
-                              color: AppColors.primary,
-                              size: 16,
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            'Quick Actions',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 16),
-
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: _buildQuickActionsGrid(context),
-                    ),
-                    SizedBox(height: 16),
-
-                    // Daily Inspiration Section
-                    _buildDailyInspirationSection(context, theme),
+                    _buildQuickActionsHeader(context, theme),
+                    SizedBox(height: 12),
+                    _buildQuickActionsGrid(context),
                     SizedBox(height: 16),
                   ],
                 ),
@@ -210,21 +94,94 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildLoadingState() {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAppBar(BuildContext context, AuthProvider authProvider) {
+    return CustomAppBar(
+      title: 'CalmQ',
+      showBackButton: false,
+      leadingIcon: Icons.self_improvement_rounded,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.logout_rounded, color: Colors.white),
+          onPressed: () => _handleSignOut(context),
+        ),
+      ],
+      subtitle: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.auto_awesome, color: Colors.white, size: 16),
+            SizedBox(width: 8),
+            Text(
+              'Your wellness companion',
+              style: TextStyle(
+                color: Colors.grey.withOpacity(0.9),
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handleSignOut(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => CustomConfirmationDialog(
+        title: 'Sign Out',
+        message: 'Are you sure you want to sign out?',
+        confirmText: 'Sign Out',
+        cancelText: 'Cancel',
+        confirmColor: AppColors.error,
+        onConfirm: () async {
+          try {
+            context.read<MoodProvider>().clearData();
+            context.read<UserProfileProvider>().clearProfile();
+            context.read<ChatProvider>().clearChat();
+            await context.read<AuthProvider>().signOut();
+            if (context.mounted) {
+              Navigator.of(
+                context,
+              ).pushNamedAndRemoveUntil('/login', (route) => false);
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Error signing out: $e'),
+                  backgroundColor: AppColors.error,
+                ),
+              );
+            }
+          }
+        },
+      ),
+    );
+  }
+
   Widget _buildWelcomeSection(BuildContext context, String userName) {
     final now = DateTime.now();
     final theme = Theme.of(context);
     final userProfile = context.watch<UserProfileProvider>().userProfile;
 
-    String greeting;
-    if (now.hour < 12) {
-      greeting = 'Good Morning';
-    } else if (now.hour < 17) {
-      greeting = 'Good Afternoon';
-    } else {
-      greeting = 'Good Evening';
-    }
-
-    final name = userProfile?.name ?? "Friend";
+    final greeting = _getTimeBasedGreeting(now.hour);
+    final name = userProfile?.name ?? userName;
     final dateFormat = DateFormat('EEEE, MMMM d');
     final today = dateFormat.format(now);
 
@@ -315,6 +272,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  String _getTimeBasedGreeting(int hour) {
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
   }
 
   Widget _buildTodayCheckinSection(
@@ -499,13 +462,53 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildQuickActionsHeader(BuildContext context, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.grid_view_rounded,
+              color: AppColors.primary,
+              size: 16,
+            ),
+          ),
+          SizedBox(width: 8),
+          Text(
+            'Quick Actions',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildQuickActionsGrid(BuildContext context) {
     final quickActions = [
       QuickActionData(
+        icon: Icons.psychology,
+        label: 'Serenity',
+        color: AppColors.accent,
+        description: 'AI Chat',
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => ChatScreen()),
+        ),
+      ),
+      QuickActionData(
         icon: Icons.calendar_month,
-        label: 'Mood Tracker',
+        label: 'Mood',
         color: AppColors.primary,
-        description: 'Mood analysis',
+        description: 'Tracker',
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => MoodScreen()),
@@ -515,7 +518,7 @@ class _HomeScreenState extends State<HomeScreen> {
         icon: Icons.air,
         label: 'Breathing',
         color: AppColors.secondary,
-        description: 'Guided exercises',
+        description: 'Exercises',
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => BreathingScreen()),
@@ -523,29 +526,19 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       QuickActionData(
         icon: Icons.water_drop,
-        label: 'Water Tracker',
+        label: 'Water',
         color: AppColors.info,
-        description: 'Track hydration',
+        description: 'Tracker',
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => WaterTrackerScreen()),
         ),
       ),
       QuickActionData(
-        icon: Icons.psychology,
-        label: 'Serenity',
-        color: AppColors.accent,
-        description: 'AI Wellness Chat',
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => ChatScreen()),
-        ),
-      ),
-      QuickActionData(
         icon: Icons.timer,
         label: 'Focus',
         color: AppColors.accent,
-        description: 'Meditation timer',
+        description: 'Timer',
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => FocusScreen()),
@@ -555,7 +548,7 @@ class _HomeScreenState extends State<HomeScreen> {
         icon: Icons.book,
         label: 'Journal',
         color: AppColors.secondaryLight,
-        description: 'Express thoughts',
+        description: 'Write',
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => JournalScreen()),
@@ -565,7 +558,7 @@ class _HomeScreenState extends State<HomeScreen> {
         icon: Icons.notifications_active,
         label: 'Reminders',
         color: AppColors.error,
-        description: 'Self-care alerts',
+        description: 'Alerts',
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => RemindersScreen()),
@@ -573,21 +566,24 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     ];
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(0),
-      shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-        childAspectRatio: 1.2,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: GridView.builder(
+        padding: const EdgeInsets.all(0),
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
+          childAspectRatio: 1.1,
+        ),
+        itemCount: quickActions.length,
+        itemBuilder: (context, index) {
+          final action = quickActions[index];
+          return _QuickActionCard(action: action);
+        },
       ),
-      itemCount: quickActions.length,
-      itemBuilder: (context, index) {
-        final action = quickActions[index];
-        return _QuickActionCard(action: action);
-      },
     );
   }
 
@@ -616,7 +612,7 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: EdgeInsets.all(20),
+            padding: EdgeInsets.all(16),
             child: Row(
               children: [
                 Container(
@@ -635,7 +631,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   'Daily Inspiration',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
                     letterSpacing: 0.5,
@@ -650,7 +646,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   },
                   style: TextButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     backgroundColor: AppColors.secondary.withOpacity(0.1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
@@ -664,13 +660,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: TextStyle(
                           color: AppColors.secondary,
                           fontWeight: FontWeight.w600,
-                          fontSize: 14,
+                          fontSize: 12,
                         ),
                       ),
                       SizedBox(width: 4),
                       Icon(
                         Icons.arrow_forward_rounded,
-                        size: 16,
+                        size: 14,
                         color: AppColors.secondary,
                       ),
                     ],
@@ -681,14 +677,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Container(
             width: double.infinity,
-            padding: EdgeInsets.fromLTRB(20, 0, 20, 24),
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Text(
               '"${dailyAffirmation.text}"',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: AppColors.textPrimary,
-                height: 1.6,
+                height: 1.5,
                 fontStyle: FontStyle.italic,
               ),
             ),

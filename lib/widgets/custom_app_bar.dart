@@ -107,17 +107,6 @@ class CustomAppBar extends StatelessWidget {
                                     color: Colors.white,
                                     size: 24,
                                   ),
-                                  if (Platform.isIOS) ...[
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'Back',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                    ),
-                                  ],
                                 ],
                               ),
                             ),
@@ -142,26 +131,33 @@ class CustomAppBar extends StatelessWidget {
                               ),
                             ),
                           ),
-                        if (leadingIcon != null && !showBackButton)
-                          SizedBox(width: 12),
+
+                        SizedBox(width: 12),
                         Expanded(
-                          child: Center(
-                            child: Text(
-                              title,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 20,
-                                letterSpacing: 0.5,
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.black.withOpacity(0.3),
-                                    offset: Offset(0, 1),
-                                    blurRadius: 3,
-                                  ),
-                                ],
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 20,
+                                  letterSpacing: 0.5,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black.withOpacity(0.3),
+                                      offset: Offset(0, 1),
+                                      blurRadius: 3,
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
+                              if (subtitle != null) ...[
+                                SizedBox(height: 4),
+                                subtitle!,
+                              ],
+                            ],
                           ),
                         ),
                         if (trailingWidget != null)
@@ -186,24 +182,6 @@ class CustomAppBar extends StatelessWidget {
                           ),
                       ],
                     ),
-                    if (subtitle != null) ...[
-                      SizedBox(height: 12),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.25),
-                            width: 1,
-                          ),
-                        ),
-                        child: subtitle!,
-                      ),
-                    ],
                   ],
                 ),
               ),
