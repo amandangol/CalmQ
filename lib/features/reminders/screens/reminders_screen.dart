@@ -9,6 +9,68 @@ class RemindersScreen extends StatelessWidget {
     final reminderProvider = context.watch<ReminderProvider>();
     final theme = Theme.of(context);
 
+    if (reminderProvider.isLoading) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+          ),
+        ),
+      );
+    }
+
+    if (!reminderProvider.hasPermission) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.notifications_off_rounded,
+                  size: 64,
+                  color: AppColors.primary,
+                ),
+                SizedBox(height: 24),
+                Text(
+                  'Notification Permission Required',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Please enable notifications in your device settings to use reminders.',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 32),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    reminderProvider.initializeNotifications();
+                  },
+                  icon: Icon(Icons.settings),
+                  label: Text('Open Settings'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
@@ -143,8 +205,12 @@ class RemindersScreen extends StatelessWidget {
                                 'Set a daily reminder to write in your journal',
                             icon: Icons.edit_note,
                             time: reminderProvider.journalReminderTime,
-                            onTimeSelected: (time) =>
-                                reminderProvider.setJournalReminder(time),
+                            onTimeSelected: (time) => _handleTimeSelection(
+                              context,
+                              time,
+                              reminderProvider.setJournalReminder,
+                              'Journal',
+                            ),
                           ),
                           SizedBox(height: 16),
                           _ReminderCard(
@@ -153,8 +219,12 @@ class RemindersScreen extends StatelessWidget {
                                 'Set a daily reminder for breathing exercises',
                             icon: Icons.air,
                             time: reminderProvider.breathingReminderTime,
-                            onTimeSelected: (time) =>
-                                reminderProvider.setBreathingReminder(time),
+                            onTimeSelected: (time) => _handleTimeSelection(
+                              context,
+                              time,
+                              reminderProvider.setBreathingReminder,
+                              'Breathing',
+                            ),
                           ),
                           SizedBox(height: 16),
                           _ReminderCard(
@@ -162,8 +232,12 @@ class RemindersScreen extends StatelessWidget {
                             subtitle: 'Set a daily reminder to log your mood',
                             icon: Icons.mood,
                             time: reminderProvider.moodReminderTime,
-                            onTimeSelected: (time) =>
-                                reminderProvider.setMoodReminder(time),
+                            onTimeSelected: (time) => _handleTimeSelection(
+                              context,
+                              time,
+                              reminderProvider.setMoodReminder,
+                              'Mood',
+                            ),
                           ),
                           SizedBox(height: 16),
                           _ReminderCard(
@@ -172,8 +246,12 @@ class RemindersScreen extends StatelessWidget {
                                 'Set a daily reminder for your focus practice',
                             icon: Icons.psychology,
                             time: reminderProvider.focusReminderTime,
-                            onTimeSelected: (time) =>
-                                reminderProvider.setFocusReminder(time),
+                            onTimeSelected: (time) => _handleTimeSelection(
+                              context,
+                              time,
+                              reminderProvider.setFocusReminder,
+                              'Focus',
+                            ),
                           ),
                           SizedBox(height: 16),
                           _ReminderCard(
@@ -182,8 +260,12 @@ class RemindersScreen extends StatelessWidget {
                                 'Set a daily reminder to read your affirmations',
                             icon: Icons.auto_awesome,
                             time: reminderProvider.affirmationReminderTime,
-                            onTimeSelected: (time) =>
-                                reminderProvider.setAffirmationReminder(time),
+                            onTimeSelected: (time) => _handleTimeSelection(
+                              context,
+                              time,
+                              reminderProvider.setAffirmationReminder,
+                              'Affirmation',
+                            ),
                           ),
                           SizedBox(height: 16),
                         ],
@@ -197,6 +279,46 @@ class RemindersScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _handleTimeSelection(
+    BuildContext context,
+    TimeOfDay? time,
+    Future<void> Function(TimeOfDay?) setReminder,
+    String reminderType,
+  ) async {
+    try {
+      await setReminder(time);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              time != null
+                  ? '$reminderType reminder set for ${time.format(context)}'
+                  : '$reminderType reminder removed',
+            ),
+            backgroundColor: AppColors.primary,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to set reminder. Please try again.'),
+            backgroundColor: Colors.red.shade300,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    }
   }
 }
 

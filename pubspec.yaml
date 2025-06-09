@@ -54,6 +54,9 @@ dependencies:
   web3dart: ^2.7.1
   reown_appkit: ^1.4.4
   hex: ^0.2.0
+  flutter_local_notifications: ^19.2.1
+  timezone: ^0.10.1
+ 
   
 
 dev_dependencies:

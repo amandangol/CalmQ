@@ -11,22 +11,33 @@ class JournalScreen extends StatefulWidget {
 }
 
 class _JournalScreenState extends State<JournalScreen>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
-  final _tagsController = TextEditingController();
   String _selectedMood = 'Neutral';
-  int _gratitudeLevel = 5;
-  int _stressLevel = 3;
-  List<String> _tags = [];
-  bool _isPrivate = false;
+  List<String> _gratitudeItems = [];
   JournalEntry? _editingEntry;
+  bool _isRecording = false;
+  String _dailyPrompt = "";
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
+    _loadDailyPrompt();
+  }
+
+  void _loadDailyPrompt() {
+    final prompts = [
+      "What made you smile today?",
+      "What's one thing you're grateful for?",
+      "What's your biggest achievement today?",
+      "What's something you're looking forward to?",
+      "What's a challenge you overcame today?",
+    ];
+    final random = DateTime.now().day % prompts.length;
+    _dailyPrompt = prompts[random];
   }
 
   @override
@@ -34,24 +45,7 @@ class _JournalScreenState extends State<JournalScreen>
     _tabController.dispose();
     _titleController.dispose();
     _contentController.dispose();
-    _tagsController.dispose();
     super.dispose();
-  }
-
-  void _addTag() {
-    if (_tagsController.text.isNotEmpty &&
-        !_tags.contains(_tagsController.text)) {
-      setState(() {
-        _tags.add(_tagsController.text);
-        _tagsController.clear();
-      });
-    }
-  }
-
-  void _removeTag(String tag) {
-    setState(() {
-      _tags.remove(tag);
-    });
   }
 
   void _saveEntry() {
@@ -64,31 +58,26 @@ class _JournalScreenState extends State<JournalScreen>
       context,
       listen: false,
     );
+    final now = DateTime.now();
 
     if (_editingEntry != null) {
       final updatedEntry = _editingEntry!.copyWith(
         title: _titleController.text,
         content: _contentController.text,
         mood: _selectedMood,
-        gratitudeLevel: _gratitudeLevel,
-        stressLevel: _stressLevel,
-        tags: _tags,
-        isPrivate: _isPrivate,
-        updatedAt: DateTime.now(),
+        gratitudeItems: _gratitudeItems,
+        updatedAt: now,
       );
       journalProvider.updateEntry(_editingEntry!.id, updatedEntry);
       _showSnackBar('Journal entry updated successfully!');
     } else {
       final entry = JournalEntry(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: now.millisecondsSinceEpoch.toString(),
         title: _titleController.text,
         content: _contentController.text,
         mood: _selectedMood,
-        gratitudeLevel: _gratitudeLevel,
-        stressLevel: _stressLevel,
-        tags: _tags,
-        isPrivate: _isPrivate,
-        createdAt: DateTime.now(),
+        gratitudeItems: _gratitudeItems,
+        createdAt: now,
       );
       journalProvider.addEntry(entry);
       _showSnackBar('Journal entry saved successfully!');
@@ -99,13 +88,9 @@ class _JournalScreenState extends State<JournalScreen>
   void _clearForm() {
     _titleController.clear();
     _contentController.clear();
-    _tagsController.clear();
     setState(() {
       _selectedMood = 'Neutral';
-      _gratitudeLevel = 5;
-      _stressLevel = 3;
-      _tags.clear();
-      _isPrivate = false;
+      _gratitudeItems.clear();
       _editingEntry = null;
     });
   }
@@ -129,8 +114,7 @@ class _JournalScreenState extends State<JournalScreen>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF2C3E50), Color(0xFF34495E), Color(0xFF2C3E50)],
-            stops: [0.0, 0.5, 1.0],
+            colors: [Color(0xFF1A1A2E), Color(0xFF16213E), Color(0xFF0F3460)],
           ),
         ),
         child: SafeArea(
@@ -141,11 +125,7 @@ class _JournalScreenState extends State<JournalScreen>
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
-                  children: [
-                    _buildNewEntryTab(),
-                    _buildEntriesTab(),
-                    _buildInsightsTab(),
-                  ],
+                  children: [_buildNewEntryTab(), _buildEntriesTab()],
                 ),
               ),
             ],
@@ -157,32 +137,24 @@ class _JournalScreenState extends State<JournalScreen>
 
   Widget _buildHeader() {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'My Journal',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w300,
-                    color: Colors.white,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                Text(
-                  DateFormat('EEEE, MMMM d').format(DateTime.now()),
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white.withOpacity(0.7),
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
+          Text(
+            'My Journal',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w300,
+              color: Colors.white,
+              letterSpacing: 1.2,
             ),
+          ),
+          Spacer(),
+          IconButton(
+            icon: Icon(Icons.calendar_today, color: Colors.white70),
+            onPressed: () {
+              // TODO: Show calendar view
+            },
           ),
         ],
       ),
@@ -190,99 +162,126 @@ class _JournalScreenState extends State<JournalScreen>
   }
 
   Widget _buildTabBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(25),
+      ),
+      child: TabBar(
+        controller: _tabController,
+        indicator: BoxDecoration(
+          color: Color(0xFFE94560),
           borderRadius: BorderRadius.circular(25),
         ),
-        child: TabBar(
-          controller: _tabController,
-          indicator: BoxDecoration(
-            color: Color(0xFF3498DB),
-            borderRadius: BorderRadius.circular(25),
-          ),
-          indicatorSize: TabBarIndicatorSize.tab,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white.withOpacity(0.7),
-          labelStyle: TextStyle(fontWeight: FontWeight.w600),
-          tabs: [
-            Tab(text: 'Write'),
-            Tab(text: 'Entries'),
-            Tab(text: 'Insights'),
-          ],
-        ),
+        labelColor: Colors.white,
+        unselectedLabelColor: Colors.white70,
+        tabs: [
+          Tab(text: 'Write'),
+          Tab(text: 'Entries'),
+        ],
       ),
     );
   }
 
   Widget _buildNewEntryTab() {
-    return Container(
-      margin: EdgeInsets.all(20),
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildMoodSelection(),
-            SizedBox(height: 16),
-            _buildJournalForm(),
-            SizedBox(height: 16),
-            _buildWellnessMetrics(),
-            SizedBox(height: 24),
-            _buildSaveButton(),
-          ],
-        ),
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildDailyPrompt(),
+          SizedBox(height: 20),
+          _buildMoodSelection(),
+          SizedBox(height: 20),
+          _buildJournalForm(),
+          SizedBox(height: 20),
+          _buildGratitudeLog(),
+          SizedBox(height: 30),
+          _buildSaveButton(),
+        ],
       ),
     );
   }
 
-  Widget _buildMoodSelection() {
-    final moodProvider = context.watch<MoodProvider>();
-
+  Widget _buildDailyPrompt() {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Color(0xFF3498DB).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.mood, color: Color(0xFF3498DB)),
-              ),
-              SizedBox(width: 12),
+              Icon(Icons.lightbulb_outline, color: Color(0xFFFFD700)),
+              SizedBox(width: 10),
               Text(
-                'Add Mood',
+                'Daily Prompt',
                 style: TextStyle(
+                  color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
-                  color: Colors.white,
                 ),
               ),
             ],
           ),
-          SizedBox(height: 20),
+          SizedBox(height: 15),
+          Text(
+            _dailyPrompt,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.9),
+              fontSize: 16,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMoodSelection() {
+    final moodProvider = context.watch<MoodProvider>();
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.mood, color: Color(0xFFFFD700)),
+              SizedBox(width: 10),
+              Text(
+                'How are you feeling?',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 15),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.symmetric(horizontal: 15),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(15),
               border: Border.all(color: Colors.white.withOpacity(0.1)),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: _selectedMood,
                 isExpanded: true,
-                dropdownColor: Color(0xFF2C3E50),
+                dropdownColor: Color(0xFF16213E),
                 style: TextStyle(color: Colors.white),
                 icon: Icon(Icons.arrow_drop_down, color: Colors.white),
                 items: moodProvider.moodEmojis.entries.map((entry) {
@@ -312,306 +311,165 @@ class _JournalScreenState extends State<JournalScreen>
 
   Widget _buildJournalForm() {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Color(0xFF667eea).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.edit, color: Color(0xFF667eea)),
-              ),
-              SizedBox(width: 12),
+              Icon(Icons.edit, color: Color(0xFFE94560)),
+              SizedBox(width: 10),
               Text(
                 'Journal Entry',
                 style: TextStyle(
+                  color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
-                  color: Colors.white,
                 ),
+              ),
+              Spacer(),
+              IconButton(
+                icon: Icon(
+                  _isRecording ? Icons.stop : Icons.mic,
+                  color: _isRecording ? Colors.red : Colors.white70,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _isRecording = !_isRecording;
+                  });
+                  // TODO: Implement voice-to-text
+                },
               ),
             ],
           ),
-          SizedBox(height: 20),
+          SizedBox(height: 15),
           TextField(
             controller: _titleController,
             style: TextStyle(color: Colors.white),
             decoration: InputDecoration(
-              labelText: 'Entry Title',
-              labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-              prefixIcon: Icon(Icons.title, color: Color(0xFF667eea)),
+              labelText: 'Title',
+              labelStyle: TextStyle(color: Colors.white70),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(15),
                 borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(15),
                 borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Color(0xFF667eea)),
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide(color: Color(0xFFE94560)),
               ),
               filled: true,
               fillColor: Colors.white.withOpacity(0.05),
             ),
           ),
-          SizedBox(height: 16),
+          SizedBox(height: 15),
           TextField(
             controller: _contentController,
             style: TextStyle(color: Colors.white),
             decoration: InputDecoration(
               labelText: 'Write your thoughts...',
-              labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-              prefixIcon: Icon(Icons.notes, color: Color(0xFF667eea)),
+              labelStyle: TextStyle(color: Colors.white70),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(15),
                 borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(15),
                 borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Color(0xFF667eea)),
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide(color: Color(0xFFE94560)),
               ),
               filled: true,
               fillColor: Colors.white.withOpacity(0.05),
             ),
-            maxLines: 5,
-          ),
-          SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _tagsController,
-                  style: TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Add tags',
-                    labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-                    prefixIcon: Icon(Icons.tag, color: Color(0xFF667eea)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.white.withOpacity(0.1),
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.white.withOpacity(0.1),
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Color(0xFF667eea)),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white.withOpacity(0.05),
-                  ),
-                  onSubmitted: (_) => _addTag(),
-                ),
-              ),
-              SizedBox(width: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: Color(0xFF667eea).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  onPressed: _addTag,
-                  icon: Icon(Icons.add_circle, color: Color(0xFF667eea)),
-                ),
-              ),
-            ],
-          ),
-          if (_tags.isNotEmpty) ...[
-            SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _tags.map((tag) {
-                return Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Color(0xFF667eea).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Color(0xFF667eea).withOpacity(0.3),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        tag,
-                        style: TextStyle(
-                          color: Color(0xFF667eea),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(width: 4),
-                      GestureDetector(
-                        onTap: () => _removeTag(tag),
-                        child: Icon(
-                          Icons.close,
-                          size: 16,
-                          color: Color(0xFF667eea),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
-          SizedBox(height: 16),
-          Row(
-            children: [
-              Icon(Icons.lock, color: Colors.white.withOpacity(0.7)),
-              SizedBox(width: 8),
-              Text(
-                'Private Entry',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontSize: 14,
-                ),
-              ),
-              Spacer(),
-              Switch(
-                value: _isPrivate,
-                onChanged: (value) => setState(() => _isPrivate = value),
-                activeColor: Color(0xFF667eea),
-                activeTrackColor: Color(0xFF667eea).withOpacity(0.3),
-              ),
-            ],
+            maxLines: 8,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildWellnessMetrics() {
+  Widget _buildGratitudeLog() {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Color(0xFF667eea).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.analytics, color: Color(0xFF667eea)),
-              ),
-              SizedBox(width: 12),
+              Icon(Icons.favorite, color: Color(0xFFE94560)),
+              SizedBox(width: 10),
               Text(
-                'Wellness Metrics',
+                'Gratitude Log',
                 style: TextStyle(
+                  color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
-                  color: Colors.white,
                 ),
               ),
             ],
           ),
-          SizedBox(height: 20),
-          _buildSlider(
-            'Gratitude Level',
-            _gratitudeLevel,
-            Icons.favorite,
-            Color(0xFF667eea),
-            (value) => setState(() => _gratitudeLevel = value.round()),
+          SizedBox(height: 15),
+          Text(
+            'What are you grateful for today?',
+            style: TextStyle(color: Colors.white70, fontSize: 14),
           ),
-          SizedBox(height: 16),
-          _buildSlider(
-            'Stress Level',
-            _stressLevel,
-            Icons.psychology,
-            Color(0xFF764ba2),
-            (value) => setState(() => _stressLevel = value.round()),
-          ),
+          SizedBox(height: 15),
+          ...List.generate(3, (index) {
+            return Padding(
+              padding: EdgeInsets.only(bottom: 10),
+              child: TextField(
+                style: TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: 'Gratitude item ${index + 1}',
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                  prefixIcon: Icon(Icons.star, color: Color(0xFFFFD700)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide(
+                      color: Colors.white.withOpacity(0.1),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide(
+                      color: Colors.white.withOpacity(0.1),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide(color: Color(0xFFE94560)),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.05),
+                ),
+                onChanged: (value) {
+                  if (index < _gratitudeItems.length) {
+                    _gratitudeItems[index] = value;
+                  } else {
+                    _gratitudeItems.add(value);
+                  }
+                },
+              ),
+            );
+          }),
         ],
       ),
-    );
-  }
-
-  Widget _buildSlider(
-    String label,
-    int value,
-    IconData icon,
-    Color color,
-    ValueChanged<double> onChanged,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, color: color, size: 20),
-            SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Colors.white.withOpacity(0.9),
-              ),
-            ),
-            Spacer(),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: color.withOpacity(0.3)),
-              ),
-              child: Text(
-                '$value/10',
-                style: TextStyle(color: color, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-        SliderTheme(
-          data: SliderThemeData(
-            activeTrackColor: color,
-            inactiveTrackColor: color.withOpacity(0.2),
-            thumbColor: color,
-            overlayColor: color.withOpacity(0.1),
-            valueIndicatorColor: color,
-            valueIndicatorTextStyle: TextStyle(color: Colors.white),
-          ),
-          child: Slider(
-            value: value.toDouble(),
-            min: 1,
-            max: 10,
-            divisions: 9,
-            onChanged: onChanged,
-          ),
-        ),
-      ],
     );
   }
 
@@ -621,11 +479,11 @@ class _JournalScreenState extends State<JournalScreen>
       child: ElevatedButton(
         onPressed: _saveEntry,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Color(0xFF667eea),
+          backgroundColor: Color(0xFFE94560),
           foregroundColor: Colors.white,
           padding: EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(15),
           ),
           elevation: 0,
         ),
@@ -682,7 +540,7 @@ class _JournalScreenState extends State<JournalScreen>
         }
 
         return ListView.builder(
-          padding: EdgeInsets.all(24),
+          padding: EdgeInsets.all(20),
           itemCount: entries.length,
           itemBuilder: (context, index) {
             final entry = entries[index];
@@ -693,11 +551,8 @@ class _JournalScreenState extends State<JournalScreen>
                 padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.1),
-                    width: 1,
-                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withOpacity(0.1)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -713,13 +568,6 @@ class _JournalScreenState extends State<JournalScreen>
                           ),
                         ),
                         Spacer(),
-                        if (entry.isPrivate)
-                          Icon(
-                            Icons.lock,
-                            size: 16,
-                            color: Colors.white.withOpacity(0.7),
-                          ),
-                        SizedBox(width: 8),
                         Text(
                           DateFormat('MMM d').format(entry.createdAt),
                           style: TextStyle(
@@ -739,35 +587,6 @@ class _JournalScreenState extends State<JournalScreen>
                         height: 1.4,
                       ),
                     ),
-                    if (entry.tags.isNotEmpty) ...[
-                      SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        children: entry.tags.take(3).map((tag) {
-                          return Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Color(0xFF3498DB).withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Color(0xFF3498DB).withOpacity(0.3),
-                              ),
-                            ),
-                            child: Text(
-                              '#$tag',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF3498DB),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -786,13 +605,13 @@ class _JournalScreenState extends State<JournalScreen>
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.9,
         decoration: BoxDecoration(
-          color: Color(0xFF2C3E50),
+          color: Color(0xFF16213E),
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           children: [
             Container(
-              padding: EdgeInsets.all(24),
+              padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.05),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -827,7 +646,7 @@ class _JournalScreenState extends State<JournalScreen>
             ),
             Expanded(
               child: SingleChildScrollView(
-                padding: EdgeInsets.all(24),
+                padding: EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -855,13 +674,13 @@ class _JournalScreenState extends State<JournalScreen>
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Color(0xFF3498DB).withOpacity(0.2),
+                            color: Color(0xFFE94560).withOpacity(0.2),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             entry.mood,
                             style: TextStyle(
-                              color: Color(0xFF3498DB),
+                              color: Color(0xFFE94560),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -877,37 +696,39 @@ class _JournalScreenState extends State<JournalScreen>
                         height: 1.6,
                       ),
                     ),
-                    if (entry.tags.isNotEmpty) ...[
+                    if (entry.gratitudeItems.isNotEmpty) ...[
                       SizedBox(height: 24),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: entry.tags.map((tag) {
-                          return Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Color(0xFF3498DB).withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Color(0xFF3498DB).withOpacity(0.3),
-                              ),
-                            ),
-                            child: Text(
-                              '#$tag',
-                              style: TextStyle(
-                                color: Color(0xFF3498DB),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          );
-                        }).toList(),
+                      Text(
+                        'Gratitude Items',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
+                      SizedBox(height: 12),
+                      ...entry.gratitudeItems.map((item) {
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: 8),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.star,
+                                color: Color(0xFFFFD700),
+                                size: 16,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                item,
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.9),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
                     ],
-                    SizedBox(height: 24),
-                    _buildWellnessMetricsDetail(entry),
                   ],
                 ),
               ),
@@ -918,93 +739,13 @@ class _JournalScreenState extends State<JournalScreen>
     );
   }
 
-  Widget _buildWellnessMetricsDetail(JournalEntry entry) {
-    return Container(
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Wellness Metrics',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildMetricItem(
-                  'Gratitude',
-                  entry.gratitudeLevel,
-                  Icons.favorite,
-                  Color(0xFF3498DB),
-                ),
-              ),
-              SizedBox(width: 16),
-              Expanded(
-                child: _buildMetricItem(
-                  'Stress',
-                  entry.stressLevel,
-                  Icons.psychology,
-                  Color(0xFFE74C3C),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMetricItem(String label, int value, IconData icon, Color color) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 24),
-          SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
-              fontSize: 14,
-            ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            '$value/10',
-            style: TextStyle(
-              color: color,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _editEntry(JournalEntry entry) {
     setState(() {
       _editingEntry = entry;
       _titleController.text = entry.title;
       _contentController.text = entry.content;
       _selectedMood = entry.mood;
-      _gratitudeLevel = entry.gratitudeLevel;
-      _stressLevel = entry.stressLevel;
-      _tags = List.from(entry.tags);
-      _isPrivate = entry.isPrivate;
+      _gratitudeItems = List.from(entry.gratitudeItems);
     });
     _tabController.animateTo(0);
   }
@@ -1013,7 +754,7 @@ class _JournalScreenState extends State<JournalScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Color(0xFF2C3E50),
+        backgroundColor: Color(0xFF16213E),
         title: Text('Delete Entry', style: TextStyle(color: Colors.white)),
         content: Text(
           'Are you sure you want to delete this entry?',
@@ -1037,98 +778,6 @@ class _JournalScreenState extends State<JournalScreen>
               _showSnackBar('Entry deleted successfully');
             },
             child: Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInsightsTab() {
-    return Consumer<JournalProvider>(
-      builder: (context, journalProvider, child) {
-        return Container(
-          padding: EdgeInsets.all(24),
-          child: Column(
-            children: [
-              _buildInsightCard(
-                'Total Entries',
-                journalProvider.entries.length.toString(),
-                Icons.book,
-                Color(0xFF667eea),
-              ),
-              SizedBox(height: 16),
-              _buildInsightCard(
-                'This Week',
-                journalProvider.getWeeklyEntryCount().toString(),
-                Icons.calendar_today,
-                Color(0xFF764ba2),
-              ),
-              SizedBox(height: 16),
-              _buildInsightCard(
-                'Average Mood',
-                journalProvider.getAverageMoodScore().toStringAsFixed(1),
-                Icons.mood,
-                Color(0xFF667eea),
-              ),
-              SizedBox(height: 16),
-              _buildInsightCard(
-                'Streak',
-                '${journalProvider.getCurrentStreak()} days',
-                Icons.local_fire_department,
-                Color(0xFF764ba2),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildInsightCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withOpacity(0.7),
-                  ),
-                ),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz;
 
 class ReminderProvider extends ChangeNotifier {
   static const String _journalReminderKey = 'journal_reminder_time';
@@ -8,12 +11,15 @@ class ReminderProvider extends ChangeNotifier {
   static const String _focusReminderKey = 'focus_reminder_time';
   static const String _affirmationReminderKey = 'affirmation_reminder_time';
 
+  final FlutterLocalNotificationsPlugin _notifications =
+      FlutterLocalNotificationsPlugin();
   TimeOfDay? _journalReminderTime;
   TimeOfDay? _breathingReminderTime;
   TimeOfDay? _moodReminderTime;
   TimeOfDay? _focusReminderTime;
   TimeOfDay? _affirmationReminderTime;
   bool _isLoading = true;
+  bool _hasPermission = false;
 
   TimeOfDay? get journalReminderTime => _journalReminderTime;
   TimeOfDay? get breathingReminderTime => _breathingReminderTime;
@@ -21,72 +27,311 @@ class ReminderProvider extends ChangeNotifier {
   TimeOfDay? get focusReminderTime => _focusReminderTime;
   TimeOfDay? get affirmationReminderTime => _affirmationReminderTime;
   bool get isLoading => _isLoading;
+  bool get hasPermission => _hasPermission;
 
   ReminderProvider() {
+    initializeNotifications();
     _loadReminders();
   }
 
+  Future<void> initializeNotifications() async {
+    try {
+      tz.initializeTimeZones();
+
+      const androidSettings = AndroidInitializationSettings(
+        '@mipmap/ic_launcher',
+      );
+      const iosSettings = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
+
+      const initSettings = InitializationSettings(
+        android: androidSettings,
+        iOS: iosSettings,
+      );
+
+      await _notifications.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: _onNotificationTapped,
+      );
+
+      // Request notification permissions
+      final androidPermission = await _notifications
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.requestNotificationsPermission();
+      final iosPermission = await _notifications
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >()
+          ?.requestPermissions(alert: true, badge: true, sound: true);
+
+      _hasPermission = androidPermission ?? iosPermission ?? false;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error initializing notifications: $e');
+      _hasPermission = false;
+      notifyListeners();
+    }
+  }
+
+  void _onNotificationTapped(NotificationResponse response) {
+    // Handle notification tap
+    debugPrint('Notification tapped: ${response.payload}');
+  }
+
   Future<void> _loadReminders() async {
-    final prefs = await SharedPreferences.getInstance();
+    try {
+      final prefs = await SharedPreferences.getInstance();
 
-    _journalReminderTime = _loadTimeFromPrefs(prefs, _journalReminderKey);
-    _breathingReminderTime = _loadTimeFromPrefs(prefs, _breathingReminderKey);
-    _moodReminderTime = _loadTimeFromPrefs(prefs, _moodReminderKey);
-    _focusReminderTime = _loadTimeFromPrefs(prefs, _focusReminderKey);
-    _affirmationReminderTime = _loadTimeFromPrefs(
-      prefs,
-      _affirmationReminderKey,
-    );
+      _journalReminderTime = _loadTimeFromPrefs(prefs, _journalReminderKey);
+      _breathingReminderTime = _loadTimeFromPrefs(prefs, _breathingReminderKey);
+      _moodReminderTime = _loadTimeFromPrefs(prefs, _moodReminderKey);
+      _focusReminderTime = _loadTimeFromPrefs(prefs, _focusReminderKey);
+      _affirmationReminderTime = _loadTimeFromPrefs(
+        prefs,
+        _affirmationReminderKey,
+      );
 
-    _isLoading = false;
-    notifyListeners();
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading reminders: $e');
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   TimeOfDay? _loadTimeFromPrefs(SharedPreferences prefs, String key) {
-    final timeString = prefs.getString(key);
-    if (timeString == null) return null;
+    try {
+      final timeString = prefs.getString(key);
+      if (timeString == null) return null;
 
-    final parts = timeString.split(':');
-    return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+      final parts = timeString.split(':');
+      return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+    } catch (e) {
+      debugPrint('Error loading time from prefs: $e');
+      return null;
+    }
   }
 
   Future<void> _saveTimeToPrefs(TimeOfDay? time, String key) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (time == null) {
-      await prefs.remove(key);
-    } else {
-      await prefs.setString(key, '${time.hour}:${time.minute}');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (time == null) {
+        await prefs.remove(key);
+      } else {
+        await prefs.setString(key, '${time.hour}:${time.minute}');
+      }
+    } catch (e) {
+      debugPrint('Error saving time to prefs: $e');
+      throw Exception('Failed to save reminder time');
+    }
+  }
+
+  Future<void> _scheduleNotification({
+    required int id,
+    required String title,
+    required String body,
+    required TimeOfDay time,
+  }) async {
+    if (!_hasPermission) {
+      throw Exception('Notification permission not granted');
+    }
+
+    try {
+      final now = DateTime.now();
+      var scheduledDate = DateTime(
+        now.year,
+        now.month,
+        now.day,
+        time.hour,
+        time.minute,
+      );
+
+      // If the time has already passed today, schedule for tomorrow
+      if (scheduledDate.isBefore(now)) {
+        scheduledDate = scheduledDate.add(const Duration(days: 1));
+      }
+
+      // Cancel any existing notification with this ID first
+      await _cancelNotification(id);
+
+      await _notifications.zonedSchedule(
+        id,
+        title,
+        body,
+        tz.TZDateTime.from(scheduledDate, tz.local),
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'reminders_channel',
+            'Reminders',
+            channelDescription: 'Daily wellness reminders',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+            enableLights: true,
+            enableVibration: true,
+            playSound: true,
+            sound: const RawResourceAndroidNotificationSound(
+              'notification_sound',
+            ),
+            fullScreenIntent: true,
+            category: AndroidNotificationCategory.reminder,
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+            sound: 'notification_sound.aiff',
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+        payload: title,
+      );
+
+      // Verify the notification was scheduled
+      final pendingNotifications = await _notifications
+          .pendingNotificationRequests();
+      final isScheduled = pendingNotifications.any(
+        (notification) => notification.id == id,
+      );
+
+      if (!isScheduled) {
+        throw Exception('Failed to verify notification schedule');
+      }
+    } catch (e) {
+      debugPrint('Error scheduling notification: $e');
+      throw Exception('Failed to schedule notification');
+    }
+  }
+
+  Future<void> _cancelNotification(int id) async {
+    try {
+      await _notifications.cancel(id);
+      // Verify the notification was cancelled
+      final pendingNotifications = await _notifications
+          .pendingNotificationRequests();
+      final isStillScheduled = pendingNotifications.any(
+        (notification) => notification.id == id,
+      );
+
+      if (isStillScheduled) {
+        throw Exception('Failed to cancel notification');
+      }
+    } catch (e) {
+      debugPrint('Error canceling notification: $e');
+      throw Exception('Failed to cancel notification');
     }
   }
 
   Future<void> setJournalReminder(TimeOfDay? time) async {
-    _journalReminderTime = time;
-    await _saveTimeToPrefs(time, _journalReminderKey);
-    notifyListeners();
+    try {
+      if (time != null) {
+        await _scheduleNotification(
+          id: 1,
+          title: 'Journal Reminder',
+          body: 'Time to write in your journal!',
+          time: time,
+        );
+      } else {
+        await _cancelNotification(1);
+      }
+      _journalReminderTime = time;
+      await _saveTimeToPrefs(time, _journalReminderKey);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error setting journal reminder: $e');
+      throw Exception('Failed to set journal reminder');
+    }
   }
 
   Future<void> setBreathingReminder(TimeOfDay? time) async {
-    _breathingReminderTime = time;
-    await _saveTimeToPrefs(time, _breathingReminderKey);
-    notifyListeners();
+    try {
+      if (time != null) {
+        await _scheduleNotification(
+          id: 2,
+          title: 'Breathing Exercise',
+          body: 'Take a moment to practice breathing exercises',
+          time: time,
+        );
+      } else {
+        await _cancelNotification(2);
+      }
+      _breathingReminderTime = time;
+      await _saveTimeToPrefs(time, _breathingReminderKey);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error setting breathing reminder: $e');
+      throw Exception('Failed to set breathing reminder');
+    }
   }
 
   Future<void> setMoodReminder(TimeOfDay? time) async {
-    _moodReminderTime = time;
-    await _saveTimeToPrefs(time, _moodReminderKey);
-    notifyListeners();
+    try {
+      if (time != null) {
+        await _scheduleNotification(
+          id: 3,
+          title: 'Mood Check-in',
+          body: 'How are you feeling today?',
+          time: time,
+        );
+      } else {
+        await _cancelNotification(3);
+      }
+      _moodReminderTime = time;
+      await _saveTimeToPrefs(time, _moodReminderKey);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error setting mood reminder: $e');
+      throw Exception('Failed to set mood reminder');
+    }
   }
 
   Future<void> setFocusReminder(TimeOfDay? time) async {
-    _focusReminderTime = time;
-    await _saveTimeToPrefs(time, _focusReminderKey);
-    notifyListeners();
+    try {
+      if (time != null) {
+        await _scheduleNotification(
+          id: 4,
+          title: 'Focus Session',
+          body: 'Time for your daily focus practice',
+          time: time,
+        );
+      } else {
+        await _cancelNotification(4);
+      }
+      _focusReminderTime = time;
+      await _saveTimeToPrefs(time, _focusReminderKey);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error setting focus reminder: $e');
+      throw Exception('Failed to set focus reminder');
+    }
   }
 
   Future<void> setAffirmationReminder(TimeOfDay? time) async {
-    _affirmationReminderTime = time;
-    await _saveTimeToPrefs(time, _affirmationReminderKey);
-    notifyListeners();
+    try {
+      if (time != null) {
+        await _scheduleNotification(
+          id: 5,
+          title: 'Daily Affirmation',
+          body: 'Read your daily affirmations',
+          time: time,
+        );
+      } else {
+        await _cancelNotification(5);
+      }
+      _affirmationReminderTime = time;
+      await _saveTimeToPrefs(time, _affirmationReminderKey);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error setting affirmation reminder: $e');
+      throw Exception('Failed to set affirmation reminder');
+    }
   }
 
   String formatTimeOfDay(TimeOfDay time) {

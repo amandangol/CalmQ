@@ -5,10 +5,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../auth/providers/user_profile_provider.dart';
 import '../../auth/models/user_profile.dart';
 import '../../../app_theme.dart';
-import '../../../widgets/custom_app_bar.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../web3/providers/web3_provider.dart';
-import 'package:flutter/rendering.dart';
+import '../../settings/screens/settings_screen.dart';
 import 'package:flutter/services.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -69,6 +68,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const Spacer(),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.settings_rounded,
+                          color: Colors.white,
+                        ),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SettingsScreen(),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),

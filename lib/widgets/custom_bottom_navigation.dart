@@ -16,7 +16,7 @@ class NavigationItem {
   });
 }
 
-class CurvedNavigationBar extends StatelessWidget {
+class CurvedNavigationBar extends StatefulWidget {
   const CurvedNavigationBar({
     Key? key,
     required this.items,
@@ -25,8 +25,8 @@ class CurvedNavigationBar extends StatelessWidget {
     this.onFABPressed,
     this.fabIcon = Icons.home_rounded,
     this.fabColor = const Color(0xFF6B73FF),
-    this.backgroundColor = Colors.white,
-    this.unselectedColor = Colors.grey,
+    this.backgroundColor = const Color(0xFFF8F9FF),
+    this.unselectedColor = Colors.black54,
     this.height = 80.0,
   }) : super(key: key);
 
@@ -41,21 +41,69 @@ class CurvedNavigationBar extends StatelessWidget {
   final double height;
 
   @override
+  State<CurvedNavigationBar> createState() => _CurvedNavigationBarState();
+}
+
+class _CurvedNavigationBarState extends State<CurvedNavigationBar>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _rotateAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+
+    _rotateAnimation = Tween<double>(begin: 0.0, end: 0.1).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+
+    // Start animation if FAB is selected
+    if (widget.selectedIndex == -1) {
+      _animationController.forward();
+    }
+  }
+
+  @override
+  void didUpdateWidget(CurvedNavigationBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedIndex == -1 && oldWidget.selectedIndex != -1) {
+      _animationController.forward();
+    } else if (widget.selectedIndex != -1 && oldWidget.selectedIndex == -1) {
+      _animationController.reverse();
+    }
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
-      height: height,
+      height: widget.height,
       child: Stack(
         children: [
           // Curved background
           ClipPath(
             clipper: _CurvedClipper(),
             child: Container(
-              height: height,
+              height: widget.height,
               decoration: BoxDecoration(
-                color: backgroundColor,
+                color: const Color(0xFFF8F9FF), // Light blue-white background
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withOpacity(0.08),
                     blurRadius: 20,
                     offset: const Offset(0, -5),
                   ),
@@ -70,7 +118,7 @@ class CurvedNavigationBar extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: _buildNavigationItems(),
+                children: _buildNavigationItems(context),
               ),
             ),
           ),
@@ -81,23 +129,38 @@ class CurvedNavigationBar extends StatelessWidget {
             left: 0,
             right: 0,
             child: Center(
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: fabColor.withOpacity(0.3),
-                      blurRadius: 15,
-                      offset: const Offset(0, 5),
+              child: AnimatedBuilder(
+                animation: _animationController,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _scaleAnimation.value,
+                    child: Transform.rotate(
+                      angle: _rotateAnimation.value,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: widget.fabColor.withOpacity(0.3),
+                              blurRadius: 15,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: FloatingActionButton(
+                          onPressed: widget.onFABPressed,
+                          backgroundColor: widget.fabColor,
+                          elevation: 0,
+                          child: Icon(
+                            widget.fabIcon,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                      ),
                     ),
-                  ],
-                ),
-                child: FloatingActionButton(
-                  onPressed: onFABPressed,
-                  backgroundColor: fabColor,
-                  elevation: 0,
-                  child: Icon(fabIcon, color: Colors.white, size: 28),
-                ),
+                  );
+                },
               ),
             ),
           ),
@@ -106,22 +169,22 @@ class CurvedNavigationBar extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildNavigationItems() {
+  List<Widget> _buildNavigationItems(BuildContext context) {
     List<Widget> navigationItems = [];
-    final screenWidth = MediaQuery.of(navigatorKey.currentContext!).size.width;
+    final screenWidth = MediaQuery.of(context).size.width;
     final availableWidth =
         screenWidth - 32 - 90; // Subtract padding and FAB space
     final itemWidth = availableWidth / 4; // Divide by 4 items
 
-    for (int i = 0; i < items.length; i++) {
-      final item = items[i];
-      final isSelected = i == selectedIndex;
+    for (int i = 0; i < widget.items.length; i++) {
+      final item = widget.items[i];
+      final isSelected = i == widget.selectedIndex;
 
       navigationItems.add(
         SizedBox(
           width: itemWidth,
           child: GestureDetector(
-            onTap: () => onItemTapped?.call(i),
+            onTap: () => widget.onItemTapped?.call(i),
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Column(
@@ -138,7 +201,7 @@ class CurvedNavigationBar extends StatelessWidget {
                     ),
                     child: Icon(
                       isSelected ? (item.selectedIcon ?? item.icon) : item.icon,
-                      color: isSelected ? item.color : unselectedColor,
+                      color: isSelected ? item.color : widget.unselectedColor,
                       size: 24,
                     ),
                   ),
@@ -146,7 +209,7 @@ class CurvedNavigationBar extends StatelessWidget {
                   AnimatedDefaultTextStyle(
                     duration: const Duration(milliseconds: 200),
                     style: TextStyle(
-                      color: isSelected ? item.color : unselectedColor,
+                      color: isSelected ? item.color : widget.unselectedColor,
                       fontSize: isSelected ? 14 : 12,
                       fontWeight: isSelected
                           ? FontWeight.w600
@@ -165,7 +228,7 @@ class CurvedNavigationBar extends StatelessWidget {
         ),
       );
 
-      //  space for FAB after second item
+      // Add space for FAB after second item
       if (i == 1) {
         navigationItems.add(const SizedBox(width: 90));
       }

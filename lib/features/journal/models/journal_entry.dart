@@ -4,25 +4,47 @@ class JournalEntry {
   final String title;
   final String content;
   final String mood;
-  final int gratitudeLevel;
-  final int stressLevel;
-  final List<String> tags;
-  final bool isPrivate;
+  final List<String> gratitudeItems;
   final DateTime createdAt;
   final DateTime? updatedAt;
+  final List<String> tags;
+  final bool isPrivate;
 
   JournalEntry({
     required this.id,
     required this.title,
     required this.content,
     required this.mood,
-    required this.gratitudeLevel,
-    required this.stressLevel,
-    required this.tags,
-    required this.isPrivate,
+    required this.gratitudeItems,
     required this.createdAt,
     this.updatedAt,
+    this.tags = const [],
+    this.isPrivate = false,
   });
+
+  JournalEntry copyWith({
+    String? id,
+    String? title,
+    String? content,
+    String? mood,
+    List<String>? gratitudeItems,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    List<String>? tags,
+    bool? isPrivate,
+  }) {
+    return JournalEntry(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      content: content ?? this.content,
+      mood: mood ?? this.mood,
+      gratitudeItems: gratitudeItems ?? this.gratitudeItems,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      tags: tags ?? this.tags,
+      isPrivate: isPrivate ?? this.isPrivate,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -30,12 +52,11 @@ class JournalEntry {
       'title': title,
       'content': content,
       'mood': mood,
-      'gratitudeLevel': gratitudeLevel,
-      'stressLevel': stressLevel,
-      'tags': tags,
-      'isPrivate': isPrivate,
+      'gratitudeItems': gratitudeItems,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
+      'tags': tags,
+      'isPrivate': isPrivate,
     };
   }
 
@@ -45,40 +66,13 @@ class JournalEntry {
       title: json['title'],
       content: json['content'],
       mood: json['mood'],
-      gratitudeLevel: json['gratitudeLevel'],
-      stressLevel: json['stressLevel'],
-      tags: List<String>.from(json['tags']),
-      isPrivate: json['isPrivate'],
+      gratitudeItems: List<String>.from(json['gratitudeItems'] ?? []),
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'])
           : null,
-    );
-  }
-
-  JournalEntry copyWith({
-    String? id,
-    String? title,
-    String? content,
-    String? mood,
-    int? gratitudeLevel,
-    int? stressLevel,
-    List<String>? tags,
-    bool? isPrivate,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) {
-    return JournalEntry(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      content: content ?? this.content,
-      mood: mood ?? this.mood,
-      gratitudeLevel: gratitudeLevel ?? this.gratitudeLevel,
-      stressLevel: stressLevel ?? this.stressLevel,
-      tags: tags ?? this.tags,
-      isPrivate: isPrivate ?? this.isPrivate,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      tags: List<String>.from(json['tags'] ?? []),
+      isPrivate: json['isPrivate'] ?? false,
     );
   }
 }

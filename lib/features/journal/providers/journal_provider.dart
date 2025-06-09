@@ -133,29 +133,19 @@ class JournalProvider with ChangeNotifier {
 
     final totalGratitude = _entries.fold(
       0,
-      (sum, entry) => sum + entry.gratitudeLevel,
+      (sum, entry) => sum + entry.gratitudeItems.length,
     );
     return totalGratitude / _entries.length;
   }
 
-  // Get average stress level
-  double getAverageStressLevel() {
-    if (_entries.isEmpty) return 0.0;
-
-    final totalStress = _entries.fold(
-      0,
-      (sum, entry) => sum + entry.stressLevel,
-    );
-    return totalStress / _entries.length;
-  }
-
-  // Get current writing streak
-  int getCurrentStreak() {
-    if (_entries.isEmpty) return 0;
+  // Get writing streak with bonus points
+  Map<String, dynamic> getWritingStreak() {
+    if (_entries.isEmpty) return {'streak': 0, 'bonus': 0};
 
     _entries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     int streak = 0;
+    int bonus = 0;
     DateTime currentDate = DateTime.now();
 
     for (var entry in _entries) {
@@ -173,69 +163,169 @@ class JournalProvider with ChangeNotifier {
       if (entryDate.isAtSameMomentAs(checkDate) ||
           entryDate.isAtSameMomentAs(checkDate.subtract(Duration(days: 1)))) {
         streak++;
+        // Add bonus points for consecutive days
+        if (streak > 3) bonus += 5;
+        if (streak > 7) bonus += 10;
+        if (streak > 14) bonus += 20;
         currentDate = currentDate.subtract(Duration(days: 1));
       } else {
         break;
       }
     }
 
-    return streak;
+    return {'streak': streak, 'bonus': bonus, 'total': streak + bonus};
   }
 
-  // Get most used tags
-  List<String> getMostUsedTags({int limit = 10}) {
-    final tagCounts = <String, int>{};
-
-    for (var entry in _entries) {
-      for (var tag in entry.tags) {
-        tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
-      }
+  // Get emotional insights
+  Map<String, dynamic> getEmotionalInsights() {
+    if (_entries.isEmpty) {
+      return {'mood_trend': [], 'gratitude_trend': [], 'insights': []};
     }
 
-    final sortedTags = tagCounts.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+    final now = DateTime.now();
+    final thirtyDaysAgo = now.subtract(Duration(days: 30));
+    final recentEntries = getEntriesByDateRange(thirtyDaysAgo, now);
 
-    return sortedTags.take(limit).map((e) => e.key).toList();
-  }
+    // Calculate trends
+    final moodTrend = <Map<String, dynamic>>[];
+    final gratitudeTrend = <Map<String, dynamic>>[];
+    final insights = <String>[];
 
-  // Get mood distribution
-  Map<String, int> getMoodDistribution() {
+    // Analyze mood patterns
     final moodCounts = <String, int>{};
-
-    for (var entry in _entries) {
+    for (var entry in recentEntries) {
       moodCounts[entry.mood] = (moodCounts[entry.mood] ?? 0) + 1;
     }
 
-    return moodCounts;
+    final dominantMood = moodCounts.entries
+        .reduce((a, b) => a.value > b.value ? a : b)
+        .key;
+
+    // Generate insights
+    if (moodCounts['Great'] != null && moodCounts['Great']! > 5) {
+      insights.add(
+        'You\'ve been feeling great lately! Keep up the positive energy.',
+      );
+    }
+
+    if (moodCounts['Bad'] != null && moodCounts['Bad']! > 3) {
+      insights.add(
+        'You\'ve had some challenging days. Remember to practice self-care.',
+      );
+    }
+
+    // Analyze gratitude patterns
+    final totalGratitudeItems = recentEntries.fold<int>(
+      0,
+      (sum, entry) => sum + entry.gratitudeItems.length,
+    );
+
+    if (totalGratitudeItems > 20) {
+      insights.add(
+        'You\'ve been practicing gratitude regularly. This is great for your well-being!',
+      );
+    }
+
+    return {
+      'mood_trend': moodTrend,
+      'gratitude_trend': gratitudeTrend,
+      'insights': insights,
+    };
   }
 
-  // Search entries
-  List<JournalEntry> searchEntries(String query) {
-    if (query.isEmpty) return _entries;
+  // Get writing prompts based on mood and patterns
+  List<String> getWritingPrompts() {
+    final insights = getEmotionalInsights();
+    final moodTrend = insights['mood_trend'] as List<Map<String, dynamic>>;
+    final prompts = <String>[];
 
-    final lowercaseQuery = query.toLowerCase();
-    return _entries.where((entry) {
-      return entry.title.toLowerCase().contains(lowercaseQuery) ||
-          entry.content.toLowerCase().contains(lowercaseQuery) ||
-          entry.tags.any((tag) => tag.toLowerCase().contains(lowercaseQuery));
-    }).toList();
+    if (moodTrend.isNotEmpty) {
+      final recentMood = moodTrend.last['mood'] as String;
+
+      switch (recentMood) {
+        case 'Terrible':
+        case 'Bad':
+          prompts.addAll([
+            'What small steps can you take today to improve your mood?',
+            'Write about a time when you overcame a difficult situation.',
+            'What are three things you\'re grateful for right now?',
+          ]);
+          break;
+        case 'Okay':
+        case 'Neutral':
+          prompts.addAll([
+            'What would make today a great day?',
+            'Write about something you\'re looking forward to.',
+            'What\'s one thing you\'d like to improve about your day?',
+          ]);
+          break;
+        case 'Good':
+        case 'Great':
+        case 'Amazing':
+          prompts.addAll([
+            'What made today special?',
+            'How can you maintain this positive energy?',
+            'Write about someone who contributed to your good mood.',
+          ]);
+          break;
+      }
+    }
+
+    // Add general prompts
+    prompts.addAll([
+      'What\'s the most important thing you learned today?',
+      'Write about a moment that made you smile.',
+      'What are your goals for tomorrow?',
+    ]);
+
+    return prompts;
   }
 
-  // Get entries for today
-  List<JournalEntry> getTodayEntries() {
-    final today = DateTime.now();
-    final todayStart = DateTime(today.year, today.month, today.day);
-    final todayEnd = todayStart.add(Duration(days: 1));
+  // Get writing achievements
+  Map<String, dynamic> getWritingAchievements() {
+    final achievements = <String, dynamic>{
+      'total_entries': _entries.length,
+      'current_streak': getWritingStreak()['streak'],
+      'longest_streak': _calculateLongestStreak(),
+      'consistency': getWritingConsistency(),
+      'mood_insights': getEmotionalInsights()['insights'],
+      'prompts': getWritingPrompts(),
+    };
 
-    return _entries.where((entry) {
-      return entry.createdAt.isAfter(todayStart) &&
-          entry.createdAt.isBefore(todayEnd);
-    }).toList();
+    return achievements;
   }
 
-  // Check if user has written today
-  bool hasWrittenToday() {
-    return getTodayEntries().isNotEmpty;
+  int _calculateLongestStreak() {
+    if (_entries.isEmpty) return 0;
+
+    _entries.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    int longestStreak = 0;
+    int currentStreak = 1;
+    DateTime? lastDate;
+
+    for (var entry in _entries) {
+      final entryDate = DateTime(
+        entry.createdAt.year,
+        entry.createdAt.month,
+        entry.createdAt.day,
+      );
+
+      if (lastDate != null) {
+        final difference = entryDate.difference(lastDate).inDays;
+        if (difference == 1) {
+          currentStreak++;
+          if (currentStreak > longestStreak) {
+            longestStreak = currentStreak;
+          }
+        } else if (difference > 1) {
+          currentStreak = 1;
+        }
+      }
+
+      lastDate = entryDate;
+    }
+
+    return longestStreak;
   }
 
   // Get writing consistency (percentage of days with entries in last 30 days)
