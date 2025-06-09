@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 import 'firebase_options.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/auth/providers/user_profile_provider.dart';
@@ -20,6 +21,17 @@ import 'navigation/main_navigation.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Set system UI overlay style
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: AppColors.primary,
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
+  );
+
   runApp(const MyApp());
 }
 
@@ -35,8 +47,10 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => MoodProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => Web3Provider()),
-        ChangeNotifierProvider(
+        ChangeNotifierProxyProvider<Web3Provider, BreathingProvider>(
           create: (context) => BreathingProvider(context.read<Web3Provider>()),
+          update: (context, web3Provider, previous) =>
+              previous ?? BreathingProvider(web3Provider),
         ),
         ChangeNotifierProvider(create: (_) => AffirmationProvider()),
         ChangeNotifierProvider(create: (_) => ReminderProvider()),
@@ -67,22 +81,32 @@ class SplashScreenWrapper extends StatefulWidget {
 
 class _SplashScreenWrapperState extends State<SplashScreenWrapper> {
   bool _showSplash = true;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeWeb3();
+    _initialize();
   }
 
-  Future<void> _initializeWeb3() async {
-    final web3Provider = Provider.of<Web3Provider>(context, listen: false);
-    await web3Provider.initialize(context);
+  Future<void> _initialize() async {
+    if (_isInitialized) return;
+
+    try {
+      final web3Provider = Provider.of<Web3Provider>(context, listen: false);
+      await web3Provider.initialize(context);
+      _isInitialized = true;
+    } catch (e) {
+      debugPrint('Error initializing app: $e');
+    }
   }
 
   void _onSplashComplete() {
-    setState(() {
-      _showSplash = false;
-    });
+    if (mounted) {
+      setState(() {
+        _showSplash = false;
+      });
+    }
   }
 
   @override

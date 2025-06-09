@@ -18,22 +18,25 @@ class _MyAffirmationsScreenState extends State<MyAffirmationsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: CustomAppBar(
-        title: 'My Affirmations',
-        leadingIcon: Icons.person_rounded,
-      ),
-      body: Consumer<AffirmationProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading) {
-            return _buildLoadingScreen();
-          }
+      body: Column(
+        children: [
+          CustomAppBar(title: 'My Affirmations'),
+          Expanded(
+            child: Consumer<AffirmationProvider>(
+              builder: (context, provider, child) {
+                if (provider.isLoading) {
+                  return _buildLoadingScreen();
+                }
 
-          if (provider.error != null) {
-            return _buildErrorScreen(provider);
-          }
+                if (provider.error != null) {
+                  return _buildErrorScreen(provider);
+                }
 
-          return _buildContent(provider);
-        },
+                return _buildContent(provider);
+              },
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddAffirmationDialog(context),

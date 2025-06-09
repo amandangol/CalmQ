@@ -79,70 +79,31 @@ class _AffirmationsScreenState extends State<AffirmationsScreen>
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          // Custom App Bar
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
-              ),
-            ),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+          CustomAppBar(
+            title: 'Daily Affirmations',
+            actions: [
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.auto_awesome_rounded,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'Daily Affirmations',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      margin: const EdgeInsets.only(right: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.favorite_rounded,
-                          color: Colors.white,
-                        ),
-                        onPressed: () => _showFavorites(context),
-                      ),
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.person_rounded,
-                          color: Colors.white,
-                        ),
-                        onPressed: () => _showMyAffirmations(context),
-                      ),
-                    ),
-                  ],
+                child: IconButton(
+                  icon: const Icon(Icons.favorite_rounded, color: Colors.white),
+                  onPressed: () => _showFavorites(context),
                 ),
               ),
-            ),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.person_rounded, color: Colors.white),
+                  onPressed: () => _showMyAffirmations(context),
+                ),
+              ),
+            ],
           ),
           // Body content
           Expanded(

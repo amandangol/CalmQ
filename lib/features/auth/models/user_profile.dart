@@ -68,8 +68,12 @@ class UserProfile {
       sleepQuality: json['sleepQuality'],
       happinessLevel: json['happinessLevel'],
       profilePictureUrl: json['profilePictureUrl'],
-      createdAt: json['createdAt'] as Timestamp?,
-      updatedAt: json['updatedAt'] as Timestamp?,
+      createdAt: json['createdAt'] is Timestamp
+          ? json['createdAt'] as Timestamp
+          : null,
+      updatedAt: json['updatedAt'] is Timestamp
+          ? json['updatedAt'] as Timestamp
+          : null,
     );
   }
 

@@ -1,11 +1,15 @@
-import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/journal_entry.dart';
 
 class JournalProvider with ChangeNotifier {
   List<JournalEntry> _entries = [];
   bool _isLoading = false;
+  final _firestore = FirebaseFirestore.instance;
+  final _auth = FirebaseAuth.instance;
 
   List<JournalEntry> get entries => _entries.reversed.toList();
   bool get isLoading => _isLoading;
@@ -14,64 +18,113 @@ class JournalProvider with ChangeNotifier {
     _loadEntries();
   }
 
-  // Load entries from local storage
+  // Load entries from Firestore
   Future<void> _loadEntries() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final String? entriesJson = prefs.getString('journal_entries');
+      final user = _auth.currentUser;
+      if (user != null) {
+        final snapshot = await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('journals')
+            .orderBy('createdAt', descending: true)
+            .get();
 
-      if (entriesJson != null) {
-        final List<dynamic> entriesList = json.decode(entriesJson);
-        _entries = entriesList
-            .map((entry) => JournalEntry.fromJson(entry))
-            .toList();
+        _entries = snapshot.docs.map((doc) {
+          final data = doc.data();
+          data['id'] = doc.id;
+          return JournalEntry.fromJson(data);
+        }).toList();
       }
     } catch (e) {
-      print('Error loading journal entries: $e');
+      debugPrint('Error loading journal entries: $e');
     }
 
     _isLoading = false;
     notifyListeners();
   }
 
-  // Save entries to local storage
-  Future<void> _saveEntries() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final String entriesJson = json.encode(
-        _entries.map((entry) => entry.toJson()).toList(),
-      );
-      await prefs.setString('journal_entries', entriesJson);
-    } catch (e) {
-      print('Error saving journal entries: $e');
-    }
-  }
-
   // Add new entry
   Future<void> addEntry(JournalEntry entry) async {
-    _entries.add(entry);
-    await _saveEntries();
-    notifyListeners();
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        final docRef = await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('journals')
+            .add(entry.toJson());
+
+        // Create a new entry with the Firestore document ID
+        final newEntry = entry.copyWith(id: docRef.id);
+        _entries.add(newEntry);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error adding journal entry: $e');
+      rethrow;
+    }
   }
 
   // Update existing entry
   Future<void> updateEntry(String id, JournalEntry updatedEntry) async {
-    final index = _entries.indexWhere((entry) => entry.id == id);
-    if (index != -1) {
-      _entries[index] = updatedEntry.copyWith(updatedAt: DateTime.now());
-      await _saveEntries();
-      notifyListeners();
+    try {
+      final user = _auth.currentUser;
+      if (user != null && id.isNotEmpty) {
+        // First update Firestore
+        await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('journals')
+            .doc(id)
+            .update(updatedEntry.toJson());
+
+        // Then update local state
+        final index = _entries.indexWhere((entry) => entry.id == id);
+        if (index != -1) {
+          _entries[index] = updatedEntry.copyWith(
+            id: id,
+            updatedAt: DateTime.now(),
+          );
+          // Force a refresh of the entries list
+          _entries = List.from(_entries);
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error updating journal entry: $e');
+      rethrow;
     }
   }
 
   // Delete entry
   Future<void> deleteEntry(String id) async {
-    _entries.removeWhere((entry) => entry.id == id);
-    await _saveEntries();
-    notifyListeners();
+    try {
+      final user = _auth.currentUser;
+      if (user != null && id.isNotEmpty) {
+        // First delete from Firestore
+        await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('journals')
+            .doc(id)
+            .delete();
+
+        // Then update local state
+        _entries.removeWhere((entry) => entry.id == id);
+        // Force a refresh of the entries list
+        _entries = List.from(_entries);
+        notifyListeners();
+      } else {
+        throw Exception('Invalid document ID or user not authenticated');
+      }
+    } catch (e) {
+      debugPrint('Error deleting journal entry: $e');
+      rethrow;
+    }
   }
 
   // Get entries by date range
@@ -342,93 +395,6 @@ class JournalProvider with ChangeNotifier {
     }
 
     return (uniqueDays.length / 30) * 100;
-  }
-
-  // Export entries as JSON
-  String exportEntriesAsJson() {
-    final exportData = {
-      'export_date': DateTime.now().toIso8601String(),
-      'total_entries': _entries.length,
-      'entries': _entries.map((entry) => entry.toJson()).toList(),
-    };
-
-    return json.encode(exportData);
-  }
-
-  // Import entries from JSON
-  Future<bool> importEntriesFromJson(String jsonData) async {
-    try {
-      final data = json.decode(jsonData);
-      final List<dynamic> entriesList = data['entries'];
-
-      final importedEntries = entriesList
-          .map((entry) => JournalEntry.fromJson(entry))
-          .toList();
-
-      // Add imported entries (avoiding duplicates by ID)
-      for (var importedEntry in importedEntries) {
-        if (!_entries.any((entry) => entry.id == importedEntry.id)) {
-          _entries.add(importedEntry);
-        }
-      }
-
-      await _saveEntries();
-      notifyListeners();
-      return true;
-    } catch (e) {
-      print('Error importing entries: $e');
-      return false;
-    }
-  }
-
-  // Clear all entries (with confirmation)
-  Future<void> clearAllEntries() async {
-    _entries.clear();
-    await _saveEntries();
-    notifyListeners();
-  }
-
-  // Get mood trend (last 7 days)
-  List<Map<String, dynamic>> getMoodTrend() {
-    final moodScores = {
-      'Terrible': 1,
-      'Bad': 2,
-      'Okay': 3,
-      'Neutral': 4,
-      'Good': 5,
-      'Great': 6,
-      'Amazing': 7,
-    };
-
-    final now = DateTime.now();
-    final trend = <Map<String, dynamic>>[];
-
-    for (int i = 6; i >= 0; i--) {
-      final date = now.subtract(Duration(days: i));
-      final dateStart = DateTime(date.year, date.month, date.day);
-      final dateEnd = dateStart.add(Duration(days: 1));
-
-      final dayEntries = _entries.where((entry) {
-        return entry.createdAt.isAfter(dateStart) &&
-            entry.createdAt.isBefore(dateEnd);
-      }).toList();
-
-      double avgMood = 4.0; // Default neutral
-      if (dayEntries.isNotEmpty) {
-        final totalScore = dayEntries.fold(0, (sum, entry) {
-          return sum + (moodScores[entry.mood] ?? 4);
-        });
-        avgMood = totalScore / dayEntries.length;
-      }
-
-      trend.add({
-        'date': dateStart,
-        'mood_score': avgMood,
-        'entry_count': dayEntries.length,
-      });
-    }
-
-    return trend;
   }
 
   void clearData() {

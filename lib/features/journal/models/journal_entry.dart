@@ -8,7 +8,6 @@ class JournalEntry {
   final DateTime createdAt;
   final DateTime? updatedAt;
   final List<String> tags;
-  final bool isPrivate;
 
   JournalEntry({
     required this.id,
@@ -19,7 +18,6 @@ class JournalEntry {
     required this.createdAt,
     this.updatedAt,
     this.tags = const [],
-    this.isPrivate = false,
   });
 
   JournalEntry copyWith({
@@ -31,7 +29,6 @@ class JournalEntry {
     DateTime? createdAt,
     DateTime? updatedAt,
     List<String>? tags,
-    bool? isPrivate,
   }) {
     return JournalEntry(
       id: id ?? this.id,
@@ -42,7 +39,6 @@ class JournalEntry {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       tags: tags ?? this.tags,
-      isPrivate: isPrivate ?? this.isPrivate,
     );
   }
 
@@ -56,23 +52,21 @@ class JournalEntry {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
       'tags': tags,
-      'isPrivate': isPrivate,
     };
   }
 
   factory JournalEntry.fromJson(Map<String, dynamic> json) {
     return JournalEntry(
-      id: json['id'],
-      title: json['title'],
-      content: json['content'],
-      mood: json['mood'],
+      id: json['id'] ?? '',
+      title: json['title'] ?? '',
+      content: json['content'] ?? '',
+      mood: json['mood'] ?? 'Neutral',
       gratitudeItems: List<String>.from(json['gratitudeItems'] ?? []),
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'])
           : null,
       tags: List<String>.from(json['tags'] ?? []),
-      isPrivate: json['isPrivate'] ?? false,
     );
   }
 }

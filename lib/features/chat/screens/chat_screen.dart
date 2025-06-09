@@ -7,10 +7,13 @@ import 'dart:io';
 import '../providers/chat_provider.dart';
 import '../../../app_theme.dart';
 import '../../../widgets/custom_confirmation_dialog.dart';
+import '../../../widgets/custom_app_bar.dart';
 
 class ChatScreen extends StatefulWidget {
+  const ChatScreen({Key? key}) : super(key: key);
+
   @override
-  _ChatScreenState createState() => _ChatScreenState();
+  State<ChatScreen> createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
@@ -27,10 +30,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   final ImagePicker _imagePicker = ImagePicker();
   File? _selectedImage;
   String? _imageCaption;
+  late ChatProvider _chatProvider;
+  bool _isDisposed = false;
 
   @override
   void initState() {
     super.initState();
+    _chatProvider = context.read<ChatProvider>();
     _sendButtonAnimationController = AnimationController(
       duration: Duration(milliseconds: 200),
       vsync: this,
@@ -58,9 +64,16 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
     // Auto-scroll to bottom when new messages arrive
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final chatProvider = context.read<ChatProvider>();
-      chatProvider.addListener(_scrollToBottomIfNeeded);
+      _chatProvider.addListener(_scrollToBottomIfNeeded);
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isDisposed) {
+      _chatProvider = context.read<ChatProvider>();
+    }
   }
 
   void _initializeSpeech() async {
@@ -106,6 +119,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _isDisposed = true;
     _listeningAnimationController.dispose();
     _messageController.removeListener(_onTextChanged);
     _messageController.dispose();
@@ -115,8 +129,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
     // Stop any ongoing speech when leaving the screen
     if (mounted) {
-      final chatProvider = context.read<ChatProvider>();
-      chatProvider.stopSpeaking();
+      _chatProvider.stopSpeaking();
     }
 
     super.dispose();
@@ -159,15 +172,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     final text = _messageController.text.trim();
     if (text.isNotEmpty || _selectedImage != null) {
       HapticFeedback.lightImpact();
-      final chatProvider = context.read<ChatProvider>();
 
       if (_selectedImage != null) {
-        chatProvider.sendImage(_selectedImage!, caption: text);
+        _chatProvider.sendImage(_selectedImage!, caption: text);
         setState(() {
           _selectedImage = null;
         });
       } else {
-        chatProvider.sendMessage(text);
+        _chatProvider.sendMessage(text);
       }
 
       _messageController.clear();
@@ -218,12 +230,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final chatProvider = context.watch<ChatProvider>();
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-
     return WillPopScope(
       onWillPop: () async {
-        await chatProvider.stopSpeaking();
+        await _chatProvider.stopSpeaking();
         return true;
       },
       child: Scaffold(
@@ -231,76 +240,41 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         resizeToAvoidBottomInset: true,
         body: Column(
           children: [
-            // Custom App Bar
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.primary,
-                    AppColors.primary.withOpacity(0.8),
-                  ],
-                ),
-              ),
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+            CustomAppBar(
+              title: 'Serenity',
+              leadingIcon: Icons.chat_rounded,
+              actions: [
+                Container(
+                  margin: EdgeInsets.only(right: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.chat_rounded,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Serenity',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Spacer(),
-                      Container(
-                        margin: EdgeInsets.only(right: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: IconButton(
-                          icon: Icon(Icons.delete_outline, color: Colors.white),
-                          onPressed: chatProvider.messages.isEmpty
-                              ? null
-                              : () {
-                                  HapticFeedback.mediumImpact();
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => CustomConfirmationDialog(
-                                      title: 'Clear Chat',
-                                      message:
-                                          'Are you sure you want to clear all messages? This action cannot be undone.',
-                                      confirmText: 'Clear',
-                                      cancelText: 'Cancel',
-                                      confirmColor: AppColors.error,
-                                      onConfirm: () {
-                                        chatProvider.clearChat();
-                                        Navigator.of(context).pop();
-                                      },
-                                    ),
-                                  );
+                  child: IconButton(
+                    icon: Icon(Icons.delete_outline, color: Colors.white),
+                    onPressed: _chatProvider.messages.isEmpty
+                        ? null
+                        : () {
+                            HapticFeedback.mediumImpact();
+                            showDialog(
+                              context: context,
+                              builder: (context) => CustomConfirmationDialog(
+                                title: 'Clear Chat',
+                                message:
+                                    'Are you sure you want to clear all messages? This action cannot be undone.',
+                                confirmText: 'Clear',
+                                cancelText: 'Cancel',
+                                confirmColor: AppColors.error,
+                                onConfirm: () {
+                                  _chatProvider.clearChat();
+                                  Navigator.of(context).pop();
                                 },
-                        ),
-                      ),
-                    ],
+                              ),
+                            );
+                          },
                   ),
                 ),
-              ),
+              ],
             ),
             // Body content
             Expanded(
@@ -318,7 +292,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   Column(
                     children: [
                       Expanded(
-                        child: chatProvider.messages.isEmpty
+                        child: _chatProvider.messages.isEmpty
                             ? _EmptyStateWidget()
                             : ListView.builder(
                                 controller: _scrollController,
@@ -326,9 +300,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                   horizontal: 16,
                                   vertical: 8,
                                 ),
-                                itemCount: chatProvider.messages.length,
+                                itemCount: _chatProvider.messages.length,
                                 itemBuilder: (context, index) {
-                                  final message = chatProvider.messages[index];
+                                  final message = _chatProvider.messages[index];
                                   return AnimatedSlide(
                                     offset: Offset(0, 0),
                                     duration: Duration(milliseconds: 300),
@@ -340,14 +314,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                         message: message,
                                         isLastMessage:
                                             index ==
-                                            chatProvider.messages.length - 1,
+                                            _chatProvider.messages.length - 1,
                                         onCopy: () =>
                                             _copyMessage(message.text),
                                         onSpeak: () =>
-                                            chatProvider.speak(message.text),
+                                            _chatProvider.speak(message.text),
                                         isSpeaking:
-                                            chatProvider.isSpeaking &&
-                                            chatProvider
+                                            _chatProvider.isSpeaking &&
+                                            _chatProvider
                                                     .currentSpeakingMessage ==
                                                 message.text,
                                       ),
@@ -356,8 +330,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                 },
                               ),
                       ),
-                      if (chatProvider.isLoading &&
-                          chatProvider.messages.isNotEmpty)
+                      if (_chatProvider.isLoading &&
+                          _chatProvider.messages.isNotEmpty)
                         _TypingIndicator(),
                       if (_isListening)
                         Container(
@@ -396,7 +370,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           16,
                           12,
                           16,
-                          16 + keyboardHeight * 0.05,
+                          16 + MediaQuery.of(context).viewInsets.bottom * 0.05,
                         ),
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -415,7 +389,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                             isComposing: _isComposing,
                             onSend: _sendMessage,
                             sendButtonAnimation: _sendButtonScaleAnimation,
-                            isEnabled: !chatProvider.isLoading,
+                            isEnabled: !_chatProvider.isLoading,
                             isListening: _isListening,
                             onVoicePressed: _startListening,
                             onImagePick: _pickImage,

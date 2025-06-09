@@ -2,19 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_profile.dart';
+import 'package:flutter/foundation.dart';
 
-class UserProfileProvider extends ChangeNotifier {
+class UserProfileProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   UserProfile? _userProfile;
   bool _isLoading = false;
-  String? _error;
   bool _hasLoadedProfile = false;
+  String? _error;
   bool _isInitialized = false;
 
   UserProfile? get userProfile => _userProfile;
   bool get isLoading => _isLoading;
+  bool get hasLoadedProfile => _hasLoadedProfile;
   String? get error => _error;
   bool get isInitialized => _isInitialized;
 
@@ -51,8 +53,8 @@ class UserProfileProvider extends ChangeNotifier {
     required String name,
     required int age,
     String? gender,
-    List<String> goals = const [],
-    List<String> causes = const [],
+    List<String>? goals,
+    List<String>? causes,
     String? stressFrequency,
     String? healthyEating,
     String? meditationExperience,
@@ -66,56 +68,48 @@ class UserProfileProvider extends ChangeNotifier {
 
       final user = _auth.currentUser;
       if (user == null) {
-        throw Exception('not-authenticated');
+        throw Exception('User not authenticated');
       }
 
-      // Check if this is a new profile or update
-      final docRef = _firestore.collection('users').doc(user.uid);
-      final existingDoc = await docRef.get();
+      final userData = {
+        'uid': user.uid,
+        'name': name,
+        'age': age,
+        'gender': gender,
+        'goals': goals ?? [],
+        'causes': causes ?? [],
+        'stressFrequency': stressFrequency,
+        'healthyEating': healthyEating,
+        'meditationExperience': meditationExperience,
+        'sleepQuality': sleepQuality,
+        'happinessLevel': happinessLevel,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
 
-      final userProfile = UserProfile(
-        uid: user.uid,
-        name: name,
-        age: age,
-        gender: gender,
-        goals: goals,
-        causes: causes,
-        stressFrequency: stressFrequency,
-        healthyEating: healthyEating,
-        meditationExperience: meditationExperience,
-        sleepQuality: sleepQuality,
-        happinessLevel: happinessLevel,
-        createdAt: existingDoc.exists
-            ? (existingDoc.data()?['createdAt'] as Timestamp?)
-            : null,
-      );
+      // If this is a new profile, add createdAt
+      if (_userProfile == null) {
+        userData['createdAt'] = FieldValue.serverTimestamp();
+      }
 
-      // Save to Firestore
-      await docRef.set(userProfile.toJson(), SetOptions(merge: true));
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .set(userData, SetOptions(merge: true));
 
-      _userProfile = userProfile;
-      _hasLoadedProfile = true;
-      print('User profile saved successfully for uid: ${user.uid}');
-    } on FirebaseException catch (e) {
-      _error = _handleFirebaseError(e);
-      print('Firebase error saving user profile: ${e.code} - ${e.message}');
-      rethrow;
-    } catch (e) {
-      _error = e.toString();
-      print('Error saving user profile: $e');
-      rethrow;
-    } finally {
+      // Reload the profile after saving
+      await loadUserProfile();
+
       _isLoading = false;
       notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      _error = e.toString();
+      notifyListeners();
+      throw Exception('Error saving user profile: $e');
     }
   }
 
   Future<void> loadUserProfile() async {
-    // If we've already loaded the profile and it exists, don't reload
-    if (_hasLoadedProfile && _userProfile != null) {
-      return;
-    }
-
     try {
       _isLoading = true;
       _error = null;
@@ -123,31 +117,28 @@ class UserProfileProvider extends ChangeNotifier {
 
       final user = _auth.currentUser;
       if (user == null) {
-        throw Exception('not-authenticated');
+        throw Exception('User not authenticated');
       }
 
       final doc = await _firestore.collection('users').doc(user.uid).get();
 
       if (doc.exists && doc.data() != null) {
-        _userProfile = UserProfile.fromJson(doc.data()!);
+        final data = doc.data() as Map<String, dynamic>;
+        data['uid'] = user.uid; // Add the user ID to the data
+        _userProfile = UserProfile.fromJson(data);
         _hasLoadedProfile = true;
-        print('User profile loaded successfully for uid: ${user.uid}');
       } else {
         _userProfile = null;
-        _hasLoadedProfile = true;
-        print('No user profile found for uid: ${user.uid}');
+        _hasLoadedProfile = false;
       }
-    } on FirebaseException catch (e) {
-      _error = _handleFirebaseError(e);
-      print('Firebase error loading user profile: ${e.code} - ${e.message}');
-      rethrow;
-    } catch (e) {
-      _error = e.toString();
-      print('Error loading user profile: $e');
-      rethrow;
-    } finally {
+
       _isLoading = false;
       notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      _error = e.toString();
+      notifyListeners();
+      throw Exception('Error loading user profile: $e');
     }
   }
 
@@ -219,10 +210,8 @@ class UserProfileProvider extends ChangeNotifier {
   // Clear local state (useful for logout)
   void clearProfile() {
     _userProfile = null;
-    _error = null;
-    _isLoading = false;
     _hasLoadedProfile = false;
-    _isInitialized = false;
+    _error = null;
     notifyListeners();
   }
 

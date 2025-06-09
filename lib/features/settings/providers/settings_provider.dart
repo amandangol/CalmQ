@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import '../../mood/providers/mood_provider.dart';
+import '../../journal/providers/journal_provider.dart';
+import '../../affirmations/providers/affirmation_provider.dart';
 
 class SettingsProvider extends ChangeNotifier {
   static const String _themeKey = 'theme_mode';
@@ -11,10 +15,10 @@ class SettingsProvider extends ChangeNotifier {
 
   bool _isLoading = true;
   ThemeMode _themeMode = ThemeMode.system;
-  bool _notificationsEnabled = true;
+  bool _notificationsEnabled = false;
   bool _soundEffectsEnabled = true;
   bool _hapticFeedbackEnabled = true;
-  bool _dataSyncEnabled = true;
+  bool _dataSyncEnabled = false;
   bool _privacyModeEnabled = false;
 
   bool get isLoading => _isLoading;
@@ -34,10 +38,10 @@ class SettingsProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
 
       _themeMode = ThemeMode.values[prefs.getInt(_themeKey) ?? 0];
-      _notificationsEnabled = prefs.getBool(_notificationsKey) ?? true;
+      _notificationsEnabled = prefs.getBool(_notificationsKey) ?? false;
       _soundEffectsEnabled = prefs.getBool(_soundEffectsKey) ?? true;
       _hapticFeedbackEnabled = prefs.getBool(_hapticFeedbackKey) ?? true;
-      _dataSyncEnabled = prefs.getBool(_dataSyncKey) ?? true;
+      _dataSyncEnabled = prefs.getBool(_dataSyncKey) ?? false;
       _privacyModeEnabled = prefs.getBool(_privacyModeKey) ?? false;
 
       _isLoading = false;
@@ -89,5 +93,46 @@ class SettingsProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_privacyModeKey, enabled);
     notifyListeners();
+  }
+
+  Future<void> clearAllData(BuildContext context) async {
+    try {
+      // Clear SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      // Reset all settings to default values
+      _notificationsEnabled = false;
+      _soundEffectsEnabled = true;
+      _hapticFeedbackEnabled = true;
+      _dataSyncEnabled = false;
+
+      // Clear data from other providers
+      if (context.mounted) {
+        // Clear Mood data
+        final moodProvider = Provider.of<MoodProvider>(context, listen: false);
+        moodProvider.clearData();
+
+        // Clear Journal data
+        final journalProvider = Provider.of<JournalProvider>(
+          context,
+          listen: false,
+        );
+        // await journalProvider.clearData();
+
+        // Clear Affirmation data
+        final affirmationProvider = Provider.of<AffirmationProvider>(
+          context,
+          listen: false,
+        );
+        await affirmationProvider
+            .refreshData(); // This will reset to default affirmations
+      }
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error clearing data: $e');
+      rethrow;
+    }
   }
 }

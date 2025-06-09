@@ -45,51 +45,66 @@ class SettingsScreen extends StatelessWidget {
       ),
       body: ListView(
         children: [
-          _buildSection(context, 'Appearance', [
-            _buildThemeSelector(context, settingsProvider),
-          ]),
           _buildSection(context, 'Notifications & Sound', [
             _buildSwitchTile(
               context,
               'Enable Notifications',
-              'Receive reminders and updates',
+              'Receive daily wellness reminders',
               settingsProvider.notificationsEnabled,
-              (value) => settingsProvider.setNotificationsEnabled(value),
+              (value) async {
+                await settingsProvider.setNotificationsEnabled(value);
+                if (value && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Please set up your reminders in the Reminders section',
+                      ),
+                      backgroundColor: AppColors.primary,
+                      behavior: SnackBarBehavior.floating,
+                      action: SnackBarAction(
+                        label: 'Go to Reminders',
+                        textColor: Colors.white,
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/reminders');
+                        },
+                      ),
+                    ),
+                  );
+                }
+              },
               Icons.notifications_outlined,
             ),
             _buildSwitchTile(
               context,
-              'Sound Effects',
-              'Play sounds for interactions',
+              'Notification Sound',
+              'Play sound for reminders',
               settingsProvider.soundEffectsEnabled,
               (value) => settingsProvider.setSoundEffectsEnabled(value),
               Icons.volume_up_outlined,
             ),
             _buildSwitchTile(
               context,
-              'Haptic Feedback',
-              'Vibrate on interactions',
+              'Vibration',
+              'Vibrate for reminders',
               settingsProvider.hapticFeedbackEnabled,
               (value) => settingsProvider.setHapticFeedbackEnabled(value),
               Icons.vibration_outlined,
             ),
           ]),
-          _buildSection(context, 'Privacy & Data', [
+          _buildSection(context, 'Data & Privacy', [
             _buildSwitchTile(
               context,
-              'Data Sync',
-              'Sync your data across devices',
+              'Data Backup',
+              'Backup your wellness data',
               settingsProvider.dataSyncEnabled,
               (value) => settingsProvider.setDataSyncEnabled(value),
-              Icons.sync_outlined,
+              Icons.backup_outlined,
             ),
-            _buildSwitchTile(
+            _buildListTile(
               context,
-              'Privacy Mode',
-              'Hide sensitive content',
-              settingsProvider.privacyModeEnabled,
-              (value) => settingsProvider.setPrivacyModeEnabled(value),
-              Icons.visibility_off_outlined,
+              'Clear App Data',
+              Icons.delete_outline,
+              () => _showClearDataDialog(context, settingsProvider),
             ),
           ]),
           _buildSection(context, 'About', [
@@ -108,14 +123,14 @@ class SettingsScreen extends StatelessWidget {
             _buildListTile(context, 'App Version', Icons.info_outline, () {
               showAboutDialog(
                 context: context,
-                applicationName: 'CalmQ',
+                applicationName: 'Auralynn',
                 applicationVersion: '1.0.0',
                 applicationIcon: Image.asset(
                   "assets/icon/icon.png",
                   height: 60,
                   width: 60,
                 ),
-                applicationLegalese: '© 2025 CalmQ',
+                applicationLegalese: '© 2024 Auralynn',
               );
             }),
           ]),
@@ -145,21 +160,6 @@ class SettingsScreen extends StatelessWidget {
         ...children,
         const Divider(height: 1),
       ],
-    );
-  }
-
-  Widget _buildThemeSelector(BuildContext context, SettingsProvider provider) {
-    return ListTile(
-      leading: Icon(Icons.palette_outlined, color: AppColors.primary),
-      title: const Text('Theme'),
-      subtitle: Text(
-        provider.themeMode == ThemeMode.system
-            ? 'System Default'
-            : provider.themeMode == ThemeMode.light
-            ? 'Light'
-            : 'Dark',
-      ),
-      onTap: () => _showThemeSelector(context, provider),
     );
   }
 
@@ -201,39 +201,36 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  void _showThemeSelector(BuildContext context, SettingsProvider provider) {
-    showModalBottomSheet(
+  void _showClearDataDialog(BuildContext context, SettingsProvider provider) {
+    showDialog(
       context: context,
-      backgroundColor: AppColors.background,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            title: const Text('System Default'),
-            leading: const Icon(Icons.brightness_auto),
-            onTap: () {
-              provider.setThemeMode(ThemeMode.system);
-              Navigator.pop(context);
-            },
+      builder: (context) => AlertDialog(
+        title: const Text('Clear App Data'),
+        content: const Text(
+          'This will permanently delete all your wellness data, including reminders, journal entries, mood logs, and preferences. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
-          ListTile(
-            title: const Text('Light'),
-            leading: const Icon(Icons.brightness_high),
-            onTap: () {
-              provider.setThemeMode(ThemeMode.light);
-              Navigator.pop(context);
+          TextButton(
+            onPressed: () async {
+              await provider.clearAllData(context);
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('All data has been cleared'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
-          ),
-          ListTile(
-            title: const Text('Dark'),
-            leading: const Icon(Icons.brightness_4),
-            onTap: () {
-              provider.setThemeMode(ThemeMode.dark);
-              Navigator.pop(context);
-            },
+            child: const Text(
+              'Clear Data',
+              style: TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),

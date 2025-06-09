@@ -9,6 +9,7 @@ class AuthProvider with ChangeNotifier {
   bool _isLoading = false;
   firebase_auth.User? _user;
   bool _rememberMe = false;
+  bool _isInitialized = false;
   static const String _rememberMeKey = 'remember_me';
   static const String _savedEmailKey = 'saved_email';
 
@@ -16,64 +17,92 @@ class AuthProvider with ChangeNotifier {
   firebase_auth.User? get user => _user;
   bool get isAuthenticated => _user != null;
   bool get rememberMe => _rememberMe;
+  bool get isInitialized => _isInitialized;
 
   AuthProvider() {
-    _auth.authStateChanges().listen((user) {
-      _user = user;
-      if (user != null) {
-        _initializeUserData();
-      } else {
-        // Clear all data when user signs out
-        _clearAllData();
-      }
-      notifyListeners();
-    });
-    _loadRememberMePreference();
+    _initialize();
   }
 
-  void _clearAllData() {
-    // This will be called when user signs out
-    // The actual clearing is handled by each provider's clearData method
-    // which is called when the provider is disposed
-    _user = null;
+  Future<void> _initialize() async {
+    if (_isInitialized) return;
+
+    try {
+      // Set up auth state listener
+      _auth.authStateChanges().listen((user) {
+        if (_user != user) {
+          _user = user;
+          if (user != null) {
+            _initializeUserData();
+          }
+          notifyListeners();
+        }
+      });
+
+      // Load remember me preference
+      await _loadRememberMePreference();
+
+      _isInitialized = true;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error initializing AuthProvider: $e');
+    }
   }
 
   Future<void> _initializeUserData() async {
     if (_user == null) return;
 
     try {
-      // Only update last login timestamp
-      await _firestore.collection('users').doc(_user!.uid).update({
-        'lastLogin': FieldValue.serverTimestamp(),
-      });
+      // Only update last login timestamp if it's a new session
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(_user!.uid)
+          .get();
+      if (!userDoc.exists) {
+        await _firestore.collection('users').doc(_user!.uid).set({
+          'lastLogin': FieldValue.serverTimestamp(),
+        });
+      }
     } catch (e) {
       debugPrint('Error initializing user data: $e');
     }
   }
 
   Future<void> _loadRememberMePreference() async {
-    final prefs = await SharedPreferences.getInstance();
-    _rememberMe = prefs.getBool(_rememberMeKey) ?? false;
-    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _rememberMe = prefs.getBool(_rememberMeKey) ?? false;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading remember me preference: $e');
+    }
   }
 
   Future<String?> getSavedEmail() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_savedEmailKey);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_savedEmailKey);
+    } catch (e) {
+      debugPrint('Error getting saved email: $e');
+      return null;
+    }
   }
 
   Future<void> setRememberMe(bool value, {String? email}) async {
-    _rememberMe = value;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_rememberMeKey, value);
+    try {
+      _rememberMe = value;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_rememberMeKey, value);
 
-    if (value && email != null) {
-      await prefs.setString(_savedEmailKey, email);
-    } else if (!value) {
-      await prefs.remove(_savedEmailKey);
+      if (value && email != null) {
+        await prefs.setString(_savedEmailKey, email);
+      } else if (!value) {
+        await prefs.remove(_savedEmailKey);
+      }
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error setting remember me: $e');
     }
-
-    notifyListeners();
   }
 
   Future<void> signIn(String email, String password) async {
@@ -90,9 +119,9 @@ class AuthProvider with ChangeNotifier {
         });
       }
     } on firebase_auth.FirebaseAuthException catch (e) {
-      print('Firebase Auth Error Code: ${e.code}');
-      print('Firebase Auth Error Message: ${e.message}');
-      rethrow; // Rethrow to handle in the UI
+      debugPrint('Firebase Auth Error Code: ${e.code}');
+      debugPrint('Firebase Auth Error Message: ${e.message}');
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -124,22 +153,25 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> signOut() async {
+    if (_user == null) return;
+
     try {
       _isLoading = true;
       notifyListeners();
 
-      // Clear user data from Firestore
-      if (_user != null) {
-        await _firestore.collection('users').doc(_user!.uid).update({
-          'lastLogout': FieldValue.serverTimestamp(),
-        });
-      }
+      // Update last logout timestamp
+      await _firestore.collection('users').doc(_user!.uid).update({
+        'lastLogout': FieldValue.serverTimestamp(),
+      });
 
+      // Sign out from Firebase Auth
       await _auth.signOut();
-      _user = null;
 
       // Clear remember me data
       await setRememberMe(false);
+    } catch (e) {
+      debugPrint('Error during sign out: $e');
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();

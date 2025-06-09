@@ -12,6 +12,7 @@ import '../../mood/screens/mood_screen.dart';
 import '../../auth/providers/user_profile_provider.dart';
 import '../../chat/screens/chat_screen.dart';
 import '../../../widgets/custom_confirmation_dialog.dart';
+import '../../../widgets/custom_app_bar.dart';
 import '../../affirmations/providers/affirmation_provider.dart';
 import 'package:intl/intl.dart';
 
@@ -54,143 +55,156 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          // Custom App Bar
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
-              ),
-            ),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+      backgroundColor: Colors.white,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Colors.white, Color(0xFFF5F7FA), Color(0xFFE8ECF4)],
+          ),
+        ),
+        child: Column(
+          children: [
+            CustomAppBar(
+              title: 'CalmQ',
+              showBackButton: false,
+              leadingIcon: Icons.self_improvement_rounded,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.logout_rounded, color: Colors.white),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => CustomConfirmationDialog(
+                        title: 'Sign Out',
+                        message: 'Are you sure you want to sign out?',
+                        confirmText: 'Sign Out',
+                        cancelText: 'Cancel',
+                        confirmColor: AppColors.error,
+                        onConfirm: () async {
+                          try {
+                            // Clear all providers' data
+                            context.read<MoodProvider>().clearData();
+                            context.read<UserProfileProvider>().clearProfile();
+
+                            // Sign out
+                            await context.read<AuthProvider>().signOut();
+
+                            if (context.mounted) {
+                              // Navigate to login screen and clear all previous routes
+                              Navigator.of(context).pushNamedAndRemoveUntil(
+                                '/login',
+                                (route) => false,
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error signing out: $e'),
+                                  backgroundColor: AppColors.error,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ],
+              subtitle: Container(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.self_improvement_rounded,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'CalmQ',
+                    Icon(Icons.auto_awesome, color: Colors.white, size: 16),
+                    SizedBox(width: 8),
+                    Text(
+                      'Your wellness companion',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 20,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.logout_rounded,
-                          color: Colors.white,
-                        ),
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) => CustomConfirmationDialog(
-                              title: 'Sign Out',
-                              message: 'Are you sure you want to sign out?',
-                              confirmText: 'Sign Out',
-                              cancelText: 'Cancel',
-                              confirmColor: AppColors.error,
-                              onConfirm: () => authProvider.signOut(),
-                            ),
-                          );
-                        },
+                        color: Colors.grey.withOpacity(0.9),
+                        fontSize: 12,
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-          ),
-          // Body content
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.zero,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Welcome Section
-                  _buildWelcomeSection(context, user?.displayName ?? 'Friend'),
-                  SizedBox(height: 24),
+            // Body content
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.zero,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 16),
 
-                  // Today's Check-in Section (Streak)
-                  _buildTodayCheckinSection(context, moodProvider, theme),
-                  SizedBox(height: 24),
-
-                  // Today's Mood Section (Log Mood)
-                  _buildTodaysMoodSection(context, moodProvider, theme),
-                  SizedBox(height: 24),
-
-                  // Quick Actions Section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.grid_view_rounded,
-                            color: AppColors.primary,
-                            size: 20,
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        Text(
-                          'Quick Actions',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ],
+                    // Welcome Section
+                    _buildWelcomeSection(
+                      context,
+                      user?.displayName ?? 'Friend',
                     ),
-                  ),
-                  SizedBox(height: 24),
+                    SizedBox(height: 16),
 
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    child: _buildQuickActionsGrid(context),
-                  ),
-                  SizedBox(height: 24),
+                    // Today's Check-in Section (Streak)
+                    _buildTodayCheckinSection(context, moodProvider, theme),
+                    SizedBox(height: 16),
 
-                  // Daily Inspiration Section
-                  _buildDailyInspirationSection(context, theme),
-                  SizedBox(height: 24),
-                ],
+                    // Today's Mood Section (Log Mood)
+                    _buildTodaysMoodSection(context, moodProvider, theme),
+                    SizedBox(height: 16),
+
+                    // Quick Actions Section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.grid_view_rounded,
+                              color: AppColors.primary,
+                              size: 16,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Quick Actions',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 16),
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: _buildQuickActionsGrid(context),
+                    ),
+                    SizedBox(height: 16),
+
+                    // Daily Inspiration Section
+                    _buildDailyInspirationSection(context, theme),
+                    SizedBox(height: 16),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -213,83 +227,91 @@ class _HomeScreenState extends State<HomeScreen> {
     final dateFormat = DateFormat('EEEE, MMMM d');
     final today = dateFormat.format(now);
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.all(Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: Offset(0, 3),
+            ),
+          ],
         ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AnimatedOpacity(
-                opacity: 1.0,
-                duration: const Duration(milliseconds: 600),
-                curve: Curves.easeInOut,
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween<double>(begin: 0.95, end: 1.0),
-                  duration: const Duration(milliseconds: 800),
-                  curve: Curves.easeOutBack,
-                  builder: (context, scale, child) {
-                    return Transform.scale(
-                      scale: scale,
-
-                      child: Text(
-                        '$greeting,',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          shadows: [
-                            Shadow(
-                              blurRadius: 8.0,
-                              color: Colors.white.withOpacity(0.3),
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                          letterSpacing: 1.2,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AnimatedOpacity(
+                  opacity: 1.0,
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.easeInOut,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: 0.95, end: 1.0),
+                    duration: const Duration(milliseconds: 800),
+                    curve: Curves.easeOutBack,
+                    builder: (context, scale, child) {
+                      return Transform.scale(
+                        scale: scale,
+                        child: Text(
+                          '$greeting,',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            shadows: [
+                              Shadow(
+                                blurRadius: 6.0,
+                                color: Colors.black.withOpacity(0.1),
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                            letterSpacing: 1.0,
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-
-              const SizedBox(height: 6),
-              Text(
-                '$name!',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(Icons.calendar_month, size: 15, color: Colors.white),
-                  const SizedBox(width: 5),
-                  Text(
-                    today,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withOpacity(0.85),
-                      fontSize: 14,
-                    ),
+                      );
+                    },
                   ),
-                ],
-              ),
-            ],
-          ),
-        ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$name!',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_month,
+                      size: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      today,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -546,9 +568,9 @@ class _HomeScreenState extends State<HomeScreen> {
       physics: NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 1.1,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        childAspectRatio: 1.2,
       ),
       itemCount: quickActions.length,
       itemBuilder: (context, index) {
@@ -709,50 +731,50 @@ class _QuickActionCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
-              blurRadius: 15,
-              offset: Offset(0, 8),
+              blurRadius: 10,
+              offset: Offset(0, 4),
             ),
           ],
         ),
         child: Padding(
-          padding: EdgeInsets.all(20),
+          padding: EdgeInsets.all(12),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 60,
-                height: 60,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
                   color: action.color,
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
                       color: action.color.withOpacity(0.3),
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
+                      blurRadius: 8,
+                      offset: Offset(0, 3),
                     ),
                   ],
                 ),
-                child: Icon(action.icon, size: 32, color: AppColors.surface),
+                child: Icon(action.icon, size: 24, color: AppColors.surface),
               ),
-              SizedBox(height: 16),
+              SizedBox(height: 12),
               Text(
                 action.label,
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                 ),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: 6),
+              SizedBox(height: 4),
               Text(
                 action.description,
-                style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
             ],

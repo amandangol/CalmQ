@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/reminder_provider.dart';
 import '../../../app_theme.dart';
+import '../../../widgets/custom_app_bar.dart';
 
 class RemindersScreen extends StatelessWidget {
   @override
@@ -25,43 +26,46 @@ class RemindersScreen extends StatelessWidget {
         backgroundColor: AppColors.background,
         body: Center(
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   Icons.notifications_off_rounded,
-                  size: 64,
+                  size: 48,
                   color: AppColors.primary,
                 ),
-                SizedBox(height: 24),
+                SizedBox(height: 16),
                 Text(
                   'Notification Permission Required',
-                  style: theme.textTheme.titleLarge?.copyWith(
+                  style: theme.textTheme.titleMedium?.copyWith(
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.bold,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 16),
+                SizedBox(height: 12),
                 Text(
                   'Please enable notifications in your device settings to use reminders.',
-                  style: theme.textTheme.bodyLarge?.copyWith(
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     color: AppColors.textSecondary,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 32),
+                SizedBox(height: 24),
                 ElevatedButton.icon(
                   onPressed: () {
                     reminderProvider.initializeNotifications();
                   },
-                  icon: Icon(Icons.settings),
-                  label: Text('Open Settings'),
+                  icon: Icon(Icons.settings, size: 18),
+                  label: Text('Open Settings', style: TextStyle(fontSize: 13)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
               ],
@@ -75,51 +79,9 @@ class RemindersScreen extends StatelessWidget {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          // Custom App Bar
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
-              ),
-            ),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(
-                        Icons.arrow_back_rounded,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    const SizedBox(width: 12),
-                    const Icon(
-                      Icons.notifications_active_rounded,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'Reminders',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          CustomAppBar(
+            title: 'Reminders',
+            leadingIcon: Icons.notifications_active_rounded,
           ),
           // Body content
           Expanded(
@@ -131,19 +93,19 @@ class RemindersScreen extends StatelessWidget {
                   children: [
                     // Header Section
                     Container(
-                      padding: EdgeInsets.all(20),
+                      padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [AppColors.primary, AppColors.secondary],
                         ),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.primary.withOpacity(0.3),
-                            blurRadius: 15,
-                            offset: Offset(0, 8),
+                            blurRadius: 12,
+                            offset: Offset(0, 6),
                           ),
                         ],
                       ),
@@ -153,34 +115,34 @@ class RemindersScreen extends StatelessWidget {
                           Row(
                             children: [
                               Container(
-                                padding: EdgeInsets.all(12),
+                                padding: EdgeInsets.all(10),
                                 decoration: BoxDecoration(
                                   color: AppColors.surface.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
                                   Icons.notifications_active,
                                   color: AppColors.surface,
-                                  size: 28,
+                                  size: 24,
                                 ),
                               ),
-                              SizedBox(width: 16),
+                              SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       'Daily Reminders',
-                                      style: theme.textTheme.titleLarge
+                                      style: theme.textTheme.titleMedium
                                           ?.copyWith(
                                             color: AppColors.surface,
                                             fontWeight: FontWeight.bold,
                                           ),
                                     ),
-                                    SizedBox(height: 4),
+                                    SizedBox(height: 2),
                                     Text(
                                       'Set reminders for your wellness activities',
-                                      style: theme.textTheme.bodyMedium
+                                      style: theme.textTheme.bodySmall
                                           ?.copyWith(
                                             color: AppColors.surface
                                                 .withOpacity(0.9),
@@ -194,7 +156,7 @@ class RemindersScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    SizedBox(height: 24),
+                    SizedBox(height: 16),
                     // Reminders List
                     Expanded(
                       child: ListView(
@@ -344,48 +306,48 @@ class _ReminderCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+            blurRadius: 8,
+            offset: Offset(0, 2),
           ),
         ],
       ),
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: EdgeInsets.all(10),
+                  padding: EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(icon, color: AppColors.primary, size: 24),
+                  child: Icon(icon, color: AppColors.primary, size: 20),
                 ),
-                SizedBox(width: 16),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
-                        style: theme.textTheme.titleMedium?.copyWith(
+                        style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
                         ),
                       ),
-                      SizedBox(height: 4),
+                      SizedBox(height: 2),
                       Text(
                         subtitle,
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: theme.textTheme.bodySmall?.copyWith(
                           color: AppColors.textSecondary,
-                          fontSize: 13,
+                          fontSize: 12,
                         ),
                       ),
                     ],
@@ -393,12 +355,12 @@ class _ReminderCard extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: 16),
+            SizedBox(height: 12),
             Container(
-              padding: EdgeInsets.all(12),
+              padding: EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: AppColors.background,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: time != null
                       ? AppColors.primary.withOpacity(0.3)
@@ -412,21 +374,21 @@ class _ReminderCard extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.access_time,
-                        size: 18,
+                        size: 16,
                         color: time != null
                             ? AppColors.primary
                             : AppColors.textSecondary,
                       ),
-                      SizedBox(width: 8),
+                      SizedBox(width: 6),
                       Text(
                         time != null
                             ? 'Reminder set for ${time!.format(context)}'
                             : 'No reminder set',
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: theme.textTheme.bodySmall?.copyWith(
                           color: time != null
                               ? AppColors.primary
                               : AppColors.textSecondary,
-                          fontSize: 13,
+                          fontSize: 12,
                         ),
                       ),
                     ],
@@ -461,22 +423,22 @@ class _ReminderCard extends StatelessWidget {
                         },
                         icon: Icon(
                           time != null ? Icons.edit : Icons.add_alarm,
-                          size: 16,
+                          size: 14,
                         ),
                         label: Text(
                           time != null ? 'Change' : 'Set Reminder',
-                          style: TextStyle(fontSize: 13),
+                          style: TextStyle(fontSize: 12),
                         ),
                         style: TextButton.styleFrom(
                           foregroundColor: AppColors.primary,
-                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          padding: EdgeInsets.symmetric(horizontal: 8),
                         ),
                       ),
                       if (time != null) ...[
-                        SizedBox(width: 8),
+                        SizedBox(width: 6),
                         IconButton(
                           onPressed: () => onTimeSelected(null),
-                          icon: Icon(Icons.close, size: 18),
+                          icon: Icon(Icons.close, size: 16),
                           color: AppColors.error,
                           padding: EdgeInsets.zero,
                           constraints: BoxConstraints(),

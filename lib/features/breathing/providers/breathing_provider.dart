@@ -17,6 +17,7 @@ class BreathingProvider extends ChangeNotifier {
   int _totalSessions = 0;
   int _totalBreathingTime = 0; // in seconds
   DateTime? _lastSessionDate;
+  bool _isInitialized = false;
 
   bool get isBreathing => _isBreathing;
   int get selectedDuration => _selectedDuration;
@@ -27,17 +28,25 @@ class BreathingProvider extends ChangeNotifier {
   int get totalSessions => _totalSessions;
   int get totalBreathingTime => _totalBreathingTime;
   DateTime? get lastSessionDate => _lastSessionDate;
+  bool get isInitialized => _isInitialized;
 
   final List<int> availableDurations = [1, 3, 5];
   final List<String> availableSoundscapes = ['none', 'rain', 'ocean', 'forest'];
 
   BreathingProvider(this._web3Provider) {
-    _loadBreathingStats();
+    _initialize();
   }
 
-  @override
-  void initState() {
-    _loadBreathingStats();
+  Future<void> _initialize() async {
+    if (_isInitialized) return;
+
+    try {
+      await _loadBreathingStats();
+      _isInitialized = true;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error initializing BreathingProvider: $e');
+    }
   }
 
   Future<void> _loadBreathingStats() async {
@@ -58,7 +67,6 @@ class BreathingProvider extends ChangeNotifier {
         _totalSessions = data['totalSessions'] ?? 0;
         _totalBreathingTime = data['totalBreathingTime'] ?? 0;
         _lastSessionDate = data['lastSessionDate']?.toDate();
-        notifyListeners();
       }
     } catch (e) {
       debugPrint('Error loading breathing stats: $e');
@@ -87,12 +95,14 @@ class BreathingProvider extends ChangeNotifier {
   }
 
   void startBreathing() {
+    if (!_isInitialized) return;
     _isBreathing = true;
     _lastSessionDate = DateTime.now();
     notifyListeners();
   }
 
   void stopBreathing() {
+    if (!_isInitialized) return;
     _isBreathing = false;
     _totalSessions++;
     _totalBreathingTime += _selectedDuration * 60; // Convert minutes to seconds
@@ -101,6 +111,7 @@ class BreathingProvider extends ChangeNotifier {
   }
 
   void updateBreathProgress(double progress) {
+    if (!_isInitialized) return;
     _breathProgress = progress;
     if (progress >= 1.0) {
       _completedCycles++;
@@ -110,17 +121,20 @@ class BreathingProvider extends ChangeNotifier {
   }
 
   void setDuration(int minutes) {
+    if (!_isInitialized) return;
     _selectedDuration = minutes;
     notifyListeners();
   }
 
   void setSoundscape(String soundscape) {
+    if (!_isInitialized) return;
     _selectedSoundscape = soundscape;
     notifyListeners();
   }
 
   // Reset stats (for testing purposes)
   Future<void> resetStats() async {
+    if (!_isInitialized) return;
     _totalSessions = 0;
     _totalBreathingTime = 0;
     _lastSessionDate = null;

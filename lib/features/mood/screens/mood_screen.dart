@@ -6,6 +6,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../providers/mood_provider.dart';
 import '../../../app_theme.dart';
 import 'package:intl/intl.dart';
+import '../../../widgets/custom_app_bar.dart';
 
 class MoodScreen extends StatefulWidget {
   @override
@@ -36,84 +37,57 @@ class _MoodScreenState extends State<MoodScreen> {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          // Custom App Bar as a widget, not as Scaffold.appBar
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
-              ),
-            ),
-            child: SafeArea(
-              child: Padding(
+          CustomAppBar(
+            title: 'Mood Tracker',
+            showBackButton: false,
+
+            actions: [
+              Container(
+                margin: const EdgeInsets.only(right: 8),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  DateFormat('MMM yyyy').format(currentMonth),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.mood_rounded, color: Colors.white, size: 24),
-                    SizedBox(width: 12),
-                    Text(
-                      'Mood Tracker',
-                      style: TextStyle(
+                    IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back_ios,
                         color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                        size: 18,
                       ),
+                      onPressed: () => _navigateMonth(false),
                     ),
-                    Spacer(),
-                    Container(
-                      margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
+                    IconButton(
+                      icon: const Icon(
+                        Icons.arrow_forward_ios,
+                        color: Colors.white,
+                        size: 18,
                       ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        DateFormat('MMM yyyy').format(currentMonth),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back_ios,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                            onPressed: () => _navigateMonth(false),
-                          ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_forward_ios,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                            onPressed: () => _navigateMonth(true),
-                          ),
-                        ],
-                      ),
+                      onPressed: () => _navigateMonth(true),
                     ),
                   ],
                 ),
               ),
-            ),
+            ],
           ),
           // Body content
           Expanded(
@@ -135,46 +109,47 @@ class _MoodScreenState extends State<MoodScreen> {
                         SliverToBoxAdapter(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 20.0,
-                              vertical: 16.0,
+                              horizontal: 16.0,
+                              vertical: 12.0,
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 // Today's Quick Check-in Section
                                 _buildTodayCheckinSection(context),
-                                SizedBox(height: 24),
+                                SizedBox(height: 16),
 
                                 // Mood Chart Section
                                 if (weekMoods.isNotEmpty) ...[
                                   Text(
                                     'Weekly Mood Trend',
-                                    style: theme.textTheme.titleLarge?.copyWith(
-                                      color: AppColors.textPrimary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(
+                                          color: AppColors.textPrimary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                   ),
-                                  SizedBox(height: 16),
+                                  SizedBox(height: 12),
                                   Container(
                                     padding: EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 20,
+                                      horizontal: 12,
+                                      vertical: 16,
                                     ),
                                     decoration: BoxDecoration(
                                       color: AppColors.surface,
-                                      borderRadius: BorderRadius.circular(20),
+                                      borderRadius: BorderRadius.circular(16),
                                       boxShadow: [
                                         BoxShadow(
                                           color: Colors.black.withOpacity(0.05),
-                                          blurRadius: 10,
-                                          offset: Offset(0, 4),
+                                          blurRadius: 8,
+                                          offset: Offset(0, 2),
                                         ),
                                       ],
                                     ),
-                                    height: 280,
+                                    height: 240,
                                     child: _MoodBarChart(weekMoods: weekMoods),
                                   ),
-                                  SizedBox(height: 24),
+                                  SizedBox(height: 16),
                                 ],
 
                                 // Mood Statistics
@@ -340,7 +315,7 @@ class _MoodScreenState extends State<MoodScreen> {
     final streak = moodProvider.getMoodStreak();
 
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -350,7 +325,7 @@ class _MoodScreenState extends State<MoodScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.primary.withOpacity(0.2)),
       ),
       child: Column(
@@ -366,17 +341,17 @@ class _MoodScreenState extends State<MoodScreen> {
                     hasTodayEntry
                         ? 'Today\'s mood logged!'
                         : 'How are you feeling today?',
-                    style: theme.textTheme.titleMedium?.copyWith(
+                    style: theme.textTheme.titleSmall?.copyWith(
                       color: AppColors.textPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: 4),
                   Text(
                     hasTodayEntry
                         ? 'Great job tracking your mood!'
                         : 'Take a moment to check in with yourself',
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: theme.textTheme.bodySmall?.copyWith(
                       color: AppColors.textSecondary,
                     ),
                   ),
@@ -388,12 +363,12 @@ class _MoodScreenState extends State<MoodScreen> {
                   Icon(
                     Icons.local_fire_department,
                     color: AppColors.accent,
-                    size: 32,
+                    size: 24,
                   ),
-                  SizedBox(width: 5),
+                  SizedBox(width: 4),
                   Text(
                     '$streak days',
-                    style: theme.textTheme.bodyLarge?.copyWith(
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: AppColors.textPrimary,
                       fontWeight: FontWeight.bold,
                     ),
@@ -403,7 +378,7 @@ class _MoodScreenState extends State<MoodScreen> {
             ],
           ),
           if (!hasTodayEntry) ...[
-            SizedBox(height: 16),
+            SizedBox(height: 12),
             ElevatedButton.icon(
               onPressed: () {
                 showModalBottomSheet(
@@ -414,21 +389,21 @@ class _MoodScreenState extends State<MoodScreen> {
                     decoration: BoxDecoration(
                       color: AppColors.surface,
                       borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(20),
+                        top: Radius.circular(16),
                       ),
                     ),
                     child: MoodPickerSheet(),
                   ),
                 );
               },
-              icon: Icon(Icons.add, color: Colors.white),
-              label: Text('Log Your Mood'),
+              icon: Icon(Icons.add, color: Colors.white, size: 18),
+              label: Text('Log Your Mood', style: TextStyle(fontSize: 13)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
             ),
@@ -444,15 +419,15 @@ class _MoodScreenState extends State<MoodScreen> {
     final sentimentAnalysis = moodProvider.analyzeSentimentTrends();
 
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+            blurRadius: 8,
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -461,12 +436,12 @@ class _MoodScreenState extends State<MoodScreen> {
         children: [
           Text(
             'Mood Insights',
-            style: theme.textTheme.titleMedium?.copyWith(
+            style: theme.textTheme.titleSmall?.copyWith(
               color: AppColors.textPrimary,
               fontWeight: FontWeight.bold,
             ),
           ),
-          SizedBox(height: 16),
+          SizedBox(height: 12),
           Row(
             children: [
               _buildSentimentIndicator(
@@ -474,21 +449,21 @@ class _MoodScreenState extends State<MoodScreen> {
                 sentimentAnalysis['overall_sentiment'],
                 sentimentAnalysis['trend'],
               ),
-              SizedBox(width: 16),
+              SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Overall Mood',
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                      style: theme.textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    SizedBox(height: 2),
                     Text(
                       _formatSentiment(sentimentAnalysis['overall_sentiment']),
-                      style: theme.textTheme.titleMedium?.copyWith(
+                      style: theme.textTheme.titleSmall?.copyWith(
                         color: _getSentimentColor(
                           sentimentAnalysis['overall_sentiment'],
                         ),
@@ -500,33 +475,33 @@ class _MoodScreenState extends State<MoodScreen> {
               ),
             ],
           ),
-          SizedBox(height: 16),
+          SizedBox(height: 12),
           if (sentimentAnalysis['insights'].isNotEmpty) ...[
             Text(
               'Insights',
-              style: theme.textTheme.titleSmall?.copyWith(
+              style: theme.textTheme.bodyMedium?.copyWith(
                 color: AppColors.textPrimary,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 8),
+            SizedBox(height: 6),
             ...sentimentAnalysis['insights']
                 .map(
                   (insight) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
+                    padding: const EdgeInsets.only(bottom: 6.0),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(
                           Icons.insights,
-                          size: 16,
+                          size: 14,
                           color: AppColors.primary,
                         ),
-                        SizedBox(width: 8),
+                        SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             insight,
-                            style: theme.textTheme.bodyMedium?.copyWith(
+                            style: theme.textTheme.bodySmall?.copyWith(
                               color: AppColors.textSecondary,
                             ),
                           ),
@@ -687,35 +662,35 @@ class _MoodScreenState extends State<MoodScreen> {
     final theme = Theme.of(context);
 
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.primary.withOpacity(0.1)),
       ),
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(8),
+            padding: EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
             ),
-            child: Icon(icon, color: AppColors.primary, size: 20),
+            child: Icon(icon, color: AppColors.primary, size: 16),
           ),
-          SizedBox(width: 12),
+          SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 4),
+                SizedBox(height: 2),
                 Text(
                   description,
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -746,28 +721,27 @@ class _MoodEntryCard extends StatelessWidget {
     final sentiment = _getSentiment(entry.mood);
 
     return Container(
-      margin: EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+            blurRadius: 8,
+            offset: Offset(0, 2),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           onTap: () {
-            // Navigate to detailed view
             _showMoodDetails(context, entry);
           },
           child: Padding(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -777,30 +751,30 @@ class _MoodEntryCard extends StatelessWidget {
                     Row(
                       children: [
                         Container(
-                          padding: EdgeInsets.all(8),
+                          padding: EdgeInsets.all(6),
                           decoration: BoxDecoration(
                             color: MoodColors.getMoodColor(
                               entry.mood,
                             ).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Image.asset(imagePath, width: 24, height: 24),
+                          child: Image.asset(imagePath, width: 20, height: 20),
                         ),
-                        SizedBox(width: 12),
+                        SizedBox(width: 8),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               entry.mood,
-                              style: theme.textTheme.titleMedium?.copyWith(
+                              style: theme.textTheme.bodyLarge?.copyWith(
                                 color: AppColors.textPrimary,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            SizedBox(height: 4),
+                            SizedBox(height: 2),
                             Text(
                               'Feeling $sentiment',
-                              style: theme.textTheme.bodyMedium?.copyWith(
+                              style: theme.textTheme.bodySmall?.copyWith(
                                 color: AppColors.textSecondary,
                               ),
                             ),
@@ -817,7 +791,7 @@ class _MoodEntryCard extends StatelessWidget {
                             color: AppColors.textLight,
                           ),
                         ),
-                        SizedBox(height: 8),
+                        SizedBox(height: 6),
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -827,7 +801,7 @@ class _MoodEntryCard extends StatelessWidget {
                               AppColors.primary,
                               () => _editMoodEntry(context, entry),
                             ),
-                            SizedBox(width: 12),
+                            SizedBox(width: 8),
                             _buildActionButton(
                               context,
                               'Delete',
@@ -841,12 +815,12 @@ class _MoodEntryCard extends StatelessWidget {
                   ],
                 ),
                 if (entry.trigger != null && entry.trigger!.isNotEmpty) ...[
-                  SizedBox(height: 12),
+                  SizedBox(height: 8),
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       'Trigger: ${entry.trigger!}',
@@ -858,17 +832,17 @@ class _MoodEntryCard extends StatelessWidget {
                   ),
                 ],
                 if (entry.note != null && entry.note!.isNotEmpty) ...[
-                  SizedBox(height: 12),
+                  SizedBox(height: 8),
                   Text(
                     entry.note!,
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: theme.textTheme.bodySmall?.copyWith(
                       color: AppColors.textSecondary,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   if (entry.note!.length > 100) ...[
-                    SizedBox(height: 8),
+                    SizedBox(height: 4),
                     GestureDetector(
                       onTap: () => _showMoodDetails(context, entry),
                       child: Text(

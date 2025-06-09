@@ -9,6 +9,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../web3/providers/web3_provider.dart';
 import '../../settings/screens/settings_screen.dart';
 import 'package:flutter/services.dart';
+import '../../../widgets/custom_app_bar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -35,78 +36,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          // Custom App Bar
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
-              ),
-            ),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+          CustomAppBar(
+            title: 'My Profile',
+            showBackButton: false,
+            actions: [
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.person_rounded,
-                      color: Colors.white,
-                      size: 24,
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.settings_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsScreen(),
                     ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'My Profile',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.settings_rounded,
-                          color: Colors.white,
-                        ),
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SettingsScreen(),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.edit_rounded,
-                          color: Colors.white,
-                        ),
-                        onPressed: () => _navigateToEditProfile(
-                          context,
-                          context.read<UserProfileProvider>().userProfile!,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(width: 6),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.edit_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  onPressed: () => _navigateToEditProfile(
+                    context,
+                    context.read<UserProfileProvider>().userProfile!,
+                  ),
+                ),
+              ),
+            ],
           ),
           // Body content
           Expanded(
@@ -151,38 +122,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(32),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.primary.withOpacity(0.3),
-                    blurRadius: 30,
-                    offset: const Offset(0, 15),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
                   ),
                 ],
               ),
               child: CircularProgressIndicator(
                 color: AppColors.primary,
-                strokeWidth: 4,
+                strokeWidth: 3,
                 strokeCap: StrokeCap.round,
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
             Text(
               'Loading your profile...',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
-                letterSpacing: 0.5,
+                letterSpacing: 0.3,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               'Please wait a moment',
-              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -205,63 +176,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: SafeArea(
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(32),
+                  padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.1),
-                        blurRadius: 30,
-                        offset: const Offset(0, 15),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
                       ),
                     ],
                   ),
                   child: Icon(
                     Icons.person_outline_rounded,
-                    size: 64,
+                    size: 48,
                     color: AppColors.primary,
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
                 Text(
                   'Welcome to CalmQ',
                   style: TextStyle(
-                    fontSize: 28,
+                    fontSize: 24,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
-                    letterSpacing: 0.5,
+                    letterSpacing: 0.3,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Text(
                   'Let\'s create your personalized wellness profile to get started on your journey',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 14,
                     color: AppColors.textSecondary,
-                    height: 1.5,
+                    height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 48),
+                const SizedBox(height: 36),
                 Container(
                   width: double.infinity,
-                  height: 56,
+                  height: 48,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [AppColors.primary, AppColors.secondary],
                     ),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.primary.withOpacity(0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
+                        blurRadius: 15,
+                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
@@ -276,16 +247,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       backgroundColor: Colors.transparent,
                       shadowColor: Colors.transparent,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     child: const Text(
                       'Create Profile',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
-                        letterSpacing: 0.5,
+                        letterSpacing: 0.3,
                       ),
                     ),
                   ),
