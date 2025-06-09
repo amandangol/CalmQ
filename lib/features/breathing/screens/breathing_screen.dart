@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/breathing_provider.dart';
 import '../../web3/providers/web3_provider.dart';
 import 'dart:math' as math;
+import '../../../app_theme.dart';
 
 class BreathingScreen extends StatefulWidget {
   @override
@@ -162,12 +163,11 @@ class _BreathingScreenState extends State<BreathingScreen>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFF0F0C29),
-                  Color(0xFF24243e),
-                  Color(0xFF302B63),
-                  Color(0xFF0F0C29),
+                  Color(0xFFF8F9FA),
+                  Color(0xFFE9ECEF),
+                  Color(0xFFF8F9FA),
                 ],
-                stops: [0.0, 0.3, 0.7, 1.0],
+                stops: [0.0, 0.5, 1.0],
               ),
             ),
             child: SafeArea(
@@ -180,13 +180,13 @@ class _BreathingScreenState extends State<BreathingScreen>
                       children: [
                         _buildAppBar(theme),
                         _buildBreathingVisualization(),
-                        SizedBox(height: 60),
-                        _buildPhaseIndicator(theme),
                         SizedBox(height: 40),
+                        _buildPhaseIndicator(theme),
+                        SizedBox(height: 32),
                         _buildControlButton(theme),
-                        SizedBox(height: 60),
+                        SizedBox(height: 40),
                         _buildBreathingPattern(theme),
-                        SizedBox(height: 24), // Bottom padding
+                        SizedBox(height: 24),
                       ],
                     ),
                   ),
@@ -201,28 +201,27 @@ class _BreathingScreenState extends State<BreathingScreen>
 
   Widget _buildAppBar(ThemeData theme) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             'Breathing Space',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: Colors.white.withOpacity(0.9),
-              fontWeight: FontWeight.w300,
-              letterSpacing: 1.2,
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
             ),
           ),
           Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: AppColors.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
               icon: Icon(
                 Icons.psychology_outlined,
-                color: Colors.white.withOpacity(0.8),
-                size: 24,
+                color: AppColors.primary,
+                size: 20,
               ),
               onPressed: () {
                 _showBreathingInfo(context);
@@ -236,8 +235,8 @@ class _BreathingScreenState extends State<BreathingScreen>
 
   Widget _buildBreathingVisualization() {
     return Container(
-      height: 320,
-      width: 320,
+      height: 280,
+      width: 280,
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -247,7 +246,7 @@ class _BreathingScreenState extends State<BreathingScreen>
             builder: (context, child) {
               return CustomPaint(
                 painter: ParticlePainter(_particleAnimation.value),
-                size: Size(320, 320),
+                size: Size(280, 280),
               );
             },
           ),
@@ -258,7 +257,7 @@ class _BreathingScreenState extends State<BreathingScreen>
             builder: (context, child) {
               return CustomPaint(
                 painter: RipplePainter(_rippleAnimation.value, _isBreathing),
-                size: Size(320, 320),
+                size: Size(280, 280),
               );
             },
           ),
@@ -268,30 +267,30 @@ class _BreathingScreenState extends State<BreathingScreen>
             animation: _breathingAnimation,
             builder: (context, child) {
               double scale = 1.0;
-              Color primaryColor = Colors.cyan;
-              Color secondaryColor = Colors.purple;
+              Color primaryColor = AppColors.primary;
+              Color secondaryColor = AppColors.secondary;
 
               if (_isBreathing) {
                 switch (_currentPhase) {
                   case BreathingPhase.inhale:
                     scale = 0.7 + (0.6 * _breathingAnimation.value);
-                    primaryColor = Colors.cyan;
-                    secondaryColor = Colors.blue;
+                    primaryColor = AppColors.primary;
+                    secondaryColor = AppColors.secondary;
                     break;
                   case BreathingPhase.holdIn:
                     scale = 1.3;
-                    primaryColor = Colors.green;
-                    secondaryColor = Colors.teal;
+                    primaryColor = AppColors.success;
+                    secondaryColor = AppColors.success.withOpacity(0.7);
                     break;
                   case BreathingPhase.exhale:
                     scale = 1.3 - (0.6 * _breathingAnimation.value);
-                    primaryColor = Colors.purple;
-                    secondaryColor = Colors.pink;
+                    primaryColor = AppColors.accent;
+                    secondaryColor = AppColors.accent.withOpacity(0.7);
                     break;
                   case BreathingPhase.holdOut:
                     scale = 0.7;
-                    primaryColor = Colors.indigo;
-                    secondaryColor = Colors.deepPurple;
+                    primaryColor = AppColors.primary.withOpacity(0.7);
+                    secondaryColor = AppColors.secondary.withOpacity(0.7);
                     break;
                 }
               }
@@ -299,47 +298,47 @@ class _BreathingScreenState extends State<BreathingScreen>
               return Transform.scale(
                 scale: scale,
                 child: Container(
-                  width: 200,
-                  height: 200,
+                  width: 180,
+                  height: 180,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        primaryColor.withOpacity(0.3),
-                        secondaryColor.withOpacity(0.6),
+                        primaryColor.withOpacity(0.2),
+                        secondaryColor.withOpacity(0.4),
                         primaryColor.withOpacity(0.1),
                       ],
                       stops: [0.0, 0.7, 1.0],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: primaryColor.withOpacity(0.4),
-                        blurRadius: 30,
-                        spreadRadius: 10,
+                        color: primaryColor.withOpacity(0.2),
+                        blurRadius: 20,
+                        spreadRadius: 5,
                       ),
                       BoxShadow(
-                        color: secondaryColor.withOpacity(0.2),
-                        blurRadius: 60,
-                        spreadRadius: 20,
+                        color: secondaryColor.withOpacity(0.1),
+                        blurRadius: 40,
+                        spreadRadius: 10,
                       ),
                     ],
                   ),
                   child: Container(
-                    margin: EdgeInsets.all(20),
+                    margin: EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
                         colors: [
-                          primaryColor.withOpacity(0.6),
-                          secondaryColor.withOpacity(0.8),
+                          primaryColor.withOpacity(0.4),
+                          secondaryColor.withOpacity(0.6),
                         ],
                       ),
                     ),
                     child: Center(
                       child: Icon(
                         _getPhaseIcon(),
-                        color: Colors.white.withOpacity(0.9),
-                        size: 48,
+                        color: Colors.white,
+                        size: 40,
                       ),
                     ),
                   ),
@@ -357,10 +356,9 @@ class _BreathingScreenState extends State<BreathingScreen>
       children: [
         Text(
           _getPhaseText(),
-          style: theme.textTheme.headlineMedium?.copyWith(
-            color: Colors.white.withOpacity(0.9),
-            fontWeight: FontWeight.w300,
-            letterSpacing: 1.5,
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
           ),
         ),
         SizedBox(height: 8),
@@ -369,23 +367,28 @@ class _BreathingScreenState extends State<BreathingScreen>
             '$_currentCount',
             style: theme.textTheme.displayMedium?.copyWith(
               color: _getPhaseColor(),
-              fontWeight: FontWeight.w200,
-              fontSize: 72,
+              fontWeight: FontWeight.w300,
+              fontSize: 64,
             ),
           ),
-        SizedBox(height: 16),
+        SizedBox(height: 12),
         Container(
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(25),
-            border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
           ),
           child: Text(
             _getPhaseDescription(),
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withOpacity(0.7),
-              letterSpacing: 0.5,
+              color: AppColors.textSecondary,
             ),
           ),
         ),
@@ -397,27 +400,28 @@ class _BreathingScreenState extends State<BreathingScreen>
     return GestureDetector(
       onTap: _isBreathing ? _stopBreathing : _startBreathing,
       child: Container(
-        width: 120,
-        height: 120,
+        width: 100,
+        height: 100,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: LinearGradient(
             colors: _isBreathing
-                ? [Colors.red.withOpacity(0.7), Colors.pink.withOpacity(0.7)]
-                : [Colors.cyan.withOpacity(0.7), Colors.blue.withOpacity(0.7)],
+                ? [AppColors.error, AppColors.error.withOpacity(0.7)]
+                : [AppColors.primary, AppColors.secondary],
           ),
           boxShadow: [
             BoxShadow(
-              color: (_isBreathing ? Colors.red : Colors.cyan).withOpacity(0.3),
-              blurRadius: 20,
-              spreadRadius: 5,
+              color: (_isBreathing ? AppColors.error : AppColors.primary)
+                  .withOpacity(0.2),
+              blurRadius: 15,
+              spreadRadius: 3,
             ),
           ],
         ),
         child: Icon(
           _isBreathing ? Icons.pause : Icons.play_arrow,
           color: Colors.white,
-          size: 48,
+          size: 40,
         ),
       ),
     );
@@ -425,30 +429,41 @@ class _BreathingScreenState extends State<BreathingScreen>
 
   Widget _buildBreathingPattern(ThemeData theme) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 32),
-      padding: EdgeInsets.all(24),
+      margin: EdgeInsets.symmetric(horizontal: 24),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
           Text(
             'Breathing Pattern (4-7-8)',
             style: theme.textTheme.titleMedium?.copyWith(
-              color: Colors.white.withOpacity(0.9),
-              fontWeight: FontWeight.w300,
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
             ),
           ),
           SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildPatternItem('Inhale', '4s', Colors.cyan, theme),
-              _buildPatternItem('Hold', '7s', Colors.green, theme),
-              _buildPatternItem('Exhale', '8s', Colors.purple, theme),
-              _buildPatternItem('Hold', '4s', Colors.indigo, theme),
+              _buildPatternItem('Inhale', '4s', AppColors.primary, theme),
+              _buildPatternItem('Hold', '7s', AppColors.success, theme),
+              _buildPatternItem('Exhale', '8s', AppColors.accent, theme),
+              _buildPatternItem(
+                'Hold',
+                '4s',
+                AppColors.primary.withOpacity(0.7),
+                theme,
+              ),
             ],
           ),
         ],
@@ -475,36 +490,36 @@ class _BreathingScreenState extends State<BreathingScreen>
     return Column(
       children: [
         Container(
-          width: 12,
-          height: 12,
+          width: 10,
+          height: 10,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: isActive && _isBreathing
                 ? color
-                : Colors.white.withOpacity(0.3),
+                : AppColors.textLight.withOpacity(0.3),
             boxShadow: isActive && _isBreathing
                 ? [
                     BoxShadow(
-                      color: color.withOpacity(0.5),
-                      blurRadius: 8,
-                      spreadRadius: 2,
+                      color: color.withOpacity(0.3),
+                      blurRadius: 6,
+                      spreadRadius: 1,
                     ),
                   ]
                 : null,
           ),
         ),
-        SizedBox(height: 8),
+        SizedBox(height: 6),
         Text(
           label,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: Colors.white.withOpacity(0.7),
+            color: AppColors.textSecondary,
             fontSize: 10,
           ),
         ),
         Text(
           duration,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: Colors.white.withOpacity(0.5),
+            color: AppColors.textLight,
             fontSize: 10,
           ),
         ),
@@ -561,13 +576,13 @@ class _BreathingScreenState extends State<BreathingScreen>
   Color _getPhaseColor() {
     switch (_currentPhase) {
       case BreathingPhase.inhale:
-        return Colors.cyan;
+        return AppColors.primary;
       case BreathingPhase.holdIn:
-        return Colors.green;
+        return AppColors.success;
       case BreathingPhase.exhale:
-        return Colors.purple;
+        return AppColors.accent;
       case BreathingPhase.holdOut:
-        return Colors.indigo;
+        return AppColors.primary.withOpacity(0.7);
     }
   }
 
@@ -575,11 +590,14 @@ class _BreathingScreenState extends State<BreathingScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Color(0xFF1E1E2E),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'About 4-7-8 Breathing',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w300),
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         content: Text(
           'This technique helps reduce anxiety and promote relaxation:\n\n'
@@ -588,12 +606,12 @@ class _BreathingScreenState extends State<BreathingScreen>
           '• Exhale for 8 counts\n'
           '• Hold for 4 counts\n\n'
           'Practice regularly for best results.',
-          style: TextStyle(color: Colors.white.withOpacity(0.8)),
+          style: TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Got it', style: TextStyle(color: Colors.cyan)),
+            child: Text('Got it', style: TextStyle(color: AppColors.primary)),
           ),
         ],
       ),
@@ -610,14 +628,14 @@ class ParticlePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.3)
+      ..color = AppColors.primary.withOpacity(0.2)
       ..style = PaintingStyle.fill;
 
     final center = Offset(size.width / 2, size.height / 2);
 
     for (int i = 0; i < 12; i++) {
       final angle = (i * 30) * (math.pi / 180) + (animationValue * 2 * math.pi);
-      final radius = 120 + (20 * math.sin(animationValue * 2 * math.pi + i));
+      final radius = 100 + (20 * math.sin(animationValue * 2 * math.pi + i));
       final x = center.dx + radius * math.cos(angle);
       final y = center.dy + radius * math.sin(angle);
 
@@ -644,13 +662,13 @@ class RipplePainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final paint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
+      ..strokeWidth = 1.5;
 
     for (int i = 0; i < 3; i++) {
-      final radius = (animationValue + i * 0.3) * 150;
+      final radius = (animationValue + i * 0.3) * 130;
       final opacity = (1 - animationValue - i * 0.3).clamp(0.0, 1.0);
 
-      paint.color = Colors.cyan.withOpacity(opacity * 0.5);
+      paint.color = AppColors.primary.withOpacity(opacity * 0.3);
       canvas.drawCircle(center, radius, paint);
     }
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:math' as math;
+import '../../../app_theme.dart';
 
 class FocusScreen extends StatefulWidget {
   @override
@@ -519,13 +520,8 @@ class _FocusScreenState extends State<FocusScreen>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0D1B2A),
-              Color(0xFF1B263B),
-              Color(0xFF415A77),
-              Color(0xFF0D1B2A),
-            ],
-            stops: [0.0, 0.3, 0.7, 1.0],
+            colors: [Color(0xFFF8F9FA), Color(0xFFE9ECEF), Color(0xFFF8F9FA)],
+            stops: [0.0, 0.5, 1.0],
           ),
         ),
         child: SafeArea(
@@ -538,13 +534,13 @@ class _FocusScreenState extends State<FocusScreen>
                   child: Column(
                     children: [
                       _buildModeSelector(),
-                      SizedBox(height: 30),
+                      SizedBox(height: 24),
                       _buildMainVisualization(),
-                      SizedBox(height: 30),
+                      SizedBox(height: 24),
                       _buildCurrentExercise(),
-                      SizedBox(height: 30),
+                      SizedBox(height: 24),
                       _buildSessionControls(),
-                      SizedBox(height: 30),
+                      SizedBox(height: 24),
                       _buildStatsSection(),
                     ],
                   ),
@@ -559,7 +555,7 @@ class _FocusScreenState extends State<FocusScreen>
 
   Widget _buildHeader() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -569,31 +565,27 @@ class _FocusScreenState extends State<FocusScreen>
               Text(
                 'Mind Wellness',
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w300,
-                  letterSpacing: 1.2,
+                  color: AppColors.textPrimary,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               Text(
                 'Focus & Mental Clarity',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
-                  fontSize: 14,
-                  letterSpacing: 0.5,
-                ),
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
               ),
             ],
           ),
           Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: AppColors.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
               icon: Icon(
                 Icons.psychology_outlined,
-                color: Colors.white.withOpacity(0.8),
+                color: AppColors.primary,
+                size: 20,
               ),
               onPressed: () => _showInfoDialog(),
             ),
@@ -607,9 +599,15 @@ class _FocusScreenState extends State<FocusScreen>
     return Container(
       padding: EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: _focusExercises.keys.map((mode) {
@@ -625,22 +623,22 @@ class _FocusScreenState extends State<FocusScreen>
                 }
               },
               child: Container(
-                padding: EdgeInsets.symmetric(vertical: 12),
+                padding: EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? Colors.cyan.withOpacity(0.3)
+                      ? AppColors.primary.withOpacity(0.1)
                       : Colors.transparent,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
                   mode,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: isSelected
-                        ? Colors.white
-                        : Colors.white.withOpacity(0.6),
+                        ? AppColors.primary
+                        : AppColors.textSecondary,
                     fontWeight: isSelected
-                        ? FontWeight.w500
+                        ? FontWeight.w600
                         : FontWeight.normal,
                     fontSize: 12,
                   ),
@@ -655,7 +653,7 @@ class _FocusScreenState extends State<FocusScreen>
 
   Widget _buildMainVisualization() {
     return Container(
-      height: 250,
+      height: 220,
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -665,7 +663,7 @@ class _FocusScreenState extends State<FocusScreen>
             builder: (context, child) {
               return CustomPaint(
                 painter: WavePainter(_waveAnimation.value, _isSessionActive),
-                size: Size(250, 250),
+                size: Size(220, 220),
               );
             },
           ),
@@ -677,7 +675,7 @@ class _FocusScreenState extends State<FocusScreen>
               builder: (context, child) {
                 return CustomPaint(
                   painter: ProgressRingPainter(_progressAnimation.value),
-                  size: Size(200, 200),
+                  size: Size(180, 180),
                 );
               },
             ),
@@ -689,22 +687,22 @@ class _FocusScreenState extends State<FocusScreen>
               return Transform.scale(
                 scale: _isSessionActive ? _pulseAnimation.value : 1.0,
                 child: Container(
-                  width: 120,
-                  height: 120,
+                  width: 100,
+                  height: 100,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        Colors.cyan.withOpacity(0.4),
-                        Colors.blue.withOpacity(0.6),
-                        Colors.indigo.withOpacity(0.3),
+                        AppColors.primary.withOpacity(0.2),
+                        AppColors.secondary.withOpacity(0.4),
+                        AppColors.primary.withOpacity(0.1),
                       ],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.cyan.withOpacity(0.3),
-                        blurRadius: 20,
-                        spreadRadius: 5,
+                        color: AppColors.primary.withOpacity(0.2),
+                        blurRadius: 15,
+                        spreadRadius: 3,
                       ),
                     ],
                   ),
@@ -713,16 +711,16 @@ class _FocusScreenState extends State<FocusScreen>
                     children: [
                       Icon(
                         _isSessionActive ? Icons.self_improvement : Icons.spa,
-                        color: Colors.white,
-                        size: 32,
+                        color: AppColors.primary,
+                        size: 28,
                       ),
-                      SizedBox(height: 8),
+                      SizedBox(height: 6),
                       Text(
                         _formatTime(_remainingSeconds),
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w300,
+                          color: AppColors.textPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -745,11 +743,17 @@ class _FocusScreenState extends State<FocusScreen>
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -759,17 +763,19 @@ class _FocusScreenState extends State<FocusScreen>
               Container(
                 padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: (currentExerciseData['color'] as Color? ?? Colors.cyan)
-                      .withOpacity(0.2),
+                  color:
+                      (currentExerciseData['color'] as Color? ??
+                              AppColors.primary)
+                          .withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   currentExerciseData['icon'] ?? Icons.spa,
-                  color: currentExerciseData['color'] ?? Colors.cyan,
-                  size: 24,
+                  color: currentExerciseData['color'] ?? AppColors.primary,
+                  size: 20,
                 ),
               ),
-              SizedBox(width: 16),
+              SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -777,17 +783,17 @@ class _FocusScreenState extends State<FocusScreen>
                     Text(
                       _currentExercise,
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     if (_isSessionActive)
                       Text(
                         'Step ${_currentStep + 1} of $_exerciseSteps',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
-                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
                         ),
                       ),
                   ],
@@ -795,33 +801,34 @@ class _FocusScreenState extends State<FocusScreen>
               ),
             ],
           ),
-          SizedBox(height: 20),
+          SizedBox(height: 16),
           Container(
             width: double.infinity,
-            padding: EdgeInsets.all(20),
+            padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(15),
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
               _currentInstruction,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
-                fontSize: 16,
+                color: AppColors.textPrimary,
+                fontSize: 14,
                 height: 1.5,
+                fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
             ),
           ),
           if (!_isSessionActive) ...[
-            SizedBox(height: 16),
+            SizedBox(height: 12),
             Center(
               child: TextButton.icon(
                 onPressed: _selectRandomExercise,
-                icon: Icon(Icons.refresh, color: Colors.cyan, size: 20),
+                icon: Icon(Icons.refresh, color: AppColors.primary, size: 18),
                 label: Text(
                   'Try Different Exercise',
-                  style: TextStyle(color: Colors.cyan),
+                  style: TextStyle(color: AppColors.primary),
                 ),
               ),
             ),
@@ -839,12 +846,12 @@ class _FocusScreenState extends State<FocusScreen>
           Text(
             'Session Duration',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          SizedBox(height: 16),
+          SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: _durations.map((duration) {
@@ -858,60 +865,56 @@ class _FocusScreenState extends State<FocusScreen>
                   });
                 },
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? Colors.cyan.withOpacity(0.3)
-                        : Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(15),
+                        ? AppColors.primary.withOpacity(0.1)
+                        : AppColors.surface,
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isSelected
-                          ? Colors.cyan
-                          : Colors.white.withOpacity(0.2),
+                          ? AppColors.primary
+                          : AppColors.textLight.withOpacity(0.2),
                     ),
                   ),
                   child: Text(
                     duration,
                     style: TextStyle(
                       color: isSelected
-                          ? Colors.white
-                          : Colors.white.withOpacity(0.7),
+                          ? AppColors.primary
+                          : AppColors.textSecondary,
                       fontWeight: isSelected
-                          ? FontWeight.w500
+                          ? FontWeight.w600
                           : FontWeight.normal,
+                      fontSize: 12,
                     ),
                   ),
                 ),
               );
             }).toList(),
           ),
-          SizedBox(height: 30),
+          SizedBox(height: 24),
         ],
 
         // Main control button
         GestureDetector(
           onTap: _isSessionActive ? _stopSession : _startSession,
           child: Container(
-            width: 200,
-            height: 60,
+            width: 180,
+            height: 50,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: _isSessionActive
-                    ? [
-                        Colors.red.withOpacity(0.7),
-                        Colors.pink.withOpacity(0.7),
-                      ]
-                    : [
-                        Colors.cyan.withOpacity(0.7),
-                        Colors.blue.withOpacity(0.7),
-                      ],
+                    ? [AppColors.error, AppColors.error.withOpacity(0.7)]
+                    : [AppColors.primary, AppColors.secondary],
               ),
-              borderRadius: BorderRadius.circular(30),
+              borderRadius: BorderRadius.circular(25),
               boxShadow: [
                 BoxShadow(
-                  color: (_isSessionActive ? Colors.red : Colors.cyan)
-                      .withOpacity(0.3),
-                  blurRadius: 15,
+                  color:
+                      (_isSessionActive ? AppColors.error : AppColors.primary)
+                          .withOpacity(0.2),
+                  blurRadius: 10,
                   spreadRadius: 2,
                 ),
               ],
@@ -922,15 +925,15 @@ class _FocusScreenState extends State<FocusScreen>
                 Icon(
                   _isSessionActive ? Icons.stop : Icons.play_arrow,
                   color: Colors.white,
-                  size: 28,
+                  size: 24,
                 ),
-                SizedBox(width: 12),
+                SizedBox(width: 8),
                 Text(
                   _isSessionActive ? 'Stop Session' : 'Start Session',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -943,11 +946,17 @@ class _FocusScreenState extends State<FocusScreen>
 
   Widget _buildStatsSection() {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -955,12 +964,12 @@ class _FocusScreenState extends State<FocusScreen>
           Text(
             'Today\'s Progress',
             style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          SizedBox(height: 20),
+          SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -986,25 +995,25 @@ class _FocusScreenState extends State<FocusScreen>
     return Column(
       children: [
         Container(
-          padding: EdgeInsets.all(12),
+          padding: EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.cyan.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, color: Colors.cyan, size: 24),
+          child: Icon(icon, color: AppColors.primary, size: 20),
         ),
-        SizedBox(height: 8),
+        SizedBox(height: 6),
         Text(
           value,
           style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
           ),
         ),
         Text(
           label,
-          style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12),
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
         ),
       ],
     );
@@ -1014,11 +1023,15 @@ class _FocusScreenState extends State<FocusScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Color(0xFF1E1E2E),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Mind Wellness Guide',
-          style: TextStyle(color: Colors.white, fontSize: 20),
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         content: SingleChildScrollView(
           child: Column(
@@ -1047,7 +1060,7 @@ class _FocusScreenState extends State<FocusScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Got it', style: TextStyle(color: Colors.cyan)),
+            child: Text('Got it', style: TextStyle(color: AppColors.primary)),
           ),
         ],
       ),
@@ -1063,18 +1076,15 @@ class _FocusScreenState extends State<FocusScreen>
           Text(
             title,
             style: TextStyle(
-              color: Colors.cyan,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+              color: AppColors.primary,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
             ),
           ),
           SizedBox(height: 4),
           Text(
             description,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
-              fontSize: 14,
-            ),
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
           ),
         ],
       ),
@@ -1093,7 +1103,7 @@ class WavePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
+      ..strokeWidth = 1.5;
 
     final center = Offset(size.width / 2, size.height / 2);
     final maxRadius = size.width / 2;
@@ -1101,10 +1111,10 @@ class WavePainter extends CustomPainter {
     for (int i = 0; i < 3; i++) {
       final radius =
           maxRadius * (0.3 + i * 0.2) +
-          (isActive ? math.sin(animationValue + i * 0.5) * 10 : 0);
-      final opacity = isActive ? 0.3 - i * 0.1 : 0.1;
+          (isActive ? math.sin(animationValue + i * 0.5) * 8 : 0);
+      final opacity = isActive ? 0.2 - i * 0.05 : 0.1;
 
-      paint.color = Colors.cyan.withOpacity(opacity);
+      paint.color = AppColors.primary.withOpacity(opacity);
       canvas.drawCircle(center, radius, paint);
     }
   }
@@ -1121,21 +1131,21 @@ class ProgressRingPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 10;
+    final radius = size.width / 2 - 8;
 
     // Background ring
     final backgroundPaint = Paint()
-      ..color = Colors.white.withOpacity(0.1)
+      ..color = AppColors.textLight.withOpacity(0.1)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 8;
+      ..strokeWidth = 6;
 
     canvas.drawCircle(center, radius, backgroundPaint);
 
     // Progress ring
     final progressPaint = Paint()
-      ..color = Colors.cyan
+      ..color = AppColors.primary
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 8
+      ..strokeWidth = 6
       ..strokeCap = StrokeCap.round;
 
     final sweepAngle = 2 * math.pi * progress;

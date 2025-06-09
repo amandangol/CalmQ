@@ -1,4 +1,5 @@
 import 'package:auralynn/features/affirmations/screens/affirmations_screen.dart';
+import 'package:auralynn/features/wellness/screens/water_tracker_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -518,6 +519,16 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => BreathingScreen()),
+        ),
+      ),
+      QuickActionData(
+        icon: Icons.water_drop,
+        label: 'Water Tracker',
+        color: AppColors.info,
+        description: 'Track hydration',
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => WaterTrackerScreen()),
         ),
       ),
       QuickActionData(

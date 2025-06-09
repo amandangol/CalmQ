@@ -90,12 +90,12 @@ class _CreateJournalScreenState extends State<CreateJournalScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.edit_note, color: Colors.white, size: 16),
+                      Icon(Icons.edit_note, color: Colors.grey, size: 16),
                       SizedBox(width: 8),
                       Text(
                         'Express yourself freely',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.grey.withOpacity(0.9),
                           fontSize: 12,
                         ),
                       ),

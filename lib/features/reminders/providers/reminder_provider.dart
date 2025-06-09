@@ -10,6 +10,9 @@ class ReminderProvider extends ChangeNotifier {
   static const String _moodReminderKey = 'mood_reminder_time';
   static const String _focusReminderKey = 'focus_reminder_time';
   static const String _affirmationReminderKey = 'affirmation_reminder_time';
+  static const String _waterReminderStartKey = 'water_reminder_start_time';
+  static const String _waterReminderEndKey = 'water_reminder_end_time';
+  static const String _waterReminderIntervalKey = 'water_reminder_interval';
 
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
@@ -18,6 +21,9 @@ class ReminderProvider extends ChangeNotifier {
   TimeOfDay? _moodReminderTime;
   TimeOfDay? _focusReminderTime;
   TimeOfDay? _affirmationReminderTime;
+  TimeOfDay? _waterReminderStartTime;
+  TimeOfDay? _waterReminderEndTime;
+  int _waterReminderInterval = 60; // Default interval in minutes
   bool _isLoading = true;
   bool _hasPermission = false;
 
@@ -26,6 +32,9 @@ class ReminderProvider extends ChangeNotifier {
   TimeOfDay? get moodReminderTime => _moodReminderTime;
   TimeOfDay? get focusReminderTime => _focusReminderTime;
   TimeOfDay? get affirmationReminderTime => _affirmationReminderTime;
+  TimeOfDay? get waterReminderStartTime => _waterReminderStartTime;
+  TimeOfDay? get waterReminderEndTime => _waterReminderEndTime;
+  int get waterReminderInterval => _waterReminderInterval;
   bool get isLoading => _isLoading;
   bool get hasPermission => _hasPermission;
 
@@ -95,6 +104,12 @@ class ReminderProvider extends ChangeNotifier {
         prefs,
         _affirmationReminderKey,
       );
+      _waterReminderStartTime = _loadTimeFromPrefs(
+        prefs,
+        _waterReminderStartKey,
+      );
+      _waterReminderEndTime = _loadTimeFromPrefs(prefs, _waterReminderEndKey);
+      _waterReminderInterval = prefs.getInt(_waterReminderIntervalKey) ?? 60;
 
       _isLoading = false;
       notifyListeners();
@@ -331,6 +346,78 @@ class ReminderProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('Error setting affirmation reminder: $e');
       throw Exception('Failed to set affirmation reminder');
+    }
+  }
+
+  Future<void> setWaterReminder({
+    TimeOfDay? startTime,
+    TimeOfDay? endTime,
+    int? interval,
+  }) async {
+    try {
+      // Cancel all existing water reminders
+      await _cancelWaterReminders();
+
+      if (startTime != null && endTime != null && interval != null) {
+        _waterReminderStartTime = startTime;
+        _waterReminderEndTime = endTime;
+        _waterReminderInterval = interval;
+
+        // Schedule reminders at intervals between start and end time
+        final now = DateTime.now();
+        var currentTime = DateTime(
+          now.year,
+          now.month,
+          now.day,
+          startTime.hour,
+          startTime.minute,
+        );
+        final endDateTime = DateTime(
+          now.year,
+          now.month,
+          now.day,
+          endTime.hour,
+          endTime.minute,
+        );
+
+        int reminderId = 60; // Start from ID 60 for water reminders
+        while (currentTime.isBefore(endDateTime)) {
+          await _scheduleNotification(
+            id: reminderId++,
+            title: 'Water Reminder',
+            body: 'Time to stay hydrated! Take a sip of water.',
+            time: TimeOfDay.fromDateTime(currentTime),
+          );
+          currentTime = currentTime.add(Duration(minutes: interval));
+        }
+      } else {
+        _waterReminderStartTime = null;
+        _waterReminderEndTime = null;
+        _waterReminderInterval = 60;
+      }
+
+      // Save settings
+      final prefs = await SharedPreferences.getInstance();
+      await _saveTimeToPrefs(_waterReminderStartTime, _waterReminderStartKey);
+      await _saveTimeToPrefs(_waterReminderEndTime, _waterReminderEndKey);
+      await prefs.setInt(_waterReminderIntervalKey, _waterReminderInterval);
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error setting water reminders: $e');
+      throw Exception('Failed to set water reminders');
+    }
+  }
+
+  Future<void> _cancelWaterReminders() async {
+    try {
+      // Cancel all water reminders (IDs 60-99)
+      for (int i = 60; i < 100; i++) {
+        await _cancelNotification(i);
+      }
+    } catch (e) {
+      debugPrint('Error canceling water reminders: $e');
+      throw Exception('Failed to cancel water reminders');
     }
   }
 

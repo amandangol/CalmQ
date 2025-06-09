@@ -230,6 +230,28 @@ class RemindersScreen extends StatelessWidget {
                             ),
                           ),
                           SizedBox(height: 16),
+                          _ReminderCard(
+                            title: 'Water Intake',
+                            subtitle: 'Set a daily reminder to stay hydrated',
+                            icon: Icons.water_drop,
+                            time: reminderProvider.waterReminderStartTime,
+                            onTimeSelected: (time) => _handleTimeSelection(
+                              context,
+                              time,
+                              (time) => reminderProvider.setWaterReminder(
+                                startTime: time,
+                                endTime: time != null
+                                    ? TimeOfDay(
+                                        hour: time.hour + 8,
+                                        minute: time.minute,
+                                      )
+                                    : null,
+                                interval: 60,
+                              ),
+                              'Water',
+                            ),
+                          ),
+                          SizedBox(height: 16),
                         ],
                       ),
                     ),
