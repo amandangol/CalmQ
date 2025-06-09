@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import '../../../app_theme.dart';
+import '../providers/focus_provider.dart';
 
 class FocusScreen extends StatefulWidget {
   @override
@@ -250,6 +252,12 @@ class _FocusScreenState extends State<FocusScreen>
   int _totalMinutes = 0;
   int _currentStreak = 0;
 
+  // Add new state variables
+  double _currentFocusScore = 0.0;
+  List<String> _completedExercises = [];
+  Map<String, dynamic> _userFeedback = {};
+  bool _showAIAnalysis = false;
+
   @override
   void initState() {
     super.initState();
@@ -288,6 +296,11 @@ class _FocusScreenState extends State<FocusScreen>
 
     _remainingSeconds = _sessionDuration;
     _selectRandomExercise();
+
+    // Initialize AI recommendations
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<FocusProvider>().generateExerciseRecommendations();
+    });
   }
 
   @override
@@ -314,6 +327,7 @@ class _FocusScreenState extends State<FocusScreen>
   }
 
   void _startSession() {
+    context.read<FocusProvider>().startSession();
     setState(() {
       _isSessionActive = true;
       _remainingSeconds = _sessionDuration;
@@ -399,6 +413,13 @@ class _FocusScreenState extends State<FocusScreen>
     _sessionTimer?.cancel();
     _exerciseTimer?.cancel();
 
+    final focusProvider = context.read<FocusProvider>();
+    focusProvider.endSession(
+      focusScore: _currentFocusScore,
+      completedExercises: _completedExercises,
+      userFeedback: _userFeedback,
+    );
+
     setState(() {
       _isSessionActive = false;
       _isExerciseActive = false;
@@ -408,7 +429,6 @@ class _FocusScreenState extends State<FocusScreen>
     });
 
     _progressController.value = 1;
-
     _showCompletionDialog();
     HapticFeedback.heavyImpact();
   }
@@ -542,6 +562,8 @@ class _FocusScreenState extends State<FocusScreen>
                       _buildSessionControls(),
                       SizedBox(height: 24),
                       _buildStatsSection(),
+                      SizedBox(height: 24),
+                      _buildAIAnalysisButton(),
                     ],
                   ),
                 ),
@@ -1085,6 +1107,104 @@ class _FocusScreenState extends State<FocusScreen>
           Text(
             description,
             style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAIAnalysisButton() {
+    return Container(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: _showAIAnalysisDialog,
+        icon: Icon(Icons.psychology, color: Colors.white),
+        label: Text('View AI Analysis', style: TextStyle(color: Colors.white)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          padding: EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAIAnalysisDialog() {
+    final focusProvider = context.read<FocusProvider>();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'AI Analysis',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildAnalysisSection(
+                'Most Effective Mode',
+                focusProvider.modeEffectiveness.entries
+                    .reduce((a, b) => a.value > b.value ? a : b)
+                    .key,
+                Icons.psychology,
+              ),
+              _buildAnalysisSection(
+                'Recommended Exercises',
+                focusProvider.recommendedExercises.join(', '),
+                Icons.fitness_center,
+              ),
+              _buildAnalysisSection(
+                'Focus Score Trend',
+                '${focusProvider.currentFocusScore.toStringAsFixed(1)}/10',
+                Icons.trending_up,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Close', style: TextStyle(color: AppColors.primary)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnalysisSection(String title, String content, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: AppColors.primary, size: 20),
+              SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Text(
+            content,
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
           ),
         ],
       ),

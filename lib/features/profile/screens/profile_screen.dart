@@ -19,6 +19,11 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  bool _isEditMode = false;
+  Map<String, dynamic> _editedValues = {};
+  bool _isSaving = false;
+  bool _showWeb3Profile = false;
+
   @override
   void initState() {
     super.initState();
@@ -28,6 +33,87 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context.read<UserProfileProvider>().initialize();
       context.read<Web3Provider>().initialize(context);
     });
+  }
+
+  void _toggleEditMode() {
+    setState(() {
+      _isEditMode = !_isEditMode;
+      if (!_isEditMode) {
+        _editedValues.clear();
+      }
+    });
+  }
+
+  void _updateField(String field, dynamic value) {
+    setState(() {
+      _editedValues[field] = value;
+    });
+  }
+
+  void _toggleProfile() {
+    setState(() {
+      _showWeb3Profile = !_showWeb3Profile;
+    });
+  }
+
+  Future<void> _saveChanges() async {
+    if (_editedValues.isEmpty) {
+      _toggleEditMode();
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      final userProfile = context.read<UserProfileProvider>().userProfile;
+      if (userProfile == null) return;
+
+      final updatedProfile = userProfile.copyWith(
+        name: _editedValues['name'] ?? userProfile.name,
+        age: _editedValues['age'] ?? userProfile.age,
+        gender: _editedValues['gender'] ?? userProfile.gender,
+        goals: _editedValues['goals'] ?? userProfile.goals,
+        causes: _editedValues['causes'] ?? userProfile.causes,
+        stressFrequency:
+            _editedValues['stressFrequency'] ?? userProfile.stressFrequency,
+        healthyEating:
+            _editedValues['healthyEating'] ?? userProfile.healthyEating,
+        meditationExperience:
+            _editedValues['meditationExperience'] ??
+            userProfile.meditationExperience,
+        sleepQuality: _editedValues['sleepQuality'] ?? userProfile.sleepQuality,
+        happinessLevel:
+            _editedValues['happinessLevel'] ?? userProfile.happinessLevel,
+      );
+
+      await context.read<UserProfileProvider>().updateUserProfile(
+        updatedProfile,
+      );
+      _editedValues.clear();
+      _toggleEditMode();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Profile updated successfully'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update profile: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      setState(() => _isSaving = false);
+    }
   }
 
   @override
@@ -66,17 +152,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: IconButton(
-                  icon: const Icon(
-                    Icons.edit_rounded,
+                  icon: Icon(
+                    _isEditMode ? Icons.close_rounded : Icons.edit_rounded,
                     color: Colors.white,
                     size: 20,
                   ),
-                  onPressed: () => _navigateToEditProfile(
-                    context,
-                    context.read<UserProfileProvider>().userProfile!,
-                  ),
+                  onPressed: _isEditMode ? _toggleEditMode : _toggleEditMode,
                 ),
               ),
+              if (_isEditMode) ...[
+                const SizedBox(width: 6),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: IconButton(
+                    icon: _isSaving
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.check_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                    onPressed: _isSaving ? null : _saveChanges,
+                  ),
+                ),
+              ],
             ],
           ),
           // Body content
@@ -270,188 +379,158 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileContent(BuildContext context, UserProfile userProfile) {
-    return DefaultTabController(
-      length: 2,
-      child: Column(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: TabBar(
-              labelColor: AppColors.primary,
-              unselectedLabelColor: AppColors.textSecondary,
-              indicatorColor: AppColors.primary,
-              indicatorWeight: 3,
-              tabs: const [
-                Tab(
-                  icon: Icon(Icons.account_balance_outlined),
-                  text: 'Web3 Wallet',
-                ),
-                Tab(icon: Icon(Icons.person_rounded), text: 'Profile'),
-              ],
-            ),
+    return Column(
+      children: [
+        // Profile Switch Buttons
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          Expanded(
-            child: TabBarView(
-              children: [
-                // Web3 Wallet Tab
-                CustomScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 24),
-                            _buildWeb3Section(context),
-                            const SizedBox(height: 100), // Bottom padding
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildProfileSwitchButton(
+                  icon: Icons.person_rounded,
+                  label: 'Personal Profile',
+                  isSelected: !_showWeb3Profile,
+                  onTap: () {
+                    if (_showWeb3Profile) _toggleProfile();
+                  },
                 ),
-                // Profile Tab
-                CustomScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (!_isProfileComplete(userProfile))
-                              _buildCompleteProfileSetupCard(context)
-                            else ...[
-                              _buildStatsSection(userProfile),
-                              const SizedBox(height: 24),
-                              _buildSectionTitle('Personal Information'),
-                              _buildPersonalInfoCard(context, userProfile),
-                              const SizedBox(height: 24),
-                              _buildSectionTitle('Wellness Goals'),
-                              _buildGoalsCard(context, userProfile.goals),
-                              const SizedBox(height: 24),
-                              _buildSectionTitle('Areas of Focus'),
-                              _buildCausesCard(context, userProfile.causes),
-                              const SizedBox(height: 24),
-                              _buildSectionTitle('Wellness Assessment'),
-                              _buildAssessmentCard(context, userProfile),
-                            ],
-                            const SizedBox(height: 100), // Bottom padding
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+              ),
+              Container(
+                height: 40,
+                width: 1,
+                color: AppColors.primary.withOpacity(0.1),
+              ),
+              Expanded(
+                child: _buildProfileSwitchButton(
+                  icon: Icons.account_balance_wallet_rounded,
+                  label: 'Web3 Profile',
+                  isSelected: _showWeb3Profile,
+                  onTap: () {
+                    if (!_showWeb3Profile) _toggleProfile();
+                  },
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
+        // Profile Content
+        Expanded(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: _showWeb3Profile
+                ? _buildWeb3ProfileContent(context)
+                : _buildPersonalProfileContent(context, userProfile),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileSwitchButton({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary.withOpacity(0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              size: 24,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  bool _isProfileComplete(UserProfile userProfile) {
-    return userProfile.name.isNotEmpty &&
-        userProfile.age > 0 &&
-        userProfile.gender != null &&
-        userProfile.goals.isNotEmpty &&
-        userProfile.causes.isNotEmpty &&
-        userProfile.stressFrequency != null &&
-        userProfile.sleepQuality != null &&
-        userProfile.happinessLevel != null;
+  Widget _buildPersonalProfileContent(
+    BuildContext context,
+    UserProfile userProfile,
+  ) {
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildStatsSection(userProfile),
+                const SizedBox(height: 24),
+                _buildSectionTitle('Personal Information'),
+                _buildPersonalInfoCard(context, userProfile),
+                const SizedBox(height: 24),
+                _buildSectionTitle('Wellness Goals'),
+                _buildGoalsCard(context, userProfile.goals),
+                const SizedBox(height: 24),
+                _buildSectionTitle('Areas of Focus'),
+                _buildCausesCard(context, userProfile.causes),
+                const SizedBox(height: 24),
+                _buildSectionTitle('Wellness Assessment'),
+                _buildAssessmentCard(context, userProfile),
+                const SizedBox(height: 100), // Bottom padding
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
-  Widget _buildCompleteProfileSetupCard(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(top: 24),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.primary.withOpacity(0.1),
-            AppColors.secondary.withOpacity(0.1),
-          ],
+  Widget _buildWeb3ProfileContent(BuildContext context) {
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 24),
+                _buildWeb3Section(context),
+                const SizedBox(height: 100), // Bottom padding
+              ],
+            ),
+          ),
         ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.person_add_rounded,
-              size: 40,
-              color: AppColors.primary,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Complete Your Profile',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Set up your profile to get personalized wellness recommendations and track your progress.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () => _navigateToEditProfile(
-                context,
-                context.read<UserProfileProvider>().userProfile!,
-              ),
-              icon: const Icon(Icons.edit_rounded, color: Colors.white),
-              label: const Text(
-                'Complete Profile Setup',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 0,
-              ),
-            ),
-          ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -465,9 +544,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle('Web3 Wellness'),
+            _buildSectionTitle('Wallet Information'),
             _buildWeb3StatsCard(context, web3Provider),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
+            _buildSectionTitle('Wellness Achievements'),
             _buildWellnessNFTsCard(context, web3Provider),
           ],
         );
@@ -642,7 +722,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Wallet Connected',
+                        'Connected Wallet',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -757,17 +837,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ],
-            ),
-
-            const SizedBox(height: 12),
-
-            // NFTs card
-            _buildBalanceCard(
-              icon: Icons.workspace_premium_rounded,
-              label: 'Achievement NFTs',
-              value: '${web3Provider.wellnessNFTs.length}',
-              color: Colors.amber,
-              isFullWidth: true,
             ),
 
             const SizedBox(height: 24),
@@ -1016,17 +1085,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _navigateToEditProfile(BuildContext context, UserProfile userProfile) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => UserInfoScreen()),
-    ).then((_) {
-      // Refresh the profile data when returning from edit screen
-      context.read<UserProfileProvider>().loadUserProfile();
-    });
-  }
-
   Widget _buildStatsSection(UserProfile userProfile) {
+    final completedFields = [
+      userProfile.name.isNotEmpty,
+      userProfile.age > 0,
+      userProfile.gender != null,
+      userProfile.goals.isNotEmpty,
+      userProfile.causes.isNotEmpty,
+      userProfile.stressFrequency != null,
+      userProfile.sleepQuality != null,
+      userProfile.happinessLevel != null,
+    ].where((field) => field).length;
+
+    final totalFields = 8;
+    final completionPercentage = (completedFields / totalFields * 100).round();
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -1064,7 +1137,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Icons.category_rounded,
               ),
               _buildStatDivider(),
-              _buildStatItem('Profile', '100%', Icons.person_rounded),
+              _buildStatItem(
+                'Profile',
+                '$completionPercentage%',
+                Icons.person_rounded,
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -1198,14 +1275,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildPersonalInfoCard(BuildContext context, UserProfile userProfile) {
     final authProvider = context.read<AuthProvider>();
     final web3Provider = context.watch<Web3Provider>();
-    final email = authProvider.user?.email ?? '';
+    final email = authProvider.user?.email ?? 'Not set';
 
     return _buildInfoCard(context, [
-      _buildInfoRow(Icons.person_rounded, 'Name', userProfile.name),
+      _buildEditableInfoRow(
+        Icons.person_rounded,
+        'Name',
+        userProfile.name.isNotEmpty ? userProfile.name : 'Not set',
+        'name',
+        (value) => _updateField('name', value),
+      ),
       _buildInfoRow(Icons.email_rounded, 'Email', email),
-      _buildInfoRow(Icons.cake_rounded, 'Age', '${userProfile.age} years'),
-      if (userProfile.gender != null)
-        _buildInfoRow(Icons.wc_rounded, 'Gender', userProfile.gender!),
+      _buildEditableInfoRow(
+        Icons.cake_rounded,
+        'Age',
+        userProfile.age > 0 ? '${userProfile.age} years' : 'Not set',
+        'age',
+        (value) => _updateField('age', int.tryParse(value) ?? userProfile.age),
+        keyboardType: TextInputType.number,
+      ),
+      _buildEditableDropdownRow(
+        Icons.wc_rounded,
+        'Gender',
+        userProfile.gender ?? 'Not set',
+        'gender',
+        ['Male', 'Female', 'Non-binary', 'Prefer not to say'],
+        (value) => _updateField('gender', value),
+      ),
       if (userProfile.createdAt != null)
         _buildInfoRow(
           Icons.calendar_today_rounded,
@@ -1240,68 +1336,437 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
-  Widget _buildGoalsCard(BuildContext context, List<String> goals) {
-    return _buildInfoCard(
-      context,
-      goals.map((goal) => _buildChipRow(goal)).toList(),
+  Widget _buildEditableInfoRow(
+    IconData icon,
+    String label,
+    String value,
+    String field,
+    ValueChanged<String> onChanged, {
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, size: 24, color: AppColors.primary),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 4),
+              _isEditMode
+                  ? Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.primary.withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: TextFormField(
+                        initialValue: _editedValues[field]?.toString() ?? value,
+                        keyboardType: keyboardType,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          border: InputBorder.none,
+                          hintText: value,
+                          hintStyle: TextStyle(
+                            color: AppColors.textLight,
+                            fontSize: 16,
+                          ),
+                        ),
+                        onChanged: onChanged,
+                      ),
+                    )
+                  : Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
+  Widget _buildEditableDropdownRow(
+    IconData icon,
+    String label,
+    String value,
+    String field,
+    List<String> options,
+    ValueChanged<String> onChanged,
+  ) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, size: 24, color: AppColors.primary),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 4),
+              _isEditMode
+                  ? Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.primary.withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: DropdownButtonFormField<String>(
+                        value: _editedValues[field] ?? value,
+                        decoration: InputDecoration(
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          border: InputBorder.none,
+                        ),
+                        items: options.map((String option) {
+                          return DropdownMenuItem<String>(
+                            value: option,
+                            child: Text(
+                              option,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (newValue) {
+                          if (newValue != null) onChanged(newValue);
+                        },
+                        icon: Icon(
+                          Icons.arrow_drop_down,
+                          color: AppColors.primary,
+                        ),
+                        dropdownColor: AppColors.surface,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    )
+                  : Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGoalsCard(BuildContext context, List<String> goals) {
+    return _buildInfoCard(context, [
+      if (_isEditMode)
+        _buildMultiSelectField(
+          'Wellness Goals',
+          _editedValues['goals'] ?? goals,
+          (newGoals) => _updateField('goals', newGoals),
+          [
+            'Manage anxiety',
+            'Reduce stress',
+            'Improve mood',
+            'Better sleep',
+            'Build confidence',
+            'Enhance relationships',
+            'Practice mindfulness',
+            'Develop coping skills',
+          ],
+        )
+      else if (goals.isEmpty)
+        _buildEmptyState('No wellness goals set yet')
+      else
+        ...goals.map((goal) => _buildChipRow(goal)).toList(),
+    ]);
+  }
+
   Widget _buildCausesCard(BuildContext context, List<String> causes) {
-    return _buildInfoCard(
-      context,
-      causes.map((cause) => _buildChipRow(cause)).toList(),
+    return _buildInfoCard(context, [
+      if (_isEditMode)
+        _buildMultiSelectField(
+          'Areas of Focus',
+          _editedValues['causes'] ?? causes,
+          (newCauses) => _updateField('causes', newCauses),
+          [
+            'Work pressure',
+            'Academic stress',
+            'Relationship issues',
+            'Financial concerns',
+            'Health worries',
+            'Family situations',
+            'Social anxiety',
+            'Life transitions',
+            'Other',
+          ],
+        )
+      else if (causes.isEmpty)
+        _buildEmptyState('No areas of focus set yet')
+      else
+        ...causes.map((cause) => _buildChipRow(cause)).toList(),
+    ]);
+  }
+
+  Widget _buildMultiSelectField(
+    String label,
+    List<String> selectedValues,
+    ValueChanged<List<String>> onChanged,
+    List<String> options,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        SizedBox(height: 12),
+        Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.primary.withOpacity(0.2),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Select all that apply',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: options.map((option) {
+                  final isSelected = selectedValues.contains(option);
+                  return InkWell(
+                    onTap: () {
+                      final newValues = List<String>.from(selectedValues);
+                      if (isSelected) {
+                        newValues.remove(option);
+                      } else {
+                        newValues.add(option);
+                      }
+                      onChanged(newValues);
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.surface,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.primary
+                              : AppColors.primary.withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.primary.withOpacity(0.2),
+                                  blurRadius: 8,
+                                  offset: Offset(0, 2),
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (isSelected)
+                            Icon(
+                              Icons.check_circle,
+                              size: 18,
+                              color: Colors.white,
+                            )
+                          else
+                            Icon(
+                              Icons.circle_outlined,
+                              size: 18,
+                              color: AppColors.primary.withOpacity(0.5),
+                            ),
+                          SizedBox(width: 8),
+                          Text(
+                            option,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                              color: isSelected
+                                  ? Colors.white
+                                  : AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildAssessmentCard(BuildContext context, UserProfile userProfile) {
     final assessmentItems = <Widget>[];
 
-    if (userProfile.stressFrequency != null) {
-      assessmentItems.add(
-        _buildInfoRow(
-          Icons.psychology_rounded,
-          'Stress Level',
-          userProfile.stressFrequency!,
-        ),
-      );
-    }
-    if (userProfile.sleepQuality != null) {
-      assessmentItems.add(
-        _buildInfoRow(
-          Icons.bedtime_rounded,
-          'Sleep Quality',
-          userProfile.sleepQuality!,
-        ),
-      );
-    }
-    if (userProfile.happinessLevel != null) {
-      assessmentItems.add(
-        _buildInfoRow(
-          Icons.sentiment_very_satisfied_rounded,
-          'Happiness Level',
-          userProfile.happinessLevel!,
-        ),
-      );
-    }
-    if (userProfile.healthyEating != null) {
-      assessmentItems.add(
-        _buildInfoRow(
-          Icons.restaurant_rounded,
-          'Eating Habits',
-          userProfile.healthyEating!,
-        ),
-      );
-    }
-    if (userProfile.meditationExperience != null) {
-      assessmentItems.add(
-        _buildInfoRow(
-          Icons.self_improvement_rounded,
-          'Meditation Experience',
-          userProfile.meditationExperience!,
-        ),
-      );
-    }
+    assessmentItems.add(
+      _buildEditableDropdownRow(
+        Icons.psychology_rounded,
+        'Stress Level',
+        userProfile.stressFrequency ?? 'Not set',
+        'stressFrequency',
+        [
+          'Almost daily',
+          'A few times a week',
+          'A few times a month',
+          'Rarely',
+          'Never',
+        ],
+        (value) => _updateField('stressFrequency', value),
+      ),
+    );
+
+    assessmentItems.add(
+      _buildEditableDropdownRow(
+        Icons.bedtime_rounded,
+        'Sleep Quality',
+        userProfile.sleepQuality ?? 'Not set',
+        'sleepQuality',
+        [
+          'Excellent - I sleep deeply',
+          'Good - Usually restful',
+          'Fair - Sometimes restless',
+          'Poor - Often tired',
+          'Very poor - Chronic issues',
+        ],
+        (value) => _updateField('sleepQuality', value),
+      ),
+    );
+
+    assessmentItems.add(
+      _buildEditableDropdownRow(
+        Icons.sentiment_very_satisfied_rounded,
+        'Happiness Level',
+        userProfile.happinessLevel ?? 'Not set',
+        'happinessLevel',
+        [
+          'Very content and joyful',
+          'Generally happy',
+          'Balanced, some ups and downs',
+          'Often feeling down',
+          'Struggling with sadness',
+        ],
+        (value) => _updateField('happinessLevel', value),
+      ),
+    );
+
+    assessmentItems.add(
+      _buildEditableDropdownRow(
+        Icons.restaurant_rounded,
+        'Eating Habits',
+        userProfile.healthyEating ?? 'Not set',
+        'healthyEating',
+        ['Always', 'Most of the time', 'Sometimes', 'Rarely', 'Never'],
+        (value) => _updateField('healthyEating', value),
+      ),
+    );
+
+    assessmentItems.add(
+      _buildEditableDropdownRow(
+        Icons.self_improvement_rounded,
+        'Meditation Experience',
+        userProfile.meditationExperience ?? 'Not set',
+        'meditationExperience',
+        [
+          'Yes, I practice regularly',
+          'I\'ve tried it a few times',
+          'No, but I\'m interested',
+          'No, not interested',
+        ],
+        (value) => _updateField('meditationExperience', value),
+      ),
+    );
 
     return _buildInfoCard(context, assessmentItems);
   }
@@ -1416,6 +1881,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   fontWeight: FontWeight.w500,
                   color: AppColors.textPrimary,
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(String message) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 24),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(
+              Icons.info_outline_rounded,
+              size: 32,
+              color: AppColors.textSecondary,
+            ),
+            SizedBox(height: 12),
+            Text(
+              message,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],

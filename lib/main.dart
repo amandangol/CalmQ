@@ -18,6 +18,7 @@ import 'features/settings/providers/settings_provider.dart';
 import 'app_theme.dart';
 import 'splash_screen.dart';
 import 'navigation/main_navigation.dart';
+import 'features/focus/providers/focus_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -58,6 +59,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => JournalProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => WaterTrackerProvider()),
+        ChangeNotifierProvider(create: (_) => FocusProvider()),
       ],
       child: Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {

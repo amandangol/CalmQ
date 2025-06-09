@@ -1,10 +1,69 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 import '../providers/reminder_provider.dart';
 import '../../../app_theme.dart';
 import '../../../widgets/custom_app_bar.dart';
 
-class RemindersScreen extends StatelessWidget {
+class RemindersScreen extends StatefulWidget {
+  @override
+  State<RemindersScreen> createState() => _RemindersScreenState();
+}
+
+class _RemindersScreenState extends State<RemindersScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _initializeNotifications();
+  }
+
+  Future<void> _initializeNotifications() async {
+    final reminderProvider = context.read<ReminderProvider>();
+    await reminderProvider.initializeNotifications();
+  }
+
+  void _openAppSettings() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Enable Notifications'),
+        content: Text(
+          'Please enable notifications in your device settings to use reminders.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await SystemChannels.platform.invokeMethod(
+                  'SystemNavigator.openAppSettings',
+                );
+                // After returning from settings, check permissions again
+                await _initializeNotifications();
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Could not open settings. Please enable notifications manually.',
+                      ),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+                }
+              }
+            },
+            child: Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final reminderProvider = context.watch<ReminderProvider>();
@@ -54,9 +113,7 @@ class RemindersScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 24),
                 ElevatedButton.icon(
-                  onPressed: () {
-                    reminderProvider.initializeNotifications();
-                  },
+                  onPressed: _openAppSettings,
                   icon: Icon(Icons.settings, size: 18),
                   label: Text('Open Settings', style: TextStyle(fontSize: 13)),
                   style: ElevatedButton.styleFrom(
@@ -82,6 +139,7 @@ class RemindersScreen extends StatelessWidget {
           CustomAppBar(
             title: 'Reminders',
             leadingIcon: Icons.notifications_active_rounded,
+            actions: [Container()],
           ),
           // Body content
           Expanded(

@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:reown_appkit/reown_appkit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 import 'package:web3dart/web3dart.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
@@ -19,44 +18,28 @@ class Web3Provider with ChangeNotifier {
   bool _isLoadingTokens = false;
   BigInt _ethBalance = BigInt.zero;
   bool _isLoadingBalance = false;
-  int _tokenBalance = 0;
 
   // Contract addresses
   static const String wellnessTokenAddress =
       '0xb734524de04Ec6b93D30e7132f4034e4F8Ea16cF';
   static const String wellnessNFTAddress =
       '0x90D85445d55CA4F35B592355D90ecff6AC1F9740';
-  static const String wellnessSystemAddress =
-      '0xFf5bD3Aa319Aa8b02Cf95BED94A3F85983Ab79cb';
 
   // Contract ABIs
   static const String wellnessTokenABI = '''[
     {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
-    {"anonymous":false,"inputs":[{"indexed":true,"name":"minter","type":"address"},{"indexed":false,"name":"status","type":"bool"}],"name":"MinterStatusChanged","type":"event"},
-    {"inputs":[{"name":"to","type":"address"},{"name":"amount","type":"uint256"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},
-    {"inputs":[{"name":"minter","type":"address"},{"name":"status","type":"bool"}],"name":"setMinter","outputs":[],"stateMutability":"nonpayable","type":"function"},
-    {"inputs":[{"name":"","type":"address"}],"name":"minters","outputs":[{"name":"","type":"bool"}],"stateMutability":"view","type":"function"}
+    {"inputs":[{"name":"","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
   ]''';
 
   static const String wellnessNFTABI = '''[
     {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
-    {"anonymous":false,"inputs":[{"indexed":true,"name":"user","type":"address"},{"indexed":false,"name":"tokenId","type":"uint256"},{"indexed":false,"name":"achievementName","type":"string"}],"name":"AchievementMinted","type":"event"},
-    {"inputs":[{"name":"to","type":"address"},{"name":"name","type":"string"},{"name":"description","type":"string"},{"name":"category","type":"string"},{"name":"difficulty","type":"uint256"},{"name":"imageUri","type":"string"}],"name":"mintAchievement","outputs":[{"name":"","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},
     {"inputs":[{"name":"user","type":"address"}],"name":"getUserAchievements","outputs":[{"name":"","type":"uint256[]"}],"stateMutability":"view","type":"function"}
-  ]''';
-
-  static const String wellnessSystemABI = '''[
-    {"inputs":[{"name":"_wellnessToken","type":"address"},{"name":"_achievementNFT","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},
-    {"anonymous":false,"inputs":[{"indexed":true,"name":"user","type":"address"},{"indexed":false,"name":"achievementName","type":"string"},{"indexed":false,"name":"tokenReward","type":"uint256"}],"name":"AchievementCompleted","type":"event"},
-    {"inputs":[{"name":"user","type":"address"},{"name":"achievementName","type":"string"},{"name":"description","type":"string"},{"name":"category","type":"string"},{"name":"difficulty","type":"uint256"},{"name":"imageUri","type":"string"}],"name":"completeAchievement","outputs":[],"stateMutability":"nonpayable","type":"function"},
-    {"inputs":[{"name":"user","type":"address"},{"name":"achievementName","type":"string"}],"name":"getUserProgress","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
   ]''';
 
   // Web3 client and contracts
   late Web3Client _client;
   late DeployedContract _wellnessTokenContract;
   late DeployedContract _wellnessNFTContract;
-  late DeployedContract _wellnessSystemContract;
 
   // Getters
   bool get isConnected => _isConnected;
@@ -65,7 +48,6 @@ class Web3Provider with ChangeNotifier {
   bool get isConnecting => _isConnecting;
   int get wellnessTokens => _wellnessTokens;
   String get ethBalance => _formatEthBalance(_ethBalance);
-  int get tokenBalance => _tokenBalance;
   int get nftCount => _wellnessNFTs.length;
   List<dynamic> get wellnessNFTs => _wellnessNFTs;
   String? get error => _error;
@@ -111,11 +93,6 @@ class Web3Provider with ChangeNotifier {
       _wellnessNFTContract = DeployedContract(
         ContractAbi.fromJson(wellnessNFTABI, 'WellnessAchievementNFT'),
         EthereumAddress.fromHex(wellnessNFTAddress),
-      );
-
-      _wellnessSystemContract = DeployedContract(
-        ContractAbi.fromJson(wellnessSystemABI, 'WellnessAchievementSystem'),
-        EthereumAddress.fromHex(wellnessSystemAddress),
       );
 
       // Initialize WalletConnect
@@ -272,46 +249,11 @@ class Web3Provider with ChangeNotifier {
       _wellnessNFTs = [];
       _wellnessTokens = 0;
       _ethBalance = BigInt.zero;
-      _tokenBalance = 0;
       await _removeWalletAddress();
       notifyListeners();
     } catch (e) {
       _error = 'Failed to disconnect wallet: $e';
       notifyListeners();
-    }
-  }
-
-  Future<String?> requestSignature(String message) async {
-    if (!_isConnected || _walletAddress == null) {
-      _error = 'Wallet not connected';
-      notifyListeners();
-      return null;
-    }
-
-    try {
-      if (_appKitModal?.session == null) {
-        _error = 'No active session';
-        notifyListeners();
-        return null;
-      }
-
-      final result = await _appKitModal!.request(
-        topic: _appKitModal!.session!.topic,
-        chainId: 'eip155:1',
-        request: SessionRequestParams(
-          method: 'personal_sign',
-          params: [
-            '0x${utf8.encode(message).map((b) => b.toRadixString(16).padLeft(2, '0')).join('')}',
-            _walletAddress,
-          ],
-        ),
-      );
-
-      return result as String?;
-    } catch (e) {
-      _error = 'Failed to request signature: $e';
-      notifyListeners();
-      return null;
     }
   }
 
@@ -388,141 +330,6 @@ class Web3Provider with ChangeNotifier {
       _error = 'Failed to load wellness tokens: $e';
       _isLoadingTokens = false;
       notifyListeners();
-    }
-  }
-
-  Future<void> completeAchievement(
-    String id,
-    String title,
-    String feature,
-    int difficulty,
-    String description,
-  ) async {
-    if (!_isConnected || _walletAddress == null) {
-      throw Exception('Wallet not connected');
-    }
-
-    try {
-      final data = _wellnessSystemContract
-          .function('completeAchievement')
-          .encodeCall([id, title, feature, difficulty, description]);
-
-      final tx = await _appKitModal!.request(
-        topic: _appKitModal!.session!.topic,
-        chainId: '11155111', // Sepolia testnet
-        request: SessionRequestParams(
-          method: 'eth_sendTransaction',
-          params: [
-            {
-              'from': _walletAddress,
-              'to': wellnessSystemAddress,
-              'data': data,
-              'value': '0x0',
-            },
-          ],
-        ),
-      );
-
-      if (tx == null) {
-        throw Exception('Transaction failed');
-      }
-
-      await Future.wait([loadWellnessTokens(), loadWellnessNFTs()]);
-    } catch (e) {
-      _error = 'Failed to complete achievement: $e';
-      notifyListeners();
-      rethrow;
-    }
-  }
-
-  Future<void> awardTokens(int amount) async {
-    if (!_isConnected || _walletAddress == null) {
-      throw Exception('Wallet not connected');
-    }
-
-    try {
-      final mintFunction = _wellnessTokenContract.function('mint');
-      final data = mintFunction.encodeCall([
-        EthereumAddress.fromHex(_walletAddress!),
-        BigInt.from(amount),
-      ]);
-
-      final tx = await _appKitModal!.request(
-        topic: _appKitModal!.session!.topic,
-        chainId: '11155111', // Sepolia testnet
-        request: SessionRequestParams(
-          method: 'eth_sendTransaction',
-          params: [
-            {
-              'from': _walletAddress,
-              'to': wellnessTokenAddress,
-              'data': data,
-              'value': '0x0',
-            },
-          ],
-        ),
-      );
-
-      if (tx == null) {
-        throw Exception('Transaction failed');
-      }
-
-      await loadWellnessTokens();
-    } catch (e) {
-      _error = 'Failed to award tokens: $e';
-      notifyListeners();
-      rethrow;
-    }
-  }
-
-  Future<void> mintAchievementNFT(
-    String achievementId,
-    String title,
-    String description,
-    String category,
-    int difficulty,
-    String imageUri,
-  ) async {
-    if (!_isConnected || _walletAddress == null) {
-      throw Exception('Wallet not connected');
-    }
-
-    try {
-      final mintFunction = _wellnessNFTContract.function('mintAchievement');
-      final data = mintFunction.encodeCall([
-        EthereumAddress.fromHex(_walletAddress!),
-        title,
-        description,
-        category,
-        BigInt.from(difficulty),
-        imageUri,
-      ]);
-
-      final tx = await _appKitModal!.request(
-        topic: _appKitModal!.session!.topic,
-        chainId: '11155111', // Sepolia testnet
-        request: SessionRequestParams(
-          method: 'eth_sendTransaction',
-          params: [
-            {
-              'from': _walletAddress,
-              'to': wellnessNFTAddress,
-              'data': data,
-              'value': '0x0',
-            },
-          ],
-        ),
-      );
-
-      if (tx == null) {
-        throw Exception('Transaction failed');
-      }
-
-      await loadWellnessNFTs();
-    } catch (e) {
-      _error = 'Failed to mint achievement NFT: $e';
-      notifyListeners();
-      rethrow;
     }
   }
 

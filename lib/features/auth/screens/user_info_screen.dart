@@ -2,9 +2,7 @@ import 'package:auralynn/navigation/main_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_profile_provider.dart';
-import '../../web3/providers/web3_provider.dart';
 import '../../../app_theme.dart';
-import '../../../main.dart';
 
 class UserInfoScreen extends StatefulWidget {
   @override
@@ -121,34 +119,32 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
   bool _canProceed() {
     switch (_currentPage) {
       case 0:
-        return nameController.text.isNotEmpty &&
-            ageController.text.isNotEmpty &&
+        return nameController.text.isNotEmpty ||
+            ageController.text.isNotEmpty ||
             gender != null;
       case 1:
-        return goals.isNotEmpty;
+        return true; // Allow proceeding even if no goals selected
       case 2:
-        return causes.isNotEmpty;
+        return true; // Allow proceeding even if no causes selected
       case 3:
-        return stressFrequency != null &&
-            sleepQuality != null &&
+        return stressFrequency != null ||
+            sleepQuality != null ||
             happinessLevel != null;
       case 4:
-        return healthyEating != null && meditationExperience != null;
+        return healthyEating != null || meditationExperience != null;
       default:
         return false;
     }
   }
 
   void _nextPage() {
-    if (_canProceed()) {
-      if (_currentPage < 4) {
-        _pageController.nextPage(
-          duration: Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      } else {
-        _saveData();
-      }
+    if (_currentPage < 4) {
+      _pageController.nextPage(
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      _saveData();
     }
   }
 
@@ -166,7 +162,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
       // First save the user profile
       await context.read<UserProfileProvider>().saveUserProfile(
         name: nameController.text,
-        age: int.parse(ageController.text),
+        age: int.tryParse(ageController.text) ?? 0,
         gender: gender,
         goals: goals,
         causes: causes,
@@ -212,39 +208,12 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
     }
   }
 
-  void _skipProfileSetup() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Skip Profile Setup?'),
-        content: Text(
-          'You can always complete your profile later from the profile. Would you like to skip for now?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Continue Setup',
-              style: TextStyle(color: AppColors.textPrimary),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Close dialog
-              // Navigate to main screen
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const MainNavigation()),
-                (route) => false,
-              );
-            },
-            child: Text(
-              'Skip for Now',
-              style: TextStyle(color: AppColors.primary),
-            ),
-          ),
-        ],
-      ),
-    );
+  void _skipCurrentPage() {
+    if (_currentPage < 4) {
+      _nextPage();
+    } else {
+      _saveData();
+    }
   }
 
   @override
@@ -286,16 +255,6 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                           _buildWellnessAssessmentPage(),
                           _buildLifestylePage(),
                         ],
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: _skipProfileSetup,
-                      child: Text(
-                        'Do it later',
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w500,
-                        ),
                       ),
                     ),
                     _buildNavigationButtons(),
@@ -435,6 +394,15 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildPageTitle('Tell us about yourself', '👋'),
+          SizedBox(height: 16),
+          Text(
+            'This information helps us personalize your experience. You can update it later.',
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.textLight,
+              height: 1.4,
+            ),
+          ),
           SizedBox(height: 32),
           _buildTextField(
             'What should we call you?',
@@ -455,6 +423,19 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
             gender,
             (value) => setState(() => gender = value),
           ),
+          SizedBox(height: 24),
+          Center(
+            child: TextButton(
+              onPressed: _skipCurrentPage,
+              child: Text(
+                'Skip for now',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -469,7 +450,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
           _buildPageTitle('What are your wellness goals?', '🎯'),
           SizedBox(height: 16),
           Text(
-            'Select all that apply - we\'ll tailor your experience accordingly',
+            'Select all that apply - we\'ll tailor your experience accordingly. You can update these later.',
             style: TextStyle(
               fontSize: 14,
               color: AppColors.textLight,
@@ -478,6 +459,19 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
           ),
           SizedBox(height: 24),
           _buildMultiSelectField(goalsOptions, goals),
+          SizedBox(height: 24),
+          Center(
+            child: TextButton(
+              onPressed: _skipCurrentPage,
+              child: Text(
+                'Skip for now',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -492,7 +486,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
           _buildPageTitle('What affects your mental wellbeing?', '💭'),
           SizedBox(height: 16),
           Text(
-            'Understanding your challenges helps us provide better support',
+            'Understanding your challenges helps us provide better support. You can update these later.',
             style: TextStyle(
               fontSize: 14,
               color: AppColors.textLight,
@@ -501,6 +495,19 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
           ),
           SizedBox(height: 24),
           _buildMultiSelectField(causesOptions, causes),
+          SizedBox(height: 24),
+          Center(
+            child: TextButton(
+              onPressed: _skipCurrentPage,
+              child: Text(
+                'Skip for now',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -513,6 +520,15 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildPageTitle('How are you feeling lately?', '🌱'),
+          SizedBox(height: 16),
+          Text(
+            'This helps us understand your current state. You can update these later.',
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.textLight,
+              height: 1.4,
+            ),
+          ),
           SizedBox(height: 32),
           _buildDropdownField(
             'How often do you feel stressed?',
@@ -534,6 +550,19 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
             happinessLevel,
             (value) => setState(() => happinessLevel = value),
           ),
+          SizedBox(height: 24),
+          Center(
+            child: TextButton(
+              onPressed: _skipCurrentPage,
+              child: Text(
+                'Skip for now',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -546,6 +575,15 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildPageTitle('Let\'s talk about your lifestyle', '🌿'),
+          SizedBox(height: 16),
+          Text(
+            'This helps us provide better recommendations. You can update these later.',
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.textLight,
+              height: 1.4,
+            ),
+          ),
           SizedBox(height: 32),
           _buildDropdownField(
             'How would you rate your eating habits?',
@@ -589,6 +627,19 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                   textAlign: TextAlign.center,
                 ),
               ],
+            ),
+          ),
+          SizedBox(height: 24),
+          Center(
+            child: TextButton(
+              onPressed: _skipCurrentPage,
+              child: Text(
+                'Skip remaining fields',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
           ),
         ],
