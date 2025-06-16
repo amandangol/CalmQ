@@ -177,6 +177,7 @@ class _JournalScreenState extends State<JournalScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'journal_screen_fab',
         onPressed: () {
           Navigator.push(
             context,

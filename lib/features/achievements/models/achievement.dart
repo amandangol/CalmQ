@@ -1,55 +1,101 @@
-import 'package:flutter/material.dart';
-
-enum AchievementType { breathing, mood, journal, water, focus }
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Achievement {
   final String id;
   final String title;
   final String description;
-  final String iconPath;
-  final AchievementType type;
   final int requiredCount;
-  final bool isUnlocked;
+  final Map<String, dynamic> progress;
+  final bool isEarned;
   final bool isClaimed;
-  final DateTime? unlockedAt;
-  final DateTime? claimedAt;
+  final Timestamp? claimedAt;
+  final String? txHash;
+  final String? ipfsMetadataUri;
+  final String category;
+  final String imageUrl;
+  final int difficulty;
 
   Achievement({
     required this.id,
     required this.title,
     required this.description,
-    required this.iconPath,
-    required this.type,
     required this.requiredCount,
-    this.isUnlocked = false,
-    this.isClaimed = false,
-    this.unlockedAt,
+    required this.progress,
+    required this.isEarned,
+    required this.isClaimed,
     this.claimedAt,
+    this.txHash,
+    this.ipfsMetadataUri,
+    required this.category,
+    required this.imageUrl,
+    required this.difficulty,
   });
+
+  factory Achievement.fromJson(Map<String, dynamic> json) {
+    return Achievement(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      description: json['description'] as String,
+      requiredCount: json['requiredCount'] as int,
+      progress: json['progress'] as Map<String, dynamic>,
+      isEarned: json['isEarned'] as bool,
+      isClaimed: json['isClaimed'] as bool,
+      claimedAt: json['claimedAt'] as Timestamp?,
+      txHash: json['txHash'] as String?,
+      ipfsMetadataUri: json['ipfsMetadataUri'] as String?,
+      category: json['category'] as String,
+      imageUrl: json['imageUrl'] as String,
+      difficulty: json['difficulty'] as int,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'requiredCount': requiredCount,
+      'progress': progress,
+      'isEarned': isEarned,
+      'isClaimed': isClaimed,
+      'claimedAt': claimedAt,
+      'txHash': txHash,
+      'ipfsMetadataUri': ipfsMetadataUri,
+      'category': category,
+      'imageUrl': imageUrl,
+      'difficulty': difficulty,
+    };
+  }
 
   Achievement copyWith({
     String? id,
     String? title,
     String? description,
-    String? iconPath,
-    AchievementType? type,
     int? requiredCount,
-    bool? isUnlocked,
+    Map<String, dynamic>? progress,
+    bool? isEarned,
     bool? isClaimed,
-    DateTime? unlockedAt,
-    DateTime? claimedAt,
+    Timestamp? claimedAt,
+    String? txHash,
+    String? ipfsMetadataUri,
+    String? category,
+    String? imageUrl,
+    int? difficulty,
   }) {
     return Achievement(
       id: id ?? this.id,
       title: title ?? this.title,
       description: description ?? this.description,
-      iconPath: iconPath ?? this.iconPath,
-      type: type ?? this.type,
       requiredCount: requiredCount ?? this.requiredCount,
-      isUnlocked: isUnlocked ?? this.isUnlocked,
+      progress: progress ?? this.progress,
+      isEarned: isEarned ?? this.isEarned,
       isClaimed: isClaimed ?? this.isClaimed,
-      unlockedAt: unlockedAt ?? this.unlockedAt,
       claimedAt: claimedAt ?? this.claimedAt,
+      txHash: txHash ?? this.txHash,
+      ipfsMetadataUri: ipfsMetadataUri ?? this.ipfsMetadataUri,
+      category: category ?? this.category,
+      imageUrl: imageUrl ?? this.imageUrl,
+      difficulty: difficulty ?? this.difficulty,
     );
   }
 }

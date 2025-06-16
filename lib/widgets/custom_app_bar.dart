@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import 'dart:io' show Platform;
 import '../app_theme.dart';
 
 class CustomAppBar extends StatelessWidget {

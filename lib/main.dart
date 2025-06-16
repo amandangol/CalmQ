@@ -30,6 +30,7 @@ void main() async {
 
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // await ConfigService.initialize();
 
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(
@@ -56,11 +57,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => MoodProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => Web3Provider()),
-        ChangeNotifierProxyProvider<Web3Provider, BreathingProvider>(
-          create: (context) => BreathingProvider(context.read<Web3Provider>()),
-          update: (context, web3Provider, previous) =>
-              previous ?? BreathingProvider(web3Provider),
-        ),
+
+        ChangeNotifierProvider(create: (_) => BreathingProvider()),
         ChangeNotifierProvider(create: (_) => AffirmationProvider()),
         ChangeNotifierProvider(create: (_) => ReminderProvider()),
         ChangeNotifierProvider(create: (_) => JournalProvider()),
@@ -107,6 +105,21 @@ class _SplashScreenWrapperState extends State<SplashScreenWrapper> {
     try {
       final web3Provider = Provider.of<Web3Provider>(context, listen: false);
       await web3Provider.initialize(context);
+
+      final achievementProvider = Provider.of<AchievementProvider>(
+        context,
+        listen: false,
+      );
+      // Temporary for testing: Clear all achievement data
+      achievementProvider.clearData();
+      // await achievementProvider.initialize();
+
+      final breathingProvider = Provider.of<BreathingProvider>(
+        context,
+        listen: false,
+      );
+      breathingProvider.initialize();
+
       _isInitialized = true;
     } catch (e) {
       debugPrint('Error initializing app: $e');
@@ -124,7 +137,7 @@ class _SplashScreenWrapperState extends State<SplashScreenWrapper> {
   @override
   Widget build(BuildContext context) {
     if (_showSplash) {
-      return CalmQSplashScreen(onComplete: _onSplashComplete);
+      return SerenaraSplashScreen(onComplete: _onSplashComplete);
     }
 
     return Consumer<AuthProvider>(

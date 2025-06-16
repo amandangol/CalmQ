@@ -1,307 +1,358 @@
-import 'package:flutter/material.dart';
-import 'package:web3dart/web3dart.dart';
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore for Timestamp
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/achievement.dart';
+import '../services/nft_service.dart';
+import '../data/achievement_data.dart';
 import '../../web3/providers/web3_provider.dart';
+import '../../breathing/providers/breathing_provider.dart';
 
 class AchievementProvider extends ChangeNotifier {
   final List<Achievement> _achievements = [];
-  final Map<String, int> _activityCounts = {};
   Web3Provider? _web3Provider;
+  NFTService? _nftService;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  bool _isLoading = false;
+  String? _error;
+  bool _isInitialized = false;
 
-  List<Achievement> get achievements => _achievements;
-
-  AchievementProvider() {
+  AchievementProvider({Web3Provider? web3Provider})
+    : _web3Provider = web3Provider,
+      _nftService = web3Provider != null ? NFTService(web3Provider) : null {
     _initializeAchievements();
   }
 
-  void setWeb3Provider(Web3Provider provider) {
-    _web3Provider = provider;
+  List<Achievement> get achievements => _achievements;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+  bool get isInitialized => _isInitialized;
+
+  void setWeb3Provider(Web3Provider web3Provider) {
+    _web3Provider = web3Provider;
+    _nftService = NFTService(web3Provider);
+    _initializeAchievements();
   }
 
-  void _initializeAchievements() {
-    _achievements.addAll([
-      Achievement(
-        id: 'breathing_beginner',
-        title: 'Breathing Beginner',
-        description: 'Complete your first breathing session',
-        iconPath: 'assets/icon/icon.png',
-        type: AchievementType.breathing,
-        requiredCount: 1,
-      ),
-      Achievement(
-        id: 'mood_tracker',
-        title: 'Mood Tracker',
-        description: 'Track your mood for 7 days',
-        iconPath: 'assets/images/happy.png',
-        type: AchievementType.mood,
-        requiredCount: 7,
-      ),
-      Achievement(
-        id: 'journal_master',
-        title: 'Journal Master',
-        description: 'Write 10 journal entries',
-        iconPath: 'assets/icon/icon.png',
-        type: AchievementType.journal,
-        requiredCount: 10,
-      ),
-      Achievement(
-        id: 'water_champion',
-        title: 'Water Champion',
-        description: 'Track water intake for 14 days',
-        iconPath: 'assets/icon/icon.png',
-        type: AchievementType.water,
-        requiredCount: 14,
-      ),
-      Achievement(
-        id: 'focus_pro',
-        title: 'Focus Pro',
-        description: 'Complete 20 focus sessions',
-        iconPath: 'assets/icon/icon.png',
-        type: AchievementType.focus,
-        requiredCount: 20,
-      ),
-    ]);
-  }
+  Future<void> _initializeAchievements() async {
+    if (_isLoading) return;
 
-  void incrementActivityCount(AchievementType type) {
-    final typeString = type.toString().split('.').last;
-    _activityCounts[typeString] = (_activityCounts[typeString] ?? 0) + 1;
-    _checkAchievements();
+    _isLoading = true;
+    _error = null;
     notifyListeners();
+
+    try {
+      // Initialize with default achievements
+      _achievements.clear();
+      _achievements.addAll(List.from(allAchievements));
+      print('Initialized ${_achievements.length} achievements');
+
+      // Load user progress and sync with Firestore and blockchain concurrently
+      await Future.wait([
+        _loadUserProgress(),
+        _syncWithFirestore(),
+        if (_web3Provider != null && _web3Provider!.isConnected)
+          _syncWithBlockchain(),
+      ]);
+
+      _isInitialized = true;
+      print('Final achievement count: ${_achievements.length}');
+    } catch (e) {
+      print('Error initializing achievements: $e');
+      _error = 'Failed to load achievements';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
-  void _checkAchievements() {
-    for (var i = 0; i < _achievements.length; i++) {
-      final achievement = _achievements[i];
-      final typeString = achievement.type.toString().split('.').last;
-      final currentCount = _activityCounts[typeString] ?? 0;
+  Future<void> _syncWithFirestore() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
 
-      if (!achievement.isUnlocked &&
-          currentCount >= achievement.requiredCount) {
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('achievements')
+          .get();
+
+      final firestoreAchievements = snapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'id': doc.id,
+          'progress': {
+            'current': data['progress']?['current'] ?? 0,
+            'total': data['progress']?['total'] ?? 1,
+          },
+          'isEarned': data['isEarned'] ?? false,
+          'isClaimed': data['isClaimed'] ?? false,
+        };
+      }).toList();
+
+      print('Firestore achievements: ${firestoreAchievements.length}');
+
+      // Update achievements with Firestore data
+      for (var i = 0; i < _achievements.length; i++) {
+        final achievement = _achievements[i];
+        final firestoreAchievement = firestoreAchievements.firstWhere(
+          (fa) => fa['id'] == achievement.id,
+          orElse: () => {
+            'id': achievement.id,
+            'progress': {'current': 0, 'total': achievement.requiredCount},
+            'isEarned': false,
+            'isClaimed': false,
+          },
+        );
+
         _achievements[i] = achievement.copyWith(
-          isUnlocked: true,
-          unlockedAt: DateTime.now(),
+          progress: firestoreAchievement['progress'] as Map<String, dynamic>,
+          isEarned: firestoreAchievement['isEarned'] as bool,
+          isClaimed: firestoreAchievement['isClaimed'] as bool,
         );
       }
+    } catch (e) {
+      print('Error syncing with Firestore: $e');
+      // Don't set error state for Firestore sync failures
+      // Just continue with local achievements
+    }
+  }
+
+  Future<void> _syncWithBlockchain() async {
+    if (_web3Provider == null || !_web3Provider!.isConnected) return;
+
+    try {
+      final blockchainAchievements = await _nftService!.getUserAchievements();
+      print('Blockchain achievements: ${blockchainAchievements.length}');
+
+      // Update claimed status for achievements that exist on blockchain
+      for (var i = 0; i < _achievements.length; i++) {
+        final achievement = _achievements[i];
+        final numericId = NFTService.achievementIdMap[achievement.id];
+
+        if (numericId != null) {
+          final isClaimed = blockchainAchievements.contains(
+            BigInt.from(numericId),
+          );
+          if (isClaimed && !achievement.isClaimed) {
+            _achievements[i] = achievement.copyWith(isClaimed: true);
+          }
+        }
+      }
+    } catch (e) {
+      print('Error syncing with blockchain: $e');
+      // Don't set error state for blockchain sync failures
+      // Just continue with local achievements
+    }
+  }
+
+  Future<void> _loadUserProgress() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userProgress = prefs.getString('user_achievements');
+
+      if (userProgress != null) {
+        final List<dynamic> progressData = json.decode(userProgress);
+        print(
+          'Loaded ${progressData.length} achievements from SharedPreferences',
+        );
+
+        for (var i = 0; i < _achievements.length; i++) {
+          final achievement = _achievements[i];
+          final progress = progressData.firstWhere(
+            (p) => p['id'] == achievement.id,
+            orElse: () => {
+              'id': achievement.id,
+              'progress': {'current': 0, 'total': achievement.requiredCount},
+              'isEarned': false,
+            },
+          );
+
+          _achievements[i] = achievement.copyWith(
+            progress: progress['progress'] as Map<String, dynamic>,
+            isEarned: progress['isEarned'] as bool,
+          );
+        }
+      }
+    } catch (e) {
+      print('Error loading user progress: $e');
+      // Don't set error state for local storage failures
+      // Just continue with default achievements
     }
   }
 
   Future<void> claimAchievement(String achievementId) async {
-    final index = _achievements.indexWhere((a) => a.id == achievementId);
-    if (index != -1 &&
-        _achievements[index].isUnlocked &&
-        !_achievements[index].isClaimed) {
-      try {
-        // Check if wallet is connected
-        if (_web3Provider == null || !_web3Provider!.isConnected) {
-          throw Exception('Please connect your wallet to claim achievements');
-        }
-
-        // Mint NFT for the achievement
-        await _mintAchievementNFT(_achievements[index]);
-
-        // Update achievement status
-        _achievements[index] = _achievements[index].copyWith(
-          isClaimed: true,
-          claimedAt: DateTime.now(),
-        );
-        notifyListeners();
-      } catch (e) {
-        debugPrint('Error claiming achievement: $e');
-        rethrow;
-      }
-    }
-  }
-
-  Future<void> _mintAchievementNFT(Achievement achievement) async {
-    if (_web3Provider == null) {
-      debugPrint('Web3Provider is null');
-      throw Exception('Web3Provider not initialized');
-    }
-
     try {
-      // Get the NFT contract
-      final nftContract = _web3Provider!.wellnessNFTContract;
-      if (nftContract == null) {
-        debugPrint('NFT contract is null');
-        throw Exception('NFT contract not initialized');
+      if (_web3Provider == null || !_web3Provider!.isConnected) {
+        throw Exception('Wallet not connected');
       }
 
-      debugPrint('Contract address: ${nftContract.address.hex}');
-      debugPrint('Achievement ID: ${achievement.id}');
-
-      // Get the achievement ID and convert to BigInt
-      final achievementId = BigInt.from(_getAchievementTokenId(achievement.id));
-      debugPrint('Token ID: $achievementId');
-
-      // Check if user already has this achievement
-      final userAddress = EthereumAddress.fromHex(
-        _web3Provider!.walletAddress!,
+      final achievement = _achievements.firstWhere(
+        (a) => a.id == achievementId,
+        orElse: () => throw Exception('Achievement not found'),
       );
-      final getUserAchievements = nftContract.function('getUserAchievements');
 
-      try {
-        final result = await _web3Provider!.client.call(
-          contract: nftContract,
-          function: getUserAchievements,
-          params: [userAddress],
-        );
-
-        final userAchievements = (result[0] as List<dynamic>).cast<BigInt>();
-        debugPrint(
-          'User achievements: ${userAchievements.map((a) => a.toString()).join(', ')}',
-        );
-
-        if (userAchievements.contains(achievementId)) {
-          throw Exception('You have already minted this achievement');
-        }
-      } catch (e) {
-        debugPrint('Error checking user achievements: $e');
-        // Continue anyway, as this might be a view function error
+      if (!achievement.isEarned) {
+        throw Exception('Achievement not earned yet');
       }
 
-      // Prepare the mint function
-      final mintFunction = nftContract.function('mintAchievement');
-
-      // First, try to simulate the call
-      try {
-        // Check if the user has already minted this achievement
-        final getUserAchievements = nftContract.function('getUserAchievements');
-        final userAchievements = await _web3Provider!.client.call(
-          contract: nftContract,
-          function: getUserAchievements,
-          params: [userAddress],
-        );
-        debugPrint('User achievements: ${userAchievements[0]}');
-
-        // Convert achievement ID to uint256
-        final achievementIdInt = BigInt.from(
-          1,
-        ); // For now, hardcode to 1 for breathing_beginner
-
-        // Try the mint simulation
-        final txData = await _web3Provider!.client.call(
-          contract: nftContract,
-          function: mintFunction,
-          params: [achievementIdInt],
-        );
-        debugPrint('Simulation successful: $txData');
-      } catch (e) {
-        debugPrint('Simulation failed: $e');
-        // Try to get more information about the revert
-        try {
-          // Check if the user has any achievements
-          final getUserAchievements = nftContract.function(
-            'getUserAchievements',
-          );
-          final userAchievements = await _web3Provider!.client.call(
-            contract: nftContract,
-            function: getUserAchievements,
-            params: [userAddress],
-          );
-          debugPrint('User achievements: ${userAchievements[0]}');
-
-          // Check if the achievement ID is valid
-          debugPrint('Attempting to mint achievement ID: 1');
-        } catch (e) {
-          debugPrint('Error getting additional info: $e');
-        }
-        throw Exception('Transaction would fail: $e');
+      if (achievement.isClaimed) {
+        throw Exception('Achievement already claimed');
       }
 
-      // Encode the function call
-      final data = mintFunction.encodeCall([BigInt.from(1)]);
-      debugPrint(
-        'Encoded data: 0x${data.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}',
-      );
-
-      // Send the transaction using Web3Provider's sendTransaction method
-      final txHash = await _web3Provider!.sendTransaction(
-        to: nftContract.address,
-        data: data,
-        gasLimit: 100000,
-      );
-
+      // Mint NFT badge
+      final txHash = await _nftService!.mintBadge(achievementId);
       if (txHash == null) {
-        debugPrint('Transaction failed - no hash returned');
-        throw Exception('Transaction failed - no hash returned');
+        throw Exception('Failed to mint NFT: Transaction failed');
       }
 
-      debugPrint('Transaction hash: $txHash');
-
-      // Wait for transaction confirmation with retries
-      TransactionReceipt? receipt;
-      int retries = 0;
-      const maxRetries = 5;
-      const retryDelay = Duration(seconds: 2);
-
-      while (retries < maxRetries) {
-        try {
-          receipt = await _web3Provider!.client.getTransactionReceipt(txHash);
-          if (receipt != null) {
-            break;
-          }
-        } catch (e) {
-          debugPrint('Error getting receipt: $e');
-        }
-        await Future.delayed(retryDelay);
-        retries++;
-      }
-
-      if (receipt == null) {
-        throw Exception(
-          'Transaction confirmation timeout after ${maxRetries * retryDelay.inSeconds} seconds',
+      // Update achievement status
+      final index = _achievements.indexWhere((a) => a.id == achievementId);
+      if (index != -1) {
+        _achievements[index] = achievement.copyWith(
+          isClaimed: true,
+          txHash: txHash,
         );
       }
 
-      if (receipt.status == false) {
-        // Get the transaction details from the receipt
-        debugPrint('Failed transaction details:');
-        debugPrint('Block number: ${receipt.blockNumber}');
-        debugPrint('Gas used: ${receipt.gasUsed}');
-        debugPrint('Status: ${receipt.status}');
+      // Save to Firestore
+      await _saveToFirestore(achievementId, txHash);
 
-        throw Exception('Transaction failed on chain. Check logs for details.');
-      }
-
-      debugPrint('Transaction confirmed in block: ${receipt.blockNumber}');
-
-      // Refresh NFTs after minting
-      await _web3Provider!.loadWellnessNFTs();
-    } catch (e, stackTrace) {
-      debugPrint('Error minting NFT: $e');
-      debugPrint('Stack trace: $stackTrace');
+      notifyListeners();
+    } catch (e) {
+      print('Error claiming achievement: $e');
       rethrow;
     }
   }
 
-  int _getAchievementTokenId(String achievementId) {
-    // Map achievement IDs to token IDs
-    final tokenIdMap = {
-      'breathing_beginner': 1,
-      'mood_tracker': 2,
-      'journal_master': 3,
-      'water_champion': 4,
-      'focus_pro': 5,
-    };
-    return tokenIdMap[achievementId] ?? 0;
-  }
+  Future<void> _saveToFirestore(String achievementId, String txHash) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
 
-  int getActivityCount(AchievementType type) {
-    final typeString = type.toString().split('.').last;
-    return _activityCounts[typeString] ?? 0;
-  }
-
-  void resetAchievements() {
-    _activityCounts.clear();
-    for (var i = 0; i < _achievements.length; i++) {
-      _achievements[i] = _achievements[i].copyWith(
-        isUnlocked: false,
-        isClaimed: false,
-        unlockedAt: null,
-        claimedAt: null,
+      final achievement = _achievements.firstWhere(
+        (a) => a.id == achievementId,
       );
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('achievements')
+          .doc(achievementId)
+          .set({
+            'progress': achievement.progress,
+            'isEarned': achievement.isEarned,
+            'isClaimed': true,
+            'txHash': txHash,
+            'claimedAt': FieldValue.serverTimestamp(),
+          });
+    } catch (e) {
+      print('Error saving to Firestore: $e');
+      // Don't throw error, just log it
     }
+  }
+
+  Future<void> refreshAchievements() async {
+    await _initializeAchievements();
+  }
+
+  void updateAchievementProgress(String achievementId, int progress) {
+    try {
+      final index = _achievements.indexWhere((a) => a.id == achievementId);
+      if (index == -1) return;
+
+      final achievement = _achievements[index];
+      final currentProgress = achievement.progress['current'] as int;
+      final totalProgress = achievement.progress['total'] as int;
+      final newProgress = currentProgress + progress;
+
+      _achievements[index] = achievement.copyWith(
+        progress: {'current': newProgress, 'total': totalProgress},
+        isEarned: newProgress >= totalProgress,
+      );
+
+      _saveProgress();
+      notifyListeners();
+    } catch (e) {
+      print('Error updating achievement progress: $e');
+    }
+  }
+
+  Future<void> _saveProgress() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final progressData = _achievements
+          .map(
+            (a) => {'id': a.id, 'progress': a.progress, 'isEarned': a.isEarned},
+          )
+          .toList();
+
+      await prefs.setString('user_achievements', json.encode(progressData));
+    } catch (e) {
+      print('Error saving progress: $e');
+    }
+  }
+
+  // Track breathing achievements
+  void trackBreathingAchievements(BreathingProvider breathingProvider) {
+    debugPrint('AchievementProvider: Tracking breathing achievements...');
+    // First Breath Achievement
+    if (breathingProvider.completedCycles > 0) {
+      updateAchievementProgress('first_breathe', 1);
+    }
+
+    // Consistent Breather Achievement
+    if (breathingProvider.totalSessions >= 5) {
+      updateAchievementProgress('breathing_streak_3', 1);
+    }
+
+    // Breathing Master Achievement
+    if (breathingProvider.totalBreathingTime >= 3600) {
+      // 1 hour total
+      updateAchievementProgress('breathing_master', 1);
+    }
+  }
+
+  Achievement? getAchievementById(String id) {
+    try {
+      return _achievements.firstWhere((achievement) => achievement.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  List<Achievement> getAchievementsByCategory(String category) {
+    if (category == 'All') return _achievements;
+    return _achievements.where((a) => a.category == category).toList();
+  }
+
+  List<Achievement> getEarnedAchievements() {
+    return _achievements.where((a) => a.isEarned).toList();
+  }
+
+  List<Achievement> getClaimedAchievements() {
+    return _achievements.where((a) => a.isClaimed).toList();
+  }
+
+  void clearData() {
+    _achievements.clear();
+    _isLoading = false;
+    _error = null;
+    _isInitialized = false;
     notifyListeners();
+  }
+
+  // Update breathing achievements
+  void updateBreathingAchievements(BreathingProvider breathingProvider) {
+    // First Breath Achievement
+    if (breathingProvider.completedCycles > 0) {
+      updateAchievementProgress('first_breathe', 1);
+    }
+
+    // Consistent Breather Achievement
+    if (breathingProvider.totalSessions >= 5) {
+      updateAchievementProgress('breathing_streak_3', 1);
+    }
   }
 }

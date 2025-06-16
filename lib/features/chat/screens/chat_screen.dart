@@ -29,7 +29,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   late Animation<double> _listeningScaleAnimation;
   final ImagePicker _imagePicker = ImagePicker();
   File? _selectedImage;
-  String? _imageCaption;
   late ChatProvider _chatProvider;
   bool _isDisposed = false;
 

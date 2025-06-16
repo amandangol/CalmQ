@@ -1,5 +1,5 @@
-🌿 CalmQ – Your Wellness Companion with Web3 Integration
-CalmQ is a next-generation wellness app that rewards your mental health journey through Web3 technology. Whether you're tracking habits, practicing mindfulness, or completing achievements, CalmQ lets you mint your wellness milestones as NFTs on the blockchain.
+🌿 Serenara – Your Wellness Companion with Web3 Integration
+Serenara is a next-generation wellness app that rewards your mental health journey through Web3 technology. Whether you're tracking habits, practicing mindfulness, or completing achievements, Serenara lets you mint your wellness milestones as NFTs on the blockchain.
 
 ## (Work in Progress)
 

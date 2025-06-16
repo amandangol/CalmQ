@@ -27,13 +27,15 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeProfile();
+    // Initialize profile in background
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeProfile();
+    });
   }
 
   Future<void> _initializeProfile() async {
-    await Future.delayed(Duration.zero);
     if (mounted) {
-      context.read<UserProfileProvider>().initialize();
+      await context.read<UserProfileProvider>().initialize();
     }
   }
 
@@ -41,13 +43,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final moodProvider = context.watch<MoodProvider>();
-    final userProfileProvider = context.watch<UserProfileProvider>();
     final theme = Theme.of(context);
     final user = authProvider.user;
-
-    if (authProvider.isLoading || userProfileProvider.isLoading) {
-      return _buildLoadingState();
-    }
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -94,20 +91,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildLoadingState() {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-        ),
-      ),
-    );
-  }
-
   Widget _buildAppBar(BuildContext context, AuthProvider authProvider) {
     return CustomAppBar(
-      title: 'CalmQ',
+      title: 'Serenara',
       showBackButton: false,
       leadingIcon: Icons.self_improvement_rounded,
       actions: [
@@ -116,26 +102,9 @@ class _HomeScreenState extends State<HomeScreen> {
           onPressed: () => _handleSignOut(context),
         ),
       ],
-      subtitle: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.auto_awesome, color: Colors.white, size: 16),
-            SizedBox(width: 8),
-            Text(
-              'Your wellness companion',
-              style: TextStyle(
-                color: Colors.grey.withOpacity(0.9),
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
+      subtitle: Text(
+        'Your wellness companion',
+        style: TextStyle(color: Colors.white, fontSize: 12),
       ),
     );
   }
@@ -189,84 +158,127 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+        padding: const EdgeInsets.all(24.0),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.all(Radius.circular(24)),
+          color: AppColors.surface,
+
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: Offset(0, 3),
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+              spreadRadius: 0,
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+              spreadRadius: 0,
             ),
           ],
+          border: Border.all(color: Colors.grey.withOpacity(0.1), width: 1),
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AnimatedOpacity(
-                  opacity: 1.0,
-                  duration: const Duration(milliseconds: 600),
-                  curve: Curves.easeInOut,
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween<double>(begin: 0.95, end: 1.0),
-                    duration: const Duration(milliseconds: 800),
-                    curve: Curves.easeOutBack,
-                    builder: (context, scale, child) {
-                      return Transform.scale(
-                        scale: scale,
-                        child: Text(
-                          '$greeting,',
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textPrimary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            shadows: [
-                              Shadow(
-                                blurRadius: 6.0,
-                                color: Colors.black.withOpacity(0.1),
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
-                            letterSpacing: 1.0,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$name!',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_month,
-                      size: 13,
-                      color: AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      today,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                        fontSize: 12,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Greeting
+                  ShaderMask(
+                    shaderCallback: (bounds) => LinearGradient(
+                      colors: [
+                        AppColors.textPrimary,
+                        AppColors.textPrimary.withOpacity(0.8),
+                      ],
+                    ).createShader(bounds),
+                    child: Text(
+                      '$greeting,',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Name with emphasis
+                  Text(
+                    name,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.3,
+                      fontSize: 24,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 8.0,
+                          color: Colors.black.withOpacity(0.1),
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Date with enhanced styling
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.textSecondary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.calendar_today_rounded,
+                          size: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          today,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Decorative element
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    _getTimeBasedColor(now.hour).withOpacity(0.2),
+                    _getTimeBasedColor(now.hour).withOpacity(0.1),
                   ],
                 ),
-              ],
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Icon(
+                _getTimeBasedIcon(now.hour),
+                size: 28,
+                color: _getTimeBasedColor(now.hour),
+              ),
             ),
           ],
         ),
@@ -278,6 +290,18 @@ class _HomeScreenState extends State<HomeScreen> {
     if (hour < 12) return 'Good Morning';
     if (hour < 17) return 'Good Afternoon';
     return 'Good Evening';
+  }
+
+  IconData _getTimeBasedIcon(int hour) {
+    if (hour < 12) return Icons.wb_sunny_rounded;
+    if (hour < 17) return Icons.wb_twilight_rounded;
+    return Icons.nights_stay_rounded;
+  }
+
+  Color _getTimeBasedColor(int hour) {
+    if (hour < 12) return Colors.orange.shade400;
+    if (hour < 17) return Colors.blue.shade400;
+    return Colors.indigo.shade400;
   }
 
   Widget _buildTodayCheckinSection(
@@ -297,6 +321,7 @@ class _HomeScreenState extends State<HomeScreen> {
             style: theme.textTheme.titleLarge?.copyWith(
               color: AppColors.textPrimary,
               fontWeight: FontWeight.bold,
+              fontSize: 18,
             ),
           ),
           SizedBox(height: 16),

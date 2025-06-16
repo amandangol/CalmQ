@@ -336,7 +336,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
             child: Column(
               children: [
                 Text(
-                  'Welcome to CalmQ',
+                  'Welcome to Serenara',
                   style: theme.textTheme.titleLarge?.copyWith(
                     color: AppColors.textPrimary,
                   ),

@@ -2,18 +2,20 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:provider/provider.dart';
 import 'features/auth/providers/auth_provider.dart';
+import 'app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-class CalmQSplashScreen extends StatefulWidget {
+class SerenaraSplashScreen extends StatefulWidget {
   final VoidCallback onComplete;
 
-  const CalmQSplashScreen({Key? key, required this.onComplete})
+  const SerenaraSplashScreen({Key? key, required this.onComplete})
     : super(key: key);
 
   @override
-  State<CalmQSplashScreen> createState() => _CalmQSplashScreenState();
+  State<SerenaraSplashScreen> createState() => _SerenaraSplashScreenState();
 }
 
-class _CalmQSplashScreenState extends State<CalmQSplashScreen>
+class _SerenaraSplashScreenState extends State<SerenaraSplashScreen>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _scaleController;
@@ -143,9 +145,9 @@ class _CalmQSplashScreenState extends State<CalmQSplashScreen>
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              const Color(0xFFE57373).withOpacity(0.1), // Light pink
-              const Color(0xFFCE93D8).withOpacity(0.15), // Light purple
-              const Color(0xFFF5F5F5), // Very light grey background
+              AppColors.primary.withOpacity(0.1),
+              AppColors.secondary.withOpacity(0.15),
+              AppColors.background,
             ],
             stops: const [0.0, 0.4, 1.0],
           ),
@@ -194,29 +196,27 @@ class _CalmQSplashScreenState extends State<CalmQSplashScreen>
                                               begin: Alignment.topLeft,
                                               end: Alignment.bottomRight,
                                               colors: [
-                                                const Color(
-                                                  0xFFE57373,
-                                                ).withOpacity(0.3),
-                                                const Color(
-                                                  0xFFCE93D8,
-                                                ).withOpacity(0.4),
-                                                const Color(
-                                                  0xFF81C784,
-                                                ).withOpacity(0.3),
+                                                AppColors.primary.withOpacity(
+                                                  0.3,
+                                                ),
+                                                AppColors.secondary.withOpacity(
+                                                  0.4,
+                                                ),
+                                                AppColors.success.withOpacity(
+                                                  0.3,
+                                                ),
                                               ],
                                             ),
                                             boxShadow: [
                                               BoxShadow(
-                                                color: const Color(
-                                                  0xFFE57373,
-                                                ).withOpacity(0.2),
+                                                color: AppColors.primary
+                                                    .withOpacity(0.2),
                                                 blurRadius: 30,
                                                 spreadRadius: 10,
                                               ),
                                               BoxShadow(
-                                                color: const Color(
-                                                  0xFFCE93D8,
-                                                ).withOpacity(0.15),
+                                                color: AppColors.secondary
+                                                    .withOpacity(0.15),
                                                 blurRadius: 50,
                                                 spreadRadius: 20,
                                               ),
@@ -226,9 +226,8 @@ class _CalmQSplashScreenState extends State<CalmQSplashScreen>
                                             margin: const EdgeInsets.all(20),
                                             decoration: BoxDecoration(
                                               shape: BoxShape.circle,
-                                              color: Colors.white.withOpacity(
-                                                0.9,
-                                              ),
+                                              color: AppColors.surface
+                                                  .withOpacity(0.9),
                                               boxShadow: [
                                                 BoxShadow(
                                                   color: Colors.black
@@ -238,10 +237,10 @@ class _CalmQSplashScreenState extends State<CalmQSplashScreen>
                                                 ),
                                               ],
                                             ),
-                                            child: const Icon(
+                                            child: Icon(
                                               Icons.self_improvement_outlined,
                                               size: 45,
-                                              color: Color(0xFFE57373),
+                                              color: AppColors.primary,
                                             ),
                                           ),
                                         ),
@@ -253,23 +252,20 @@ class _CalmQSplashScreenState extends State<CalmQSplashScreen>
 
                                   // App name with wellness gradient
                                   ShaderMask(
-                                    shaderCallback: (bounds) =>
-                                        const LinearGradient(
-                                          colors: [
-                                            Color(0xFFE57373), // Primary pink
-                                            Color(
-                                              0xFFCE93D8,
-                                            ), // Secondary purple
-                                            Color(0xFF81C784), // Success green
-                                          ],
-                                          stops: [0.0, 0.5, 1.0],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ).createShader(bounds),
-                                    child: const Text(
-                                      'CalmQ',
-                                      style: TextStyle(
-                                        fontSize: 48,
+                                    shaderCallback: (bounds) => LinearGradient(
+                                      colors: [
+                                        AppColors.primary,
+                                        AppColors.secondary,
+                                        AppColors.success,
+                                      ],
+                                      stops: const [0.0, 0.5, 1.0],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ).createShader(bounds),
+                                    child: Text(
+                                      'Serenara',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 36,
                                         fontWeight: FontWeight.w300,
                                         color: Colors.white,
                                         letterSpacing: 3,
@@ -297,9 +293,9 @@ class _CalmQSplashScreenState extends State<CalmQSplashScreen>
                                                 1.25,
                                         child: Text(
                                           'Your Mind Wellness Companion',
-                                          style: TextStyle(
+                                          style: GoogleFonts.inter(
                                             fontSize: 16,
-                                            color: const Color(0xFF616161),
+                                            color: AppColors.textSecondary,
                                             fontWeight: FontWeight.w400,
                                             letterSpacing: 1.5,
                                             shadows: [
@@ -321,9 +317,9 @@ class _CalmQSplashScreenState extends State<CalmQSplashScreen>
                                   // Wellness subtitle
                                   Text(
                                     'Breathe • Relax • Grow',
-                                    style: TextStyle(
+                                    style: GoogleFonts.inter(
                                       fontSize: 13,
-                                      color: const Color(0xFF9E9E9E),
+                                      color: AppColors.textLight,
                                       fontWeight: FontWeight.w300,
                                       letterSpacing: 2,
                                     ),
@@ -337,9 +333,9 @@ class _CalmQSplashScreenState extends State<CalmQSplashScreen>
                     },
                   ),
 
-                  const SizedBox(height: 80),
+                  const SizedBox(height: 20),
 
-                  // Loading section with wellness messaging
+                  // Animated Loading Section
                   AnimatedBuilder(
                     animation: _progressAnimation,
                     builder: (context, child) {
@@ -347,64 +343,83 @@ class _CalmQSplashScreenState extends State<CalmQSplashScreen>
                         opacity: _progressAnimation,
                         child: Column(
                           children: [
-                            Text(
-                              _getWellnessMessage(_progressAnimation.value),
-                              style: const TextStyle(
-                                color: Color(0xFF616161),
-                                fontSize: 14,
-                                letterSpacing: 1,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
+                            // Animated wellness icons
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: List.generate(3, (index) {
+                                final delay = index * 0.2;
+                                final progress =
+                                    (_progressAnimation.value - delay).clamp(
+                                      0.0,
+                                      1.0,
+                                    );
 
-                            const SizedBox(height: 20),
-
-                            // Wellness-themed progress bar
-                            Container(
-                              width: 200,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFEEEEEE),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: FractionallySizedBox(
-                                alignment: Alignment.centerLeft,
-                                widthFactor: _progressAnimation.value,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [
-                                        Color(0xFFE57373), // Primary pink
-                                        Color(0xFFCE93D8), // Secondary purple
-                                        Color(0xFF81C784), // Success green
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(10),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(
-                                          0xFFE57373,
-                                        ).withOpacity(0.3),
-                                        blurRadius: 8,
-                                        spreadRadius: 1,
-                                      ),
-                                    ],
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
                                   ),
-                                ),
-                              ),
+                                  child: Transform.scale(
+                                    scale: 0.8 + (0.2 * progress),
+                                    child: Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: [
+                                          AppColors.primary,
+                                          AppColors.secondary,
+                                          AppColors.success,
+                                        ][index].withOpacity(0.1),
+                                      ),
+                                      child: Icon(
+                                        [
+                                          Icons.self_improvement_outlined,
+                                          Icons.psychology_outlined,
+                                          Icons.spa_outlined,
+                                        ][index],
+                                        color: [
+                                          AppColors.primary,
+                                          AppColors.secondary,
+                                          AppColors.success,
+                                        ][index],
+                                        size: 24,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }),
                             ),
 
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 32),
 
-                            // Progress percentage
-                            Text(
-                              '${(_progressAnimation.value * 100).toInt()}%',
-                              style: TextStyle(
-                                color: const Color(0xFF9E9E9E),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: 1,
-                              ),
+                            // Animated loading dots
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: List.generate(3, (index) {
+                                final delay = index * 0.2;
+                                final progress =
+                                    (_progressAnimation.value - delay).clamp(
+                                      0.0,
+                                      1.0,
+                                    );
+
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 300),
+                                    width: 8 + (4 * progress),
+                                    height: 8 + (4 * progress),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: AppColors.primary.withOpacity(
+                                        0.3 + (0.7 * progress),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }),
                             ),
                           ],
                         ),
@@ -420,25 +435,13 @@ class _CalmQSplashScreenState extends State<CalmQSplashScreen>
     );
   }
 
-  String _getWellnessMessage(double progress) {
-    if (progress < 0.3) {
-      return 'Creating your peaceful space...';
-    } else if (progress < 0.6) {
-      return 'Preparing mindfulness exercises...';
-    } else if (progress < 0.9) {
-      return 'Setting up your wellness journey...';
-    } else {
-      return 'Almost ready to begin...';
-    }
-  }
-
   Widget _buildWellnessParticle(int index) {
     final colors = [
-      const Color(0xFFE57373).withOpacity(0.1),
-      const Color(0xFFCE93D8).withOpacity(0.1),
-      const Color(0xFF81C784).withOpacity(0.1),
-      const Color(0xFFFFB74D).withOpacity(0.1),
-      const Color(0xFF64B5F6).withOpacity(0.1),
+      AppColors.primary.withOpacity(0.1),
+      AppColors.secondary.withOpacity(0.1),
+      AppColors.success.withOpacity(0.1),
+      AppColors.accent.withOpacity(0.1),
+      AppColors.info.withOpacity(0.1),
     ];
 
     final sizes = [40.0, 60.0, 35.0, 55.0, 25.0, 45.0, 30.0, 50.0];
@@ -505,7 +508,7 @@ class _CalmQSplashScreenState extends State<CalmQSplashScreen>
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: const Color(0xFFE57373).withOpacity(opacity),
+          color: AppColors.primary.withOpacity(opacity),
           width: 1,
         ),
       ),
@@ -529,9 +532,9 @@ class _CalmQSplashScreenState extends State<CalmQSplashScreen>
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: const Color(
-                      0xFFCE93D8,
-                    ).withOpacity((1 - progress) * 0.1),
+                    color: AppColors.secondary.withOpacity(
+                      (1 - progress) * 0.1,
+                    ),
                     width: 2,
                   ),
                 ),

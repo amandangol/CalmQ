@@ -148,6 +148,7 @@ class _CurvedNavigationBarState extends State<CurvedNavigationBar>
                           ],
                         ),
                         child: FloatingActionButton(
+                          heroTag: 'bottom_nav_fab',
                           onPressed: widget.onFABPressed,
                           backgroundColor: widget.fabColor,
                           elevation: 0,

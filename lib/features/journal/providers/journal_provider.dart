@@ -5,9 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/journal_entry.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../achievements/providers/achievement_provider.dart';
-import '../../achievements/models/achievement.dart';
 
 class JournalProvider with ChangeNotifier {
   List<JournalEntry> _entries = [];
@@ -122,8 +119,6 @@ class JournalProvider with ChangeNotifier {
         // Force a refresh of the entries list
         _entries = List.from(_entries);
         notifyListeners();
-      } else {
-        throw Exception('Invalid document ID or user not authenticated');
       }
     } catch (e) {
       debugPrint('Error deleting journal entry: $e');

@@ -74,7 +74,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         title: Text('Terms and Conditions'),
         content: SingleChildScrollView(
           child: Text(
-            'By using CalmQ, you agree to:\n\n'
+            'By using Serenara, you agree to:\n\n'
             '1. Use the app responsibly and ethically\n'
             '2. Keep your account information secure\n'
             '3. Not share your account with others\n'
@@ -163,7 +163,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 SizedBox(height: 32),
                 Text(
-                  'Join CalmQ',
+                  'Join Serenara',
                   style: theme.textTheme.displayLarge?.copyWith(
                     color: AppColors.textPrimary,
                   ),

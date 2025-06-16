@@ -1,53 +1,31 @@
-const hre = require("hardhat");
+const { ethers } = require("hardhat");
 
 async function main() {
-  console.log("Deploying contracts...");
+  console.log("Deploying WellnessAchievementNFT...");
 
-  // Deploy WellnessToken
-  const WellnessToken = await hre.ethers.getContractFactory("WellnessToken");
-  const wellnessToken = await WellnessToken.deploy();
-  await wellnessToken.deployed();
-  console.log("WellnessToken deployed to:", wellnessToken.address);
-
-  // Deploy WellnessAchievementNFT
-  const WellnessAchievementNFT = await hre.ethers.getContractFactory(
+  const WellnessAchievementNFT = await ethers.getContractFactory(
     "WellnessAchievementNFT"
   );
-  const achievementNFT = await WellnessAchievementNFT.deploy();
-  await achievementNFT.deployed();
-  console.log("WellnessAchievementNFT deployed to:", achievementNFT.address);
+  const contract = await WellnessAchievementNFT.deploy();
 
-  // Deploy WellnessAchievementSystem
-  const WellnessAchievementSystem = await hre.ethers.getContractFactory(
-    "WellnessAchievementSystem"
-  );
-  const achievementSystem = await WellnessAchievementSystem.deploy(
-    wellnessToken.address,
-    achievementNFT.address
-  );
-  await achievementSystem.deployed();
-  console.log(
-    "WellnessAchievementSystem deployed to:",
-    achievementSystem.address
-  );
+  await contract.deployed();
 
-  // Set minters
-  console.log("Setting up permissions...");
-  await wellnessToken.setMinter(achievementSystem.address, true);
-  await achievementNFT.setMinter(achievementSystem.address, true);
-  console.log("Permissions set successfully!");
+  console.log("WellnessAchievementNFT deployed to:", contract.address);
 
-  // Save deployment info
-  const deploymentInfo = {
-    wellnessToken: wellnessToken.address,
-    achievementNFT: achievementNFT.address,
-    achievementSystem: achievementSystem.address,
+  // Save contract address and ABI for Flutter app
+  const fs = require("fs");
+  const contractInfo = {
+    address: contract.address,
     network: hre.network.name,
-    timestamp: new Date().toISOString(),
+    abi: WellnessAchievementNFT.interface.format(ethers.utils.FormatTypes.json),
   };
 
-  console.log("\nDeployment Summary:");
-  console.log(JSON.stringify(deploymentInfo, null, 2));
+  fs.writeFileSync(
+    "../assets/contract_info.json",
+    JSON.stringify(contractInfo, null, 2)
+  );
+
+  console.log("Contract info saved to Flutter app assets");
 }
 
 main()

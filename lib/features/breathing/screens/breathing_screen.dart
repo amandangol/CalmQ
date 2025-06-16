@@ -69,12 +69,6 @@ class _BreathingScreenState extends State<BreathingScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_isProviderInitialized) {
-      final web3Provider = context.read<Web3Provider>();
-
-      // Initialize breathing provider if not already initialized
-      if (!context.read<BreathingProvider>().isBreathing) {
-        context.read<BreathingProvider>().startBreathing();
-      }
       _isProviderInitialized = true;
     }
   }
@@ -110,8 +104,12 @@ class _BreathingScreenState extends State<BreathingScreen>
       // Track completed cycles
       if (_currentPhase == BreathingPhase.inhale && _currentCount == 1) {
         _completedCycles++;
+        debugPrint(
+          'BreathingScreen: Completed one breathing cycle! Total completed cycles: $_completedCycles',
+        );
         context.read<BreathingProvider>().updateBreathProgress(
           _completedCycles / 3, // Using 3 as a default target
+          context,
         );
       }
 
@@ -130,7 +128,8 @@ class _BreathingScreenState extends State<BreathingScreen>
       _currentCount = 1;
       _completedCycles = 0;
     });
-    context.read<BreathingProvider>().startBreathing();
+    debugPrint('BreathingScreen: Starting breathing session.');
+    context.read<BreathingProvider>().startSession();
     _breathingController.repeat();
   }
 
@@ -138,8 +137,9 @@ class _BreathingScreenState extends State<BreathingScreen>
     setState(() {
       _isBreathing = false;
     });
-    context.read<BreathingProvider>().stopBreathing();
-    context.read<BreathingProvider>().completeBreathingSession(context);
+
+    debugPrint('BreathingScreen: Stopping breathing session.');
+    context.read<BreathingProvider>().endSession();
     _breathingController.stop();
     _breathingController.reset();
   }

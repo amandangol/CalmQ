@@ -1,5 +1,4 @@
-import 'package:auralynn/features/achievements/screens/achievements_screen.dart';
-import 'package:auralynn/features/chat/screens/chat_screen.dart';
+import 'package:auralynn/features/achievements/screens/achievement_screen.dart';
 import 'package:flutter/material.dart';
 import '../features/home/screens/home_screen.dart';
 import '../features/mood/screens/mood_screen.dart';
@@ -23,7 +22,7 @@ class _MainNavigationState extends State<MainNavigation> {
     HomeScreen(),
     MoodScreen(),
     BreathingScreen(),
-    AchievementsScreen(),
+    AchievementScreen(),
     ProfileScreen(),
   ];
 
@@ -41,9 +40,9 @@ class _MainNavigationState extends State<MainNavigation> {
       color: Color(0xFF00BCD4),
     ),
     NavigationItem(
-      icon: Icons.redeem_outlined,
-      selectedIcon: Icons.redeem_outlined,
-      label: 'Achievements',
+      icon: Icons.image_outlined,
+      selectedIcon: Icons.image_rounded,
+      label: 'Achievement',
       color: Color(0xFFFF9800),
     ),
     NavigationItem(
@@ -102,6 +101,7 @@ class _MainNavigationState extends State<MainNavigation> {
           index: _selectedIndex == -1 ? 0 : _selectedIndex + 1,
           children: _screens,
         ),
+
         bottomNavigationBar: CurvedNavigationBar(
           selectedIndex: _selectedIndex,
           items: _navigationItems,

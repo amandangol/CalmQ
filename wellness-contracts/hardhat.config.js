@@ -1,4 +1,5 @@
-require("@nomicfoundation/hardhat-toolbox");
+require("@nomiclabs/hardhat-ethers");
+require("@nomiclabs/hardhat-etherscan");
 require("dotenv").config();
 
 module.exports = {
@@ -12,41 +13,31 @@ module.exports = {
     },
   },
   networks: {
-    // Sepolia - Free testnet tokens available
+    // For development
+    localhost: {
+      url: "http://127.0.0.1:8545",
+    },
+    // For testnet (Polygon Mumbai)
+    polygonMumbai: {
+      url: `https://polygon-mumbai.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
+      accounts: [process.env.PRIVATE_KEY],
+    },
+    // Add Sepolia network configuration
     sepolia: {
-      url:
-        process.env.SEPOLIA_RPC_URL ||
-        "https://ethereum-sepolia-rpc.publicnode.com",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 11155111,
+      url: `https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
+      accounts: [process.env.PRIVATE_KEY],
     },
-    // Base Sepolia - Also free
-    baseSepolia: {
-      url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 84532,
-    },
-    // Holesky - Another free Ethereum testnet
-    holesky: {
-      url:
-        process.env.HOLESKY_RPC_URL ||
-        "https://ethereum-holesky-rpc.publicnode.com",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 17000,
-    },
-    // Keep Amoy for later when you get funds
-    amoy: {
-      url: process.env.AMOY_RPC_URL || "https://rpc-amoy.polygon.technology",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 80002,
-    },
+    // For mainnet (Polygon)
     polygon: {
-      url: process.env.POLYGON_RPC_URL || "",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 137,
+      url: `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
+      accounts: [process.env.PRIVATE_KEY],
     },
   },
   etherscan: {
-    apiKey: process.env.POLYGONSCAN_API_KEY,
+    apiKey: {
+      polygonMumbai: process.env.POLYGONSCAN_API_KEY,
+      polygon: process.env.POLYGONSCAN_API_KEY,
+      sepolia: process.env.ETHERSCAN_API_KEY, // Use a specific key for Sepolia
+    },
   },
 };

@@ -120,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 SizedBox(height: 32),
                 // App Name
                 Text(
-                  'CalmQ',
+                  'Serenara',
                   style: theme.textTheme.displayLarge?.copyWith(
                     color: AppColors.textPrimary,
                   ),
@@ -218,7 +218,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "New to CalmQ?",
+                      "New to Serenara?",
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: AppColors.textPrimary,
                       ),

@@ -288,6 +288,7 @@ class _MoodScreenState extends State<MoodScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'mood_screen_fab',
         onPressed: () {
           showModalBottomSheet(
             context: context,
@@ -792,23 +793,12 @@ class _MoodEntryCard extends StatelessWidget {
                           ),
                         ),
                         SizedBox(height: 6),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _buildActionButton(
-                              context,
-                              'Edit',
-                              AppColors.primary,
-                              () => _editMoodEntry(context, entry),
-                            ),
-                            SizedBox(width: 8),
-                            _buildActionButton(
-                              context,
-                              'Delete',
-                              AppColors.error,
-                              () => _deleteMoodEntry(context, entry),
-                            ),
-                          ],
+
+                        _buildActionButton(
+                          context,
+                          'Delete',
+                          AppColors.error,
+                          () => _deleteMoodEntry(context, entry),
                         ),
                       ],
                     ),

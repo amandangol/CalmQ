@@ -58,6 +58,7 @@ dependencies:
   timezone: ^0.10.1
   app_settings: ^6.1.1
   flutter_dotenv: ^5.1.0
+  cloud_functions: ^5.5.2
  
   
 
@@ -86,6 +87,9 @@ flutter:
   assets:
     - assets/icon/icon.png
     - assets/images/
+    - assets/badges/
+    - assets/contract_info.json
+    - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

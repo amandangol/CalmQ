@@ -546,9 +546,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             _buildSectionTitle('Wallet Information'),
             _buildWeb3StatsCard(context, web3Provider),
-            const SizedBox(height: 24),
-            _buildSectionTitle('Wellness Achievements'),
-            _buildWellnessNFTsCard(context, web3Provider),
           ],
         );
       },
@@ -613,7 +610,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Unlock NFT achievements and earn wellness tokens',
+                      'Connect your wallet to manage your ETH balance',
                       style: TextStyle(
                         fontSize: 14,
                         color: AppColors.textSecondary,
@@ -625,6 +622,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ],
           ),
+          if (web3Provider.error != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.red.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline, size: 20, color: Colors.red),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      web3Provider.error!,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.red,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
@@ -633,7 +657,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: ElevatedButton.icon(
                 onPressed: web3Provider.isConnecting
                     ? null
-                    : () => web3Provider.connectWallet(),
+                    : () async {
+                        try {
+                          await web3Provider.connectWallet();
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Failed to connect wallet: ${e.toString()}',
+                                ),
+                                backgroundColor: Colors.red,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        }
+                      },
                 icon: web3Provider.isConnecting
                     ? const SizedBox(
                         width: 20,
@@ -816,27 +856,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 20),
 
-            // Balance cards
-            Row(
-              children: [
-                Expanded(
-                  child: _buildBalanceCard(
-                    icon: Icons.currency_exchange_rounded,
-                    label: 'ETH Balance',
-                    value: web3Provider.ethBalance,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildBalanceCard(
-                    icon: Icons.token_rounded,
-                    label: 'Wellness Tokens',
-                    value: '${web3Provider.wellnessTokens}',
-                    color: AppColors.secondary,
-                  ),
-                ),
-              ],
+            // Balance card
+            _buildBalanceCard(
+              icon: Icons.currency_exchange_rounded,
+              label: 'ETH Balance',
+              value: web3Provider.ethBalance,
+              color: AppColors.primary,
+              isFullWidth: true,
             ),
 
             const SizedBox(height: 24),
@@ -957,130 +983,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: const Text('Disconnect'),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildWellnessNFTsCard(
-    BuildContext context,
-    Web3Provider web3Provider,
-  ) {
-    if (web3Provider.isConnecting) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (web3Provider.wellnessNFTs.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Icon(
-              Icons.workspace_premium_rounded,
-              size: 48,
-              color: AppColors.primary.withOpacity(0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No Achievements Yet',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Complete wellness activities to earn NFT achievements',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Wellness Achievements',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ...web3Provider.wellnessNFTs.map(
-              (nft) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppColors.primary.withOpacity(0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.workspace_premium_rounded,
-                          color: AppColors.primary,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Text(
-                          nft,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

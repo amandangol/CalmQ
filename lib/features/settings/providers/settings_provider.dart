@@ -125,8 +125,7 @@ class SettingsProvider extends ChangeNotifier {
           context,
           listen: false,
         );
-        await affirmationProvider
-            .refreshData(); // This will reset to default affirmations
+        await affirmationProvider.refreshData();
       }
 
       notifyListeners();
